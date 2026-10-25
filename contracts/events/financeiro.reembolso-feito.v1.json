@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/hsborges/facoffee-app/blob/main/contracts/events/financeiro.reembolso-feito.v1.json",
+  "title": "Reembolso feito",
+  "description": "O gestor devolveu o valor a quem pagou um gasto do próprio bolso.",
+  "type": "object",
+  "allOf": [{ "$ref": "envelope.v1.json" }],
+  "properties": {
+    "tipo": { "const": "financeiro.reembolso-feito" },
+    "versao": { "const": 1 },
+    "payload": {
+      "type": "object",
+      "required": ["reembolsoId", "gastoId", "participanteId", "valorEmCentavos"],
+      "properties": {
+        "reembolsoId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Identificador do reembolso."
+        },
+        "gastoId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Identificador do gasto reembolsado."
+        },
+        "participanteId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Identificador da pessoa, o mesmo do contexto Usuário (sub do Passaporte UFMS)."
+        },
+        "valorEmCentavos": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Valor devolvido em centavos de real."
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "id": "0b6f2f0e-6a1c-4c55-9a43-6f1f1b0c9e17",
+      "tipo": "financeiro.reembolso-feito",
+      "versao": 1,
+      "ocorridoEm": "2026-11-01T03:00:00Z",
+      "payload": {
+        "reembolsoId": "e1d2c3b4-a596-4877-b869-5a4b3c2d1e0f",
+        "gastoId": "3f1c2a9e-8b7d-4e6f-9a10-2b3c4d5e6f70",
+        "participanteId": "2b3c4d5e-6f70-4a81-9b2c-3d4e5f6a7b8c",
+        "valorEmCentavos": 4590
+      }
+    }
+  ]
+}
