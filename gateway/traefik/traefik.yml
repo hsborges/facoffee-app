@@ -1,0 +1,15 @@
+# Static configuration. Routes and middlewares live in dynamic.yml.
+entryPoints:
+  websecure:
+    address: ":443"
+    http:
+      # shortcut: Traefik's self-signed default certificate, configure ACME or the university certificate before production
+      tls: {}
+
+providers:
+  file:
+    filename: /etc/traefik/dynamic.yml
+
+ping: {}
+
+accessLog: {}

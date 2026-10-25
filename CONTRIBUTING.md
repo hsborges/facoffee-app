@@ -22,7 +22,7 @@ pnpm install
 
 Num workspace só: `pnpm --filter @facoffee/financeiro test`.
 
-Workspaces: `services/*`, `templates/*`, `web` e `contracts`, declarados em `pnpm-workspace.yaml`. Cada um tem `tsconfig.json` estendendo `tsconfig.base.json`.
+Workspaces: `services/*`, `templates/*`, `web`, `contracts` e `gateway`, declarados em `pnpm-workspace.yaml`. Cada um tem `tsconfig.json` estendendo `tsconfig.base.json`.
 
 ## Fluxo de branch e PR (GitHub flow)
 
