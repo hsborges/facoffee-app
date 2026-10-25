@@ -27,7 +27,7 @@ Forças em jogo:
 | Lint e formatação | [Biome](https://biomejs.dev) |
 | Pacotes e workspaces | pnpm workspaces (monorepo) |
 | API Gateway | [Traefik](https://traefik.io) |
-| Armazenamento de arquivos | API S3; [MinIO](https://min.io) no ambiente local |
+| Armazenamento de arquivos | API S3; [SeaweedFS](https://github.com/seaweedfs/seaweedfs) no ambiente local |
 | Front-end | React com Vite (SPA) |
 | Contratos de eventos | JSON Schema por evento e versão; [AsyncAPI](https://www.asyncapi.com) para canais, publicadores e consumidores |
 
@@ -36,7 +36,7 @@ Forças em jogo:
 - Hono: rotas são funções, sem classes nem decorators; segue Web Standards (`Request`/`Response`).
 - Drizzle: schema em TypeScript, consultas próximas de SQL, sem geração de código. Cada serviço tem o próprio schema e as próprias migrations.
 - `amqp-connection-manager`: reconexão automática e *publisher confirms* sobre o `amqplib`.
-- Arquivos acessados pelo SDK S3 (`@aws-sdk/client-s3`); o código não depende de MinIO.
+- Arquivos acessados pelo SDK S3 (`@aws-sdk/client-s3`); o código não depende de SeaweedFS. MinIO foi descartado por não estar mais disponível.
 
 **Ferramentas**
 
