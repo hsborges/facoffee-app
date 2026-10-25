@@ -3,30 +3,24 @@ info:
   title: FACOFFEE API
   version: 0.1.0
   description: |
-    API pública do FACOFFEE, exposta pelo API Gateway
-    ([ADR 0007](https://github.com/hsborges/facoffee-app/blob/main/docs/adr/0007-api-gateway.md)).
-    O gateway roteia `/api/<contexto>/*` para o serviço do contexto e valida o token antes de
-    encaminhar. Cada serviço documenta aqui as rotas que expõe
-    ([ADR 0009](https://github.com/hsborges/facoffee-app/blob/main/docs/adr/0009-openapi-da-api-publica.md)).
+    API do FACOFFEE.
 
-    Para testar no Swagger UI, clique em **Authorize** e cole um access token do Keycloak.
+    Todas as rotas exigem autenticação. Para testar aqui, clique em **Authorize** e informe um
+    access token.
 servers:
   - url: /
-    description: O próprio gateway (local, https://localhost)
 security:
-  - passaporte: []
+  - bearer: []
 tags:
   - name: usuario
-    description: Contexto Usuário
+    description: Usuários
 paths:
   /api/usuario/eu:
     get:
       tags: [usuario]
       operationId: obterUsuarioLogado
       summary: Usuário logado
-      description: >-
-        Dados e perfis de acesso do usuário logado, a partir do token
-        ([ADR 0008](https://github.com/hsborges/facoffee-app/blob/main/docs/adr/0008-dados-do-usuario-logado.md)).
+      description: Dados e perfis de acesso do usuário autenticado.
       responses:
         '200':
           description: Usuário logado
@@ -40,16 +34,14 @@ paths:
           $ref: '#/components/responses/ErroInterno'
 components:
   securitySchemes:
-    passaporte:
+    bearer:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: >-
-        Access token do Passaporte UFMS (Keycloak) emitido ao client `facoffee-web`, assinado
-        com RS256. Toda rota exige o token.
+      description: Access token obtido ao entrar no FACOFFEE.
   responses:
     NaoAutorizado:
-      description: Token ausente, inválido, expirado ou emitido a outro client.
+      description: Token ausente, inválido ou expirado.
       headers:
         WWW-Authenticate:
           schema:
@@ -62,7 +54,7 @@ components:
           example:
             error: unauthorized
     ErroInterno:
-      description: Falha interna, como as chaves públicas (JWKS) do Keycloak inacessíveis.
+      description: Erro interno.
   schemas:
     Erro:
       type: object
@@ -73,20 +65,20 @@ components:
     Perfil:
       type: string
       enum: [gestor, participante]
-      description: Perfil de acesso, de um papel do realm no Keycloak.
+      description: Perfil de acesso ao FACOFFEE.
     Usuario:
       type: object
       required: [id, nome, email, perfis]
       properties:
         id:
           type: string
-          description: Identificador do usuário no Keycloak (claim `sub`).
+          description: Identificador do usuário.
         nome:
           type: string
-          description: Claim `name`; vazio se o token não tiver.
+          description: Nome; vazio se não informado.
         email:
           type: string
-          description: Claim `email`; vazio se o token não tiver.
+          description: E-mail; vazio se não informado.
         perfis:
           type: array
           items:
