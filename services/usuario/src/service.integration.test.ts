@@ -81,6 +81,11 @@ it('registers the usuário on the first access and the gestor reactivates them',
   expect((await acesso('João')).status).toBe(204);
   expect((await acesso('João Café')).status).toBe(204);
   expect(await listar()).toEqual({ id, nome: 'João Café', email: '', desativado: false });
+  expect(await (await fetch(`${url}/contato/${id}`)).json()).toEqual({
+    id,
+    nome: 'João Café',
+    email: '',
+  });
 
   expect((await post('desativar', gestor)).status).toBe(204);
   expect((await acesso('João Café')).status).toBe(403);
