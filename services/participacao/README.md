@@ -13,10 +13,17 @@ Alcançada só pelo [gateway](../../gateway/), que valida o token e envia a iden
 | Rota pública | Resposta |
 |---|---|
 | `POST /api/participacao/entrada` | Com `{ tipoDeCota: "so-cafe" \| "completa" }`, o usuário logado entra e publica *Participante entrou*: 204, 400 se o tipo é inválido, ou 409 se já está participando. Retornar é entrar de novo. |
+| `POST /api/participacao/troca-cota` | Com `{ tipoDeCota }`, troca o tipo de cota a partir do mês seguinte, sem publicar evento (*Tipo de cota trocado* é interno): 204, 400 ou 409 se não está participando. |
+| `POST /api/participacao/saida` | O usuário logado sai e publica *Participante saiu*: 204 ou 409 se não está participando. |
+| `POST /api/participacao/valor-da-cota` | Com `{ tipoDeCota, ano, valorEmCentavos }`, o gestor (`X-User-Roles` com `gestor`) define o valor e publica *Valor da cota definido*: 204, 400 (pedido inválido ou ano passado), 403 se não é gestor, ou 409 se já foi definido para o tipo e o ano. |
 
 Especificação completa em [`gateway/openapi.yaml`](../../gateway/openapi.yaml).
 
-Banco, outbox e publicação vêm do [template de serviço](../../templates/service/); ainda sem consumidor. A tabela `participantes` guarda quem já entrou, o tipo de cota e se está participando.
+Banco, outbox, publicação e consumidor vêm do [template de serviço](../../templates/service/). A tabela `participantes` guarda quem já entrou, o tipo de cota, a troca pendente (`troca_tipo_de_cota` a partir de `troca_a_partir_de`) e se está participando; `valores_da_cota`, o valor de cada tipo de cota por ano. Meses e anos viram à meia-noite de Campo Grande ([ADR 0015](../../docs/adr/0015-fuso-horario-do-dominio.md)).
+
+## Eventos consumidos
+
+Fila `participation.events`. *Usuário desativado* (`user.user-deactivated.v1`) vira *Participante saiu* se a pessoa está participando; senão, é ignorado. Pedir a saída e ter o acesso desativado publicam *Participante saiu* uma única vez.
 
 ## Configuração
 

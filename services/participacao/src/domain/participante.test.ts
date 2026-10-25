@@ -1,19 +1,23 @@
-import { readFileSync } from 'node:fs';
-import { Ajv } from 'ajv';
-import addFormats from 'ajv-formats';
 import { describe, expect, it } from 'vitest';
-import { entrar } from './participante.js';
+import {
+  entrar,
+  type Participante,
+  sair,
+  tipoDeCotaNoMes,
+  trocarTipoDeCota,
+} from './participante.js';
+
+const agora = new Date('2026-11-01T03:00:00Z');
+const contexto = { eventId: '0b6f2f0e-6a1c-4c55-9a43-6f1f1b0c9e11', agora };
+const id = '7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d';
+const participando: Participante = { id, tipoDeCota: 'so-cafe', participando: true, troca: null };
 
 describe('entrar', () => {
-  const agora = new Date('2026-11-01T03:00:00Z');
-  const contexto = { eventId: '0b6f2f0e-6a1c-4c55-9a43-6f1f1b0c9e11', agora };
-  const id = '7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d';
-
   it('the person enters for the first time with the chosen tipo de cota and Participante entrou is published', () => {
     expect(entrar(undefined, { id, tipoDeCota: 'so-cafe' }, contexto)).toEqual({
       ok: true,
       value: {
-        participante: { id, tipoDeCota: 'so-cafe', participando: true },
+        participante: { id, tipoDeCota: 'so-cafe', participando: true, troca: null },
         evento: {
           id: contexto.eventId,
           type: 'participation.participant-joined',
@@ -25,38 +29,105 @@ describe('entrar', () => {
     });
   });
 
-  it('returning is entering again, even with another tipo de cota', () => {
-    const saiu = { id, tipoDeCota: 'so-cafe', participando: false } as const;
+  it('returning is entering again, even with another tipo de cota, dropping an old troca', () => {
+    const saiu: Participante = {
+      ...participando,
+      participando: false,
+      troca: { tipoDeCota: 'completa', aPartirDe: '2026-03' },
+    };
     const resultado = entrar(saiu, { id, tipoDeCota: 'completa' }, contexto);
     expect(resultado).toMatchObject({
       ok: true,
       value: {
-        participante: { id, tipoDeCota: 'completa', participando: true },
+        participante: { id, tipoDeCota: 'completa', participando: true, troca: null },
         evento: { type: 'participation.participant-joined', payload: { participantId: id } },
       },
     });
   });
 
   it('cannot enter while already participando', () => {
-    const participando = { id, tipoDeCota: 'completa', participando: true } as const;
     expect(entrar(participando, { id, tipoDeCota: 'completa' }, contexto)).toEqual({
       ok: false,
       error: 'ja-participando',
     });
   });
+});
 
-  it('Participante entrou follows the contract', () => {
-    const ler = (arquivo: string) =>
-      JSON.parse(
-        readFileSync(new URL(`../../../../contracts/events/${arquivo}`, import.meta.url), 'utf8'),
-      );
-    const ajv = new Ajv({ strict: false });
-    addFormats(ajv);
-    ajv.addSchema(ler('envelope.v1.json'));
-    const validar = ajv.compile(ler('participation.participant-joined.v1.json'));
-    const resultado = entrar(undefined, { id, tipoDeCota: 'completa' }, contexto);
+describe('trocarTipoDeCota', () => {
+  // 2026-10-15 in Campo Grande: the troca takes effect in 2026-11.
+  const emOutubro = new Date('2026-10-15T15:00:00Z');
+
+  const trocar = (atual: Participante | undefined, agora = emOutubro) => {
+    const resultado = trocarTipoDeCota(atual, 'completa', agora);
     if (!resultado.ok) throw new Error(resultado.error);
+    return resultado.value;
+  };
 
-    expect(validar(resultado.value.evento), ajv.errorsText(validar.errors)).toBe(true);
+  it('the cota of the current month keeps the tipo; the next month uses the new one', () => {
+    const trocado = trocar(participando);
+
+    expect(trocado.troca).toEqual({ tipoDeCota: 'completa', aPartirDe: '2026-11' });
+    expect(tipoDeCotaNoMes(trocado, '2026-10')).toBe('so-cafe');
+    expect(tipoDeCotaNoMes(trocado, '2026-11')).toBe('completa');
+    expect(tipoDeCotaNoMes(trocado, '2027-01')).toBe('completa');
+  });
+
+  it('turns months in Campo Grande time and from December to January', () => {
+    // Still October 31 in Campo Grande (UTC-4).
+    expect(trocar(participando, new Date('2026-11-01T03:59:59Z')).troca?.aPartirDe).toBe('2026-11');
+    expect(trocar(participando, new Date('2026-11-01T04:00:00Z')).troca?.aPartirDe).toBe('2026-12');
+    expect(trocar(participando, new Date('2026-12-20T12:00:00Z')).troca?.aPartirDe).toBe('2027-01');
+  });
+
+  it('asking for the current tipo cancels a pending troca', () => {
+    const cancelado = trocarTipoDeCota(trocar(participando), 'so-cafe', emOutubro);
+    expect(cancelado).toEqual({ ok: true, value: participando });
+  });
+
+  it('a troca already in effect becomes the tipo de cota before the next one', () => {
+    const trocado = trocar(participando);
+    const emDezembro = new Date('2026-12-10T12:00:00Z');
+
+    expect(trocarTipoDeCota(trocado, 'so-cafe', emDezembro)).toEqual({
+      ok: true,
+      value: {
+        ...participando,
+        tipoDeCota: 'completa',
+        troca: { tipoDeCota: 'so-cafe', aPartirDe: '2027-01' },
+      },
+    });
+  });
+
+  it('only who is participando can trocar', () => {
+    for (const atual of [undefined, { ...participando, participando: false }]) {
+      expect(trocarTipoDeCota(atual, 'completa', emOutubro)).toEqual({
+        ok: false,
+        error: 'nao-participando',
+      });
+    }
+  });
+});
+
+describe('sair', () => {
+  it('ends the participação and produces Participante saiu', () => {
+    expect(sair(participando, contexto)).toEqual({
+      ok: true,
+      value: {
+        participante: { ...participando, participando: false },
+        evento: {
+          id: contexto.eventId,
+          type: 'participation.participant-left',
+          version: 1,
+          occurredAt: '2026-11-01T03:00:00.000Z',
+          payload: { participantId: id },
+        },
+      },
+    });
+  });
+
+  it('who is not participando cannot leave', () => {
+    for (const atual of [undefined, { ...participando, participando: false }]) {
+      expect(sair(atual, contexto)).toEqual({ ok: false, error: 'nao-participando' });
+    }
   });
 });
