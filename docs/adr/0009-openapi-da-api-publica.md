@@ -1,6 +1,6 @@
 # 0009. OpenAPI da API pública
 
-- Status: Proposto
+- Status: Aceito
 - Data: 2026-10-25
 
 ## Contexto
