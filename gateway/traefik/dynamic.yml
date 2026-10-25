@@ -18,6 +18,12 @@ http:
     docs:
       rule: Path(`/docs`) || PathPrefix(`/docs/`)
       service: docs
+    # The web app, public like the docs: the login happens in the browser (ADR 0021).
+    # Lowest priority, and never /api: an unrouted /api path keeps answering 404.
+    web:
+      rule: PathPrefix(`/`) && !Path(`/api`) && !PathPrefix(`/api/`)
+      priority: 1
+      service: web
 
   middlewares:
     auth:
@@ -46,3 +52,6 @@ http:
     docs:
       loadBalancer:
         servers: [{ url: http://docs:8080 }]
+    web:
+      loadBalancer:
+        servers: [{ url: http://web:80 }]
