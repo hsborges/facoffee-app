@@ -20,8 +20,9 @@ const textClaim = (claim: unknown) => (typeof claim === 'string' ? encodeURIComp
 
 /**
  * Token verifier called by Traefik ForwardAuth on `/verify` (ADR 0007).
- * Valid token: 204 with the `X-User-*` identity headers. Otherwise: 401, and since any non-2xx
- * response is returned to the client, the request stops at the gateway.
+ * Valid token: 204 with the `X-User-*` identity headers. Missing or invalid token: 401. Since any
+ * non-2xx response is returned to the client, the request stops at the gateway. An unreachable
+ * JWKS is not a 401: the error propagates (500).
  */
 export const createApp = ({ issuer, clientId, keys }: VerifierConfig) =>
   new Hono()

@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { perfisDos, type Usuario } from '../domain/usuario.js';
 
 /**
- * HTTP API of the Usuário context. `GET /eu` returns the logged-in user (ADR 0008).
+ * HTTP API of the Usuário context. `GET /eu` returns the logged-in user, or 401 without `X-User-Id` (ADR 0008).
  * Identity comes from the gateway (ADR 0007); name and email arrive percent-encoded.
  */
 export const app = new Hono()
