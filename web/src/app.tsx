@@ -30,7 +30,9 @@ const Aviso = ({ children }: { children: ReactNode }) => (
  */
 export const App = () => {
   const auth = useAuth();
-  const { isAuthenticated, error } = useAutoSignin();
+  // Keeps the page asked for, to return to it after the login (destinoDoLogin).
+  const entrar = { state: location.pathname + location.search };
+  const { isAuthenticated, error } = useAutoSignin({ signinArgs: entrar });
   const token = auth.user?.access_token;
   const [eu, setEu] = useState<UsuarioLogado>();
 
@@ -49,7 +51,7 @@ export const App = () => {
     return (
       <Aviso>
         <p role="alert">Não foi possível entrar no FACOFFEE.</p>
-        <button type="button" onClick={() => auth.signinRedirect()}>
+        <button type="button" onClick={() => auth.signinRedirect(entrar)}>
           Tentar de novo
         </button>
       </Aviso>

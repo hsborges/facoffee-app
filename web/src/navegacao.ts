@@ -20,3 +20,10 @@ const DO_GESTOR: readonly Item[] = [
  */
 export const navegacao = (perfis: readonly Perfil[]): readonly Item[] =>
   perfis.includes('gestor') ? [...DO_PARTICIPANTE, ...DO_GESTOR] : DO_PARTICIPANTE;
+
+/**
+ * Page to open after the login: the path kept in the OIDC `state` when the login started.
+ * Anything but a path of this origin (`//host`, `/\host`, a URL) goes to the start.
+ */
+export const destinoDoLogin = (estado: unknown): string =>
+  typeof estado === 'string' && /^\/(?![/\\])/.test(estado) ? estado : '/';

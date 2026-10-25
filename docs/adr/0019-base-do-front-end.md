@@ -17,7 +17,7 @@ Forças em jogo:
 
 ## Decisão
 
-**Login**: [`oidc-client-ts`](https://github.com/authts/oidc-client-ts) com [`react-oidc-context`](https://github.com/authts/react-oidc-context). Quem não está logado vai direto ao Keycloak; o token fica no `sessionStorage` (padrão da biblioteca) e é renovado sem nova tela de login. Emissor e client vêm de `VITE_OIDC_AUTHORITY` e `VITE_OIDC_CLIENT_ID`, com os valores do realm local como padrão. Biblioteca genérica de OIDC, não `keycloak-js`: o front-end não depende de ser Keycloak.
+**Login**: [`oidc-client-ts`](https://github.com/authts/oidc-client-ts) com [`react-oidc-context`](https://github.com/authts/react-oidc-context). Quem não está logado vai direto ao Keycloak; o token fica no `sessionStorage` (padrão da biblioteca) e é renovado sem nova tela de login. O redirect é sempre a raiz (`/`); a página pedida vai no `state` do OIDC e é aberta depois do login, se for um caminho da mesma origem. Emissor e client vêm de `VITE_OIDC_AUTHORITY` e `VITE_OIDC_CLIENT_ID`, com os valores do realm local como padrão. Biblioteca genérica de OIDC, não `keycloak-js`: o front-end não depende de ser Keycloak.
 
 **Chamadas à API**: sempre em `/api/...`, na mesma origem do front-end, com `Authorization: Bearer <access token>`. No desenvolvimento, o servidor do Vite encaminha `/api` ao gateway (`https://localhost`), sem CORS.
 
