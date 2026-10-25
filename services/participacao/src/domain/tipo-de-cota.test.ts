@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { definirValorDaCota, type ValorDaCota } from './tipo-de-cota.js';
+import { definirValorDaCota, repetirValorDoAnoAnterior, type ValorDaCota } from './tipo-de-cota.js';
 
 const agora = new Date('2027-01-02T12:00:00Z');
 const contexto = { eventId: '0b6f2f0e-6a1c-4c55-9a43-6f1f1b0c9e14', agora };
@@ -42,5 +42,27 @@ describe('definirValorDaCota', () => {
       ok: false,
       error: 'ano-passado',
     });
+  });
+});
+
+describe('repetirValorDoAnoAnterior', () => {
+  const anterior: ValorDaCota = { ...valor, ano: 2026, valorEmCentavos: 2200 };
+
+  it('a tipo de cota left without a valor repeats the previous year and Valor da cota definido is published', () => {
+    expect(repetirValorDoAnoAnterior(undefined, anterior, contexto)).toEqual({
+      valor: { tipoDeCota: 'so-cafe', ano: 2027, valorEmCentavos: 2200 },
+      evento: {
+        id: contexto.eventId,
+        type: 'participation.contribution-amount-set',
+        version: 1,
+        occurredAt: '2027-01-02T12:00:00.000Z',
+        payload: { contributionType: 'coffee-only', year: 2027, amountInCents: 2200 },
+      },
+    });
+  });
+
+  it('keeps the valor the gestor already defined, and repeats nothing without a previous year', () => {
+    expect(repetirValorDoAnoAnterior(valor, anterior, contexto)).toBeUndefined();
+    expect(repetirValorDoAnoAnterior(undefined, undefined, contexto)).toBeUndefined();
   });
 });

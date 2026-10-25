@@ -28,6 +28,8 @@ const app = (deps: Partial<ApiDependencies> = {}) =>
       if (valor.ano < 2026) return fail('ano-passado');
       return valor.valorEmCentavos === 9999 ? fail('valor-ja-definido') : ok(undefined);
     },
+    iniciarAno: async () => ({ valoresRepetidos: 1 }),
+    iniciarMes: async () => ({ cotasDevidas: 2, semValorDaCota: 0 }),
     health: async () => ({ database: true, rabbitmq: true }),
     logger: createLogger('test', () => {}),
     ...deps,
@@ -150,6 +152,23 @@ describe('POST /definir-valor-da-cota', () => {
       expect(response.status).toBe(400);
       expect(await response.json()).toEqual({ error: 'pedido-invalido' });
     }
+  });
+});
+
+describe('gatilhos do agendador', () => {
+  it('POST /iniciar-ano and POST /iniciar-mes run without identity and answer what they did', async () => {
+    const ano = await post('/iniciar-ano', {});
+    expect(ano.status).toBe(200);
+    expect(await ano.json()).toEqual({ valoresRepetidos: 1 });
+
+    const mes = await post('/iniciar-mes', {});
+    expect(mes.status).toBe(200);
+    expect(await mes.json()).toEqual({ cotasDevidas: 2, semValorDaCota: 0 });
+  });
+
+  // The gateway blocks only the exact paths, so variants must not reach the triggers either.
+  it.each(['/iniciar-mes/', '/INICIAR-MES', '/iniciar-ano/'])('404 on %s', async (path) => {
+    expect((await post(path, {})).status).toBe(404);
   });
 });
 

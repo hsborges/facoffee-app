@@ -10,6 +10,19 @@ const colunasDaTroca = ({ troca }: Participante) => ({
   trocaAPartirDe: troca?.aPartirDe ?? null,
 });
 
+/** A row of `participantes` as a {@link Participante}. */
+export const paraParticipante = ({
+  trocaTipoDeCota,
+  trocaAPartirDe,
+  ...participante
+}: typeof participantes.$inferSelect): Participante => ({
+  ...participante,
+  troca:
+    trocaTipoDeCota && trocaAPartirDe
+      ? { tipoDeCota: trocaTipoDeCota, aPartirDe: trocaAPartirDe }
+      : null,
+});
+
 const participando = (id: string) =>
   and(eq(participantes.id, id), eq(participantes.participando, true));
 
@@ -20,15 +33,7 @@ const participando = (id: string) =>
 export const participanteRepository = (db: Executor): Repository => ({
   buscar: async (id) => {
     const [row] = await db.select().from(participantes).where(eq(participantes.id, id));
-    if (!row) return undefined;
-    const { trocaTipoDeCota, trocaAPartirDe, ...participante } = row;
-    return {
-      ...participante,
-      troca:
-        trocaTipoDeCota && trocaAPartirDe
-          ? { tipoDeCota: trocaTipoDeCota, aPartirDe: trocaAPartirDe }
-          : null,
-    };
+    return row && paraParticipante(row);
   },
   // The setWhere makes a concurrent entrada of the same person save and publish nothing.
   salvarEntrada: (participante, events) =>

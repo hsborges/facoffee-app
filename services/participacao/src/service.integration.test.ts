@@ -4,6 +4,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import amqplib from 'amqplib';
 import pg from 'pg';
 import { afterAll, beforeAll, expect, it, vi } from 'vitest';
+import { anoDe, mesDe } from './domain/calendario.js';
 import { queues } from './infra/consumer.js';
 import { createLogger } from './infra/logger.js';
 import { EXCHANGE } from './infra/rabbitmq.js';
@@ -150,6 +151,43 @@ it('publishes Valor da cota definido once and only for the gestor', async () => 
   await sleep(1000);
   expect(definidos()).toMatchObject([
     { payload: { contributionType: 'coffee-only', year: valor.ano, amountInCents: 2500 } },
+  ]);
+});
+
+it('the agendador triggers make the cota of the month devida once for each participante ativo', async () => {
+  const agora = new Date();
+  await db.query(
+    `insert into valores_da_cota values ('so-cafe', $1, 2500), ('completa', $1, 3000)
+     on conflict do nothing`,
+    [anoDe(agora)],
+  );
+  const { rows } = await db.query(
+    `select valor_em_centavos from valores_da_cota where tipo_de_cota = 'completa' and ano = $1`,
+    [anoDe(agora)],
+  );
+  const [ativo, saiu] = [randomUUID(), randomUUID()];
+  await entrar(ativo, 'completa');
+  await entrar(saiu, 'so-cafe');
+  await sair(saiu);
+
+  expect((await post('/iniciar-ano', {})).status).toBe(200);
+  const disparos = await Promise.all([post('/iniciar-mes', {}), post('/iniciar-mes', {})]);
+  expect(disparos.map((r) => r.status)).toEqual([200, 200]);
+  expect(await (await post('/iniciar-mes', {})).json()).toMatchObject({ cotasDevidas: 0 });
+
+  const devidas = (id: string) => eventos('participation.contribution-due', id);
+  expect(await eventually(() => devidas(ativo).length > 0)).toBe(true);
+  await sleep(1000);
+  expect(devidas(saiu)).toEqual([]);
+  expect(devidas(ativo)).toMatchObject([
+    {
+      version: 1,
+      payload: {
+        month: mesDe(agora),
+        contributionType: 'full',
+        amountInCents: rows[0].valor_em_centavos,
+      },
+    },
   ]);
 });
 

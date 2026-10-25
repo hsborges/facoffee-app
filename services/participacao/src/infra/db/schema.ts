@@ -36,6 +36,18 @@ export const valoresDaCota = pgTable(
   (t) => [primaryKey({ columns: [t.tipoDeCota, t.ano] })],
 );
 
+/** The cotas devidas; the primary key keeps one cota per participante and month. */
+export const cotasDevidas = pgTable(
+  'cotas_devidas',
+  {
+    participanteId: uuid('participante_id').notNull(),
+    mes: text('mes').notNull(),
+    tipoDeCota: text('tipo_de_cota').$type<TipoDeCota>().notNull(),
+    valorEmCentavos: integer('valor_em_centavos').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.participanteId, t.mes] })],
+);
+
 /** Events written in the aggregate's transaction; the relay publishes them in `seq` order. */
 export const outbox = pgTable('outbox', {
   seq: bigint('seq', { mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
