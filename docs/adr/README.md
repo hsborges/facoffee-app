@@ -24,3 +24,4 @@ Registros de decisões de arquitetura. Um arquivo por decisão: `NNNN-titulo.md`
 | [0018](0018-armazenamento-de-comprovantes-e-notas.md) | Armazenamento de comprovantes e notas | Aceito |
 | [0019](0019-base-do-front-end.md) | Base do front-end | Aceito |
 | [0020](0020-envio-de-e-mails-da-notificacao.md) | Envio de e-mails da Notificação | Aceito |
+| [0021](0021-front-end-servido-pelo-gateway.md) | Front-end servido pelo gateway | Aceito |
