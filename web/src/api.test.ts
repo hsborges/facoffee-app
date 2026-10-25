@@ -40,4 +40,9 @@ describe('obterUsuarioLogado', () => {
     responde(() => Promise.reject(new TypeError('Failed to fetch')));
     expect(await obterUsuarioLogado('token')).toEqual({ situacao: 'erro' });
   });
+
+  it('a 200 that is not JSON is an error', async () => {
+    responde(async () => new Response('<!doctype html>', { status: 200 }));
+    expect(await obterUsuarioLogado('token')).toEqual({ situacao: 'erro' });
+  });
 });

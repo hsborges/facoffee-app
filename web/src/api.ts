@@ -33,5 +33,6 @@ export const obterUsuarioLogado = async (token: string): Promise<UsuarioLogado> 
   const resposta = await chamarApi(token, '/api/usuario/eu').catch(() => undefined);
   if (resposta?.status === 403) return { situacao: 'desativado' };
   if (!resposta?.ok) return { situacao: 'erro' };
-  return { situacao: 'ativo', usuario: await resposta.json() };
+  const usuario = await resposta.json().catch(() => undefined);
+  return usuario ? { situacao: 'ativo', usuario } : { situacao: 'erro' };
 };
