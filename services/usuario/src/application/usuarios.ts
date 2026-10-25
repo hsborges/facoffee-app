@@ -18,6 +18,8 @@ export type Repository = {
   /** Inserts the usuário, or updates nome and email if they changed. */
   readonly registrar: (usuario: Pick<Usuario, 'id' | 'nome' | 'email'>) => Promise<void>;
   readonly listar: () => Promise<readonly UsuarioRegistrado[]>;
+  /** Nome and email of one usuário, if registered. */
+  readonly buscar: (id: string) => Promise<Pick<Usuario, 'id' | 'nome' | 'email'> | undefined>;
   /** Removes the desativação, if any. */
   readonly reativar: (id: string) => Promise<void>;
 };

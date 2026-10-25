@@ -18,6 +18,8 @@ Alcançada só pelo [gateway](../../gateway/), que valida o token e envia a iden
 
 O gateway chama `GET /acesso` antes de toda requisição, de qualquer contexto: registra o usuário (ou atualiza nome e e-mail) e responde 204 se o acesso está ativo, 403 se foi desativado ([ADR 0011](../../docs/adr/0011-acesso-desativado.md), [ADR 0012](../../docs/adr/0012-registro-do-usuario-no-primeiro-acesso.md)).
 
+Notificação chama `GET /contato/<id>`, rota interna sem identidade e fora do gateway: responde `{ id, nome, email }` de um usuário registrado, ou 404, para os avisos por e-mail. Com `X-User-Id`, que o gateway sempre envia, responde 404 ([ADR 0020](../../docs/adr/0020-envio-de-e-mails-da-notificacao.md)).
+
 Especificação completa em [`gateway/openapi.yaml`](../../gateway/openapi.yaml).
 
 Perfis de acesso: `gestor` e `participante`, papéis do realm no Keycloak. Os demais papéis do token são ignorados.

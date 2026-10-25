@@ -1,7 +1,8 @@
 http:
   routers:
+    # The contatos are internal to Notificação (ADR 0020): without a router it answers 404.
     usuario:
-      rule: Path(`/api/usuario`) || PathPrefix(`/api/usuario/`)
+      rule: (Path(`/api/usuario`) || PathPrefix(`/api/usuario/`)) && !Path(`/api/usuario/contato`) && !PathPrefix(`/api/usuario/contato/`)
       middlewares: [auth, acesso, strip-api-prefix]
       service: usuario
     # The agendador's triggers are internal (ADR 0017): without a router they answer 404.

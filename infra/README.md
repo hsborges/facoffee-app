@@ -13,7 +13,7 @@ docker compose up -d --wait
 | [API Gateway](../gateway/) (única porta aberta fora do host) | https://localhost |
 | Documentação da API (Swagger UI, pelo gateway) | https://localhost/docs |
 | RabbitMQ (AMQP / painel) | `localhost:5672` / http://localhost:15672 |
-| PostgreSQL (bancos `usuario`, `participacao`, `financeiro`, `example`) | `localhost:5432` |
+| PostgreSQL (bancos `usuario`, `participacao`, `financeiro`, `notificacao`, `example`) | `localhost:5432` |
 | Serviço de exemplo (perfil `example`) | http://localhost:3000 |
 | Keycloak | http://localhost:8080 |
 | SeaweedFS (S3) | http://localhost:8333 |

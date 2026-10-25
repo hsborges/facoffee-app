@@ -22,6 +22,8 @@ const app = (deps: Partial<ApiDependencies> = {}) =>
       solicitante.perfis.includes('gestor')
         ? ok([{ id: ativo, nome: 'João', email: 'joao@ufms.br', desativado: false }])
         : fail('sem-permissao'),
+    contato: async (id) =>
+      id === ativo ? { id: ativo, nome: 'João', email: 'joao@ufms.br' } : undefined,
     reativar: async (solicitante) =>
       solicitante.perfis.includes('gestor') ? ok(undefined) : fail('sem-permissao'),
     health: async () => ({ database: true, rabbitmq: true }),
@@ -138,6 +140,26 @@ describe('GET /', () => {
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({ error: 'sem-permissao' });
     expect((await app().request('/')).status).toBe(401);
+  });
+});
+
+describe('GET /contato/:id', () => {
+  it('nome and e-mail of one usuário, without identity: internal to Notificação', async () => {
+    const response = await app().request(`/contato/${ativo}`);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ id: ativo, nome: 'João', email: 'joao@ufms.br' });
+  });
+
+  it('404 for an unknown usuário or an id that is not a uuid', async () => {
+    expect((await app().request(`/contato/${desativado}`)).status).toBe(404);
+    expect((await app().request('/contato/abc')).status).toBe(404);
+  });
+
+  it('404 for a request through the gateway, which always sends X-User-Id', async () => {
+    const response = await app().request(`/contato/${ativo}`, {
+      headers: { 'x-user-id': 'gestor-1', 'x-user-roles': 'gestor' },
+    });
+    expect(response.status).toBe(404);
   });
 });
 

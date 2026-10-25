@@ -46,6 +46,13 @@ export const usuarioRepository = (db: Executor): Repository => ({
       .from(usuarios)
       .leftJoin(usuariosDesativados, eq(usuariosDesativados.id, usuarios.id))
       .orderBy(asc(usuarios.nome), asc(usuarios.id)),
+  buscar: async (id) => {
+    const [row] = await db
+      .select({ id: usuarios.id, nome: usuarios.nome, email: usuarios.email })
+      .from(usuarios)
+      .where(eq(usuarios.id, id));
+    return row;
+  },
   reativar: async (id) => {
     await db.delete(usuariosDesativados).where(eq(usuariosDesativados.id, id));
   },
