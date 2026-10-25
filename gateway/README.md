@@ -8,7 +8,7 @@ Ponto de entrada HTTPS (rede pública). Roteia via REST para Usuário, Participa
 | `/api/participacao/*` | `http://participacao:3000/*` |
 | `/api/financeiro/*` | `http://financeiro:3000/*` |
 
-Toda rota exige `Authorization: Bearer <access token do Keycloak>`. Sem token ou com token inválido: 401. Com token válido, o serviço recebe `X-User-Id` (o `sub`) e `X-User-Roles` (papéis do realm, separados por vírgula).
+Toda rota exige `Authorization: Bearer <access token do Keycloak>`. Sem token ou com token inválido: 401. Com token válido, o serviço recebe `X-User-Id` (o `sub`), `X-User-Roles` (papéis do realm, separados por vírgula), `X-User-Name` (o `name`) e `X-User-Email` (o `email`); nome e e-mail vêm codificados com `encodeURIComponent` ([ADR 0008](../docs/adr/0008-dados-do-usuario-logado.md)). Header ausente no token vai vazio.
 
 | Pasta | Conteúdo |
 |---|---|
