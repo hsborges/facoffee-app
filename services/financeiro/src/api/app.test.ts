@@ -8,6 +8,7 @@ import {
   guardarComprovante,
   guardarNota,
 } from '../application/arquivos.js';
+import { consultarCreditoEPendente, listarCreditoEPendentes } from '../application/credito.js';
 import { receberPagamento } from '../application/pagamentos.js';
 import { TAMANHO_MAXIMO } from '../domain/arquivo.js';
 import { ok } from '../domain/result.js';
@@ -19,6 +20,9 @@ const outro = '11111111-1111-4111-8111-111111111111';
 const gestor = { 'x-user-id': '22222222-2222-4222-8222-222222222222', 'x-user-roles': 'gestor' };
 const doParticipante = { 'x-user-id': participante, 'x-user-roles': 'participante' };
 const doOutro = { 'x-user-id': outro, 'x-user-roles': 'participante' };
+
+const totais = [{ id: participante, ativo: true, devidoEmCentavos: 3000, pagoEmCentavos: 9000 }];
+const buscarTotais = async (id?: string) => totais.filter((t) => id === undefined || t.id === id);
 
 const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]);
 
@@ -42,6 +46,8 @@ const app = (deps: Partial<ApiDependencies> = {}) => {
       comprovanteDoParticipante(armazem),
       { now: () => new Date(), newId },
     ),
+    listarCreditoEPendentes: listarCreditoEPendentes(buscarTotais),
+    consultarCreditoEPendente: consultarCreditoEPendente(buscarTotais),
     health: async () => ({ database: true, rabbitmq: true, armazenamento: true }),
     logger: createLogger('test', () => {}),
     ...deps,
@@ -259,5 +265,40 @@ describe('POST /receber-pagamento', () => {
   it('403 when not the gestor and 401 without the logged-in person', async () => {
     expect((await receber(app(), doParticipante, emDinheiro)).status).toBe(403);
     expect((await receber(app(), {}, emDinheiro)).status).toBe(401);
+  });
+});
+
+describe('Crédito e pendentes', () => {
+  const situacao = {
+    id: participante,
+    ativo: true,
+    creditoEmCentavos: 6000,
+    pendenteEmCentavos: 0,
+  };
+
+  it('GET /participante gives the gestor every participante', async () => {
+    const response = await app().request('/participante', { headers: gestor });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual([situacao]);
+  });
+
+  it('GET /participante is 403 for a participante', async () => {
+    const response = await app().request('/participante', { headers: doParticipante });
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ error: 'sem-permissao' });
+  });
+
+  it('GET /participante/eu gives the participante only their own situação', async () => {
+    const response = await app().request('/participante/eu', { headers: doParticipante });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual(situacao);
+    const desconhecido = await app().request('/participante/eu', { headers: doOutro });
+    expect(desconhecido.status).toBe(404);
+    expect(await desconhecido.json()).toEqual({ error: 'participante-nao-encontrado' });
+  });
+
+  it('401 without the logged-in person', async () => {
+    expect((await app().request('/participante')).status).toBe(401);
+    expect((await app().request('/participante/eu')).status).toBe(401);
   });
 });

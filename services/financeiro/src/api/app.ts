@@ -3,6 +3,7 @@ import { bodyLimit } from 'hono/body-limit';
 import type { Arquivo, GuardarComprovanteErro, NaoEncontrado } from '../application/arquivos.js';
 import type { ReceberPagamentoErro } from '../application/pagamentos.js';
 import { type ArquivoInvalido, type Solicitante, TAMANHO_MAXIMO } from '../domain/arquivo.js';
+import type { Situacao } from '../domain/credito.js';
 import { FORMAS, type Forma, type PedidoDePagamento } from '../domain/pagamento.js';
 import type { Result } from '../domain/result.js';
 import type { Logger } from '../infra/logger.js';
@@ -24,6 +25,12 @@ export type ApiDependencies = {
     solicitante: Pick<Solicitante, 'perfis'>,
     pedido: PedidoDePagamento,
   ) => Promise<Result<string, ReceberPagamentoErro>>;
+  readonly listarCreditoEPendentes: (
+    solicitante: Pick<Solicitante, 'perfis'>,
+  ) => Promise<Result<readonly Situacao[], 'sem-permissao'>>;
+  readonly consultarCreditoEPendente: (
+    solicitante: Pick<Solicitante, 'id'>,
+  ) => Promise<Result<Situacao, 'participante-nao-encontrado'>>;
   readonly health: () => Promise<Readonly<Record<string, boolean>>>;
   readonly logger: Logger;
 };
@@ -112,6 +119,8 @@ const baixado = (c: Context, result: Result<Arquivo, NaoEncontrado>) =>
  * (multipart, up to 5 MB, PDF, JPEG or PNG); `GET /comprovante/:id` serves only the participante
  * and the gestor, and `GET /nota/:id` any participante. The gestor receives pagamentos with
  * `POST /receber-pagamento` (JSON; a pagamento por PIX references its comprovante).
+ * Leitura *Crédito e pendentes*: `GET /participante` lists every participante, only for the
+ * gestor; `GET /participante/eu` gives the logged-in participante their own.
  * Without `X-User-Id`, 401.
  * Logs every request except health probes; unhandled errors become 500.
  */
@@ -121,6 +130,8 @@ export const createApp = ({
   baixarComprovante,
   baixarNota,
   receberPagamento,
+  listarCreditoEPendentes,
+  consultarCreditoEPendente,
   health,
   logger,
 }: ApiDependencies) =>
@@ -179,4 +190,16 @@ export const createApp = ({
       const pedido = await pedidoDePagamento(c);
       if (!pedido) return c.json({ error: 'pedido-invalido' }, 400);
       return criado(c, await receberPagamento(quem, pedido));
+    })
+    .get('/participante', async (c) => {
+      const quem = solicitante(c);
+      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      const result = await listarCreditoEPendentes(quem);
+      return result.ok ? c.json(result.value) : c.json({ error: result.error }, 403);
+    })
+    .get('/participante/eu', async (c) => {
+      const quem = solicitante(c);
+      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      const result = await consultarCreditoEPendente(quem);
+      return result.ok ? c.json(result.value) : c.json({ error: result.error }, 404);
     });
