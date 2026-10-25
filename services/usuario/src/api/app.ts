@@ -1,6 +1,12 @@
 import { type Context, Hono } from 'hono';
 import type { Result } from '../domain/result.js';
-import { type DesativarErro, perfisDos, type Usuario } from '../domain/usuario.js';
+import {
+  type DesativarErro,
+  perfisDos,
+  type SemPermissao,
+  type Usuario,
+  type UsuarioRegistrado,
+} from '../domain/usuario.js';
 import type { Logger } from '../infra/logger.js';
 
 /** Use cases and infrastructure the HTTP API calls; injected so tests can replace them. */
@@ -9,7 +15,16 @@ export type ApiDependencies = {
     solicitante: Pick<Usuario, 'id' | 'perfis'>,
     usuarioId: string,
   ) => Promise<Result<void, DesativarErro>>;
-  readonly estaDesativado: (id: string) => Promise<boolean>;
+  readonly registrarAcesso: (
+    usuario: Pick<Usuario, 'id' | 'nome' | 'email'>,
+  ) => Promise<'ativo' | 'desativado'>;
+  readonly listar: (
+    solicitante: Pick<Usuario, 'perfis'>,
+  ) => Promise<Result<readonly UsuarioRegistrado[], SemPermissao>>;
+  readonly reativar: (
+    solicitante: Pick<Usuario, 'perfis'>,
+    usuarioId: string,
+  ) => Promise<Result<void, SemPermissao>>;
   readonly health: () => Promise<Readonly<Record<string, boolean>>>;
   readonly logger: Logger;
 };
@@ -29,11 +44,19 @@ const usuarioLogado = (c: Context): Usuario | undefined => {
 };
 
 /**
- * HTTP API of the Usuário context: `GET /eu` (ADR 0008), `POST /:id/desativacao` and
- * `GET /acesso`, the gateway access check (ADR 0011). Without `X-User-Id`, 401.
+ * HTTP API of the Usuário context: `GET /eu` (ADR 0008), `POST /:id/desativacao`,
+ * `GET /acesso`, the gateway access check that also registers the usuário (ADR 0011, 0012),
+ * `GET /` and `POST /:id/reativacao` (ADR 0013). Without `X-User-Id`, 401.
  * Logs every request except health probes and access checks; unhandled errors become 500.
  */
-export const createApp = ({ desativar, estaDesativado, health, logger }: ApiDependencies) =>
+export const createApp = ({
+  desativar,
+  registrarAcesso,
+  listar,
+  reativar,
+  health,
+  logger,
+}: ApiDependencies) =>
   new Hono()
     .use(async (c, next) => {
       const start = performance.now();
@@ -62,12 +85,18 @@ export const createApp = ({ desativar, estaDesativado, health, logger }: ApiDepe
     })
     // Traefik ForwardAuth target (ADR 0011): any non-2xx response stops the request.
     .all('/acesso', async (c) => {
-      const id = c.req.header('x-user-id');
-      if (!id) return c.json({ error: 'unauthorized' }, 401);
-      if (UUID.test(id) && (await estaDesativado(id))) {
+      const usuario = usuarioLogado(c);
+      if (!usuario) return c.json({ error: 'unauthorized' }, 401);
+      if (UUID.test(usuario.id) && (await registrarAcesso(usuario)) === 'desativado') {
         return c.json({ error: 'acesso-desativado' }, 403);
       }
       return c.body(null, 204);
+    })
+    .get('/', async (c) => {
+      const solicitante = usuarioLogado(c);
+      if (!solicitante) return c.json({ error: 'unauthorized' }, 401);
+      const result = await listar(solicitante);
+      return result.ok ? c.json(result.value) : c.json({ error: result.error }, 403);
     })
     .post('/:id/desativacao', async (c) => {
       const solicitante = usuarioLogado(c);
@@ -75,5 +104,13 @@ export const createApp = ({ desativar, estaDesativado, health, logger }: ApiDepe
       const id = c.req.param('id');
       if (!UUID.test(id)) return c.json({ error: 'not-found' }, 404);
       const result = await desativar(solicitante, id);
+      return result.ok ? c.body(null, 204) : c.json({ error: result.error }, 403);
+    })
+    .post('/:id/reativacao', async (c) => {
+      const solicitante = usuarioLogado(c);
+      if (!solicitante) return c.json({ error: 'unauthorized' }, 401);
+      const id = c.req.param('id');
+      if (!UUID.test(id)) return c.json({ error: 'not-found' }, 404);
+      const result = await reativar(solicitante, id);
       return result.ok ? c.body(null, 204) : c.json({ error: result.error }, 403);
     });

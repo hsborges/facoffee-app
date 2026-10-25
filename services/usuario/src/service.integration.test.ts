@@ -62,3 +62,34 @@ it('publishes Usuário desativado once and blocks the access', async () => {
   await sleep(1000);
   expect(mine()).toMatchObject([{ type: 'user.user-deactivated', version: 1 }]);
 });
+
+it('registers the usuário on the first access and the gestor reactivates them', async () => {
+  const id = randomUUID();
+  const gestor = { 'x-user-id': randomUUID(), 'x-user-roles': 'gestor' };
+  const acesso = (nome: string) =>
+    fetch(`${url}/acesso`, {
+      headers: { 'x-user-id': id, 'x-user-name': encodeURIComponent(nome), 'x-user-email': '' },
+    });
+  const listar = async () =>
+    ((await (await fetch(`${url}/`, { headers: gestor })).json()) as { id: string }[]).find(
+      (u) => u.id === id,
+    );
+  const post = (acao: string, headers: Record<string, string>) =>
+    fetch(`${url}/${id}/${acao}`, { method: 'POST', headers });
+
+  expect(await listar()).toBeUndefined();
+  expect((await acesso('João')).status).toBe(204);
+  expect((await acesso('João Café')).status).toBe(204);
+  expect(await listar()).toEqual({ id, nome: 'João Café', email: '', desativado: false });
+
+  expect((await post('desativacao', gestor)).status).toBe(204);
+  expect((await acesso('João Café')).status).toBe(403);
+  expect(await listar()).toMatchObject({ desativado: true });
+
+  expect(
+    (await post('reativacao', { 'x-user-id': id, 'x-user-roles': 'participante' })).status,
+  ).toBe(403);
+  expect((await post('reativacao', gestor)).status).toBe(204);
+  expect((await acesso('João Café')).status).toBe(204);
+  expect(await listar()).toMatchObject({ desativado: false });
+});

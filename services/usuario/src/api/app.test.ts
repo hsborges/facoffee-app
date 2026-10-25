@@ -6,13 +6,24 @@ import { type ApiDependencies, createApp } from './app.js';
 const desativado = '7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d';
 const ativo = '11111111-1111-4111-8111-111111111111';
 
+const registrados: unknown[] = [];
+
 const app = (deps: Partial<ApiDependencies> = {}) =>
   createApp({
     desativar: async (solicitante, usuarioId) =>
       solicitante.id === usuarioId || solicitante.perfis.includes('gestor')
         ? ok(undefined)
         : fail('sem-permissao'),
-    estaDesativado: async (id) => id === desativado,
+    registrarAcesso: async (usuario) => {
+      registrados.push(usuario);
+      return usuario.id === desativado ? 'desativado' : 'ativo';
+    },
+    listar: async (solicitante) =>
+      solicitante.perfis.includes('gestor')
+        ? ok([{ id: ativo, nome: 'João', email: 'joao@ufms.br', desativado: false }])
+        : fail('sem-permissao'),
+    reativar: async (solicitante) =>
+      solicitante.perfis.includes('gestor') ? ok(undefined) : fail('sem-permissao'),
     health: async () => ({ database: true, rabbitmq: true }),
     logger: createLogger('test', () => {}),
     ...deps,
@@ -88,8 +99,71 @@ describe('GET /acesso', () => {
     );
   });
 
+  it('registers the usuário with the nome and email from the gateway headers', async () => {
+    registrados.length = 0;
+    await app().request('/acesso', {
+      headers: { 'x-user-id': ativo, 'x-user-name': 'Jo%C3%A3o', 'x-user-email': 'joao%40ufms.br' },
+    });
+    expect(registrados).toMatchObject([{ id: ativo, nome: 'João', email: 'joao@ufms.br' }]);
+  });
+
+  it('204 without registering for an id that is not a uuid', async () => {
+    registrados.length = 0;
+    expect((await app().request('/acesso', { headers: { 'x-user-id': 'user-1' } })).status).toBe(
+      204,
+    );
+    expect(registrados).toEqual([]);
+  });
+
   it('401 without the gateway identity', async () => {
     expect((await app().request('/acesso')).status).toBe(401);
+  });
+});
+
+describe('GET /', () => {
+  it('the usuários for the gestor', async () => {
+    const response = await app().request('/', {
+      headers: { 'x-user-id': 'gestor-1', 'x-user-roles': 'gestor' },
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual([
+      { id: ativo, nome: 'João', email: 'joao@ufms.br', desativado: false },
+    ]);
+  });
+
+  it('403 for someone who is not gestor and 401 without the gateway identity', async () => {
+    const response = await app().request('/', {
+      headers: { 'x-user-id': 'user-2', 'x-user-roles': 'participante' },
+    });
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ error: 'sem-permissao' });
+    expect((await app().request('/')).status).toBe(401);
+  });
+});
+
+describe('POST /:id/reativacao', () => {
+  const post = (id: string, headers: Record<string, string>) =>
+    app().request(`/${id}/reativacao`, { method: 'POST', headers });
+
+  it('204 when the gestor reactivates an access', async () => {
+    const gestor = { 'x-user-id': 'gestor-1', 'x-user-roles': 'gestor' };
+    expect((await post(desativado, gestor)).status).toBe(204);
+  });
+
+  it('403 when someone who is not gestor reactivates', async () => {
+    const response = await post(desativado, {
+      'x-user-id': 'user-2',
+      'x-user-roles': 'participante',
+    });
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ error: 'sem-permissao' });
+  });
+
+  it('404 for an invalid id and 401 without the gateway identity', async () => {
+    expect((await post('abc', { 'x-user-id': 'gestor-1', 'x-user-roles': 'gestor' })).status).toBe(
+      404,
+    );
+    expect((await post(desativado, {})).status).toBe(401);
   });
 });
 

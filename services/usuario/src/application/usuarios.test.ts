@@ -1,11 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import type { Event } from '../domain/event.js';
-import { desativarAcesso, type Repository } from './usuarios.js';
+import type { UsuarioRegistrado } from '../domain/usuario.js';
+import {
+  desativarAcesso,
+  listarUsuarios,
+  type Repository,
+  reativarAcesso,
+  registrarAcesso,
+} from './usuarios.js';
 
 const now = new Date('2026-11-01T03:00:00Z');
 const gestor = { id: 'gestor-1', perfis: ['gestor'] as const };
+const participante = { id: 'user-2', perfis: ['participante'] as const };
 
 const inMemory = () => {
+  const usuarios = new Map<string, Omit<UsuarioRegistrado, 'desativado'>>();
   const desativados = new Map<string, Date>();
   const events: Event[] = [];
   const repository: Repository = {
@@ -14,10 +23,25 @@ const inMemory = () => {
       desativados.set(desativacao.id, desativacao.desativadoEm);
       events.push(...newEvents);
     },
+    registrar: async (usuario) => {
+      usuarios.set(usuario.id, usuario);
+    },
+    listar: async () =>
+      [...usuarios.values()].map((u) => ({ ...u, desativado: desativados.has(u.id) })),
+    reativar: async (id) => {
+      desativados.delete(id);
+    },
   };
   let n = 0;
   const clock = { now: () => now, newId: () => `id-${++n}` };
-  return { desativados, events, desativar: desativarAcesso(repository, clock) };
+  return {
+    desativados,
+    events,
+    desativar: desativarAcesso(repository, clock),
+    registrar: registrarAcesso(repository),
+    listar: listarUsuarios(repository),
+    reativar: reativarAcesso(repository),
+  };
 };
 
 describe('desativarAcesso', () => {
@@ -42,10 +66,65 @@ describe('desativarAcesso', () => {
   it('saves nothing when the domain rejects the command', async () => {
     const { desativados, desativar } = inMemory();
 
-    expect(await desativar({ id: 'user-2', perfis: ['participante'] }, 'user-1')).toEqual({
+    expect(await desativar(participante, 'user-1')).toEqual({
       ok: false,
       error: 'sem-permissao',
     });
     expect(desativados.size).toBe(0);
+  });
+});
+
+describe('registrarAcesso and listarUsuarios', () => {
+  const joao = { id: 'user-1', nome: 'João', email: 'joao@ufms.br' };
+
+  it('registers the usuário on the first access and lists them to the gestor', async () => {
+    const { registrar, listar } = inMemory();
+
+    expect(await registrar(joao)).toBe('ativo');
+    expect(await listar(gestor)).toEqual({ ok: true, value: [{ ...joao, desativado: false }] });
+  });
+
+  it('updates nome and email on the next access', async () => {
+    const { registrar, listar } = inMemory();
+
+    await registrar(joao);
+    await registrar({ ...joao, nome: 'João Café', email: 'joao.cafe@ufms.br' });
+    expect(await listar(gestor)).toEqual({
+      ok: true,
+      value: [{ id: 'user-1', nome: 'João Café', email: 'joao.cafe@ufms.br', desativado: false }],
+    });
+  });
+
+  it('tells a desativado access apart and shows it in the listing', async () => {
+    const { registrar, listar, desativar } = inMemory();
+
+    await desativar(gestor, joao.id);
+    expect(await registrar(joao)).toBe('desativado');
+    expect(await listar(gestor)).toEqual({ ok: true, value: [{ ...joao, desativado: true }] });
+  });
+
+  it('only the gestor lists the usuários', async () => {
+    expect(await inMemory().listar(participante)).toEqual({ ok: false, error: 'sem-permissao' });
+  });
+});
+
+describe('reativarAcesso', () => {
+  it('the gestor reactivates a desativado access', async () => {
+    const { desativados, desativar, reativar } = inMemory();
+
+    await desativar(gestor, 'user-1');
+    expect(await reativar(gestor, 'user-1')).toEqual({ ok: true, value: undefined });
+    expect(desativados.size).toBe(0);
+  });
+
+  it('only the gestor reactivates, even their own access', async () => {
+    const { desativados, desativar, reativar } = inMemory();
+
+    await desativar(participante, participante.id);
+    expect(await reativar(participante, participante.id)).toEqual({
+      ok: false,
+      error: 'sem-permissao',
+    });
+    expect(desativados.size).toBe(1);
   });
 });
