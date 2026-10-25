@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { Ajv } from 'ajv';
 import addFormats from 'ajv-formats';
 import { expect, it } from 'vitest';
+import { deverCota } from './cota.js';
 import { entrar, sair } from './participante.js';
 import { definirValorDaCota } from './tipo-de-cota.js';
 
@@ -41,6 +42,17 @@ it.each([
         undefined,
         { perfis: ['gestor'] },
         { tipoDeCota: 'completa', ano: 2026, valorEmCentavos: 3000 },
+        contexto,
+      ),
+    ),
+  ],
+  [
+    'participation.contribution-due.v1.json',
+    evento(
+      deverCota(
+        { id, tipoDeCota: 'so-cafe', participando: true, troca: null },
+        '2026-11',
+        [{ tipoDeCota: 'so-cafe', ano: 2026, valorEmCentavos: 2500 }],
         contexto,
       ),
     ),

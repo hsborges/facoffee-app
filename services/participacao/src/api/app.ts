@@ -21,6 +21,11 @@ export type ApiDependencies = {
     solicitante: { readonly perfis: readonly string[] },
     valor: ValorDaCota,
   ) => Promise<Result<void, DefinirValorErro>>;
+  readonly iniciarAno: () => Promise<{ readonly valoresRepetidos: number }>;
+  readonly iniciarMes: () => Promise<{
+    readonly cotasDevidas: number;
+    readonly semValorDaCota: number;
+  }>;
   readonly health: () => Promise<Readonly<Record<string, boolean>>>;
   readonly logger: Logger;
 };
@@ -53,6 +58,8 @@ const STATUS_DO_ERRO = {
  * HTTP API of the Participação context, for the logged-in person: `POST /entrar`,
  * `POST /trocar-tipo-de-cota`, `POST /sair` and, for the gestor, `POST /definir-valor-da-cota`.
  * Identity comes from the gateway in `X-User-Id` and `X-User-Roles` (ADR 0007); without it, 401.
+ * `POST /iniciar-ano` and `POST /iniciar-mes` are the agendador's triggers, on the internal
+ * network only: the gateway does not route them (ADR 0017).
  * Logs every request except health probes; unhandled errors become 500.
  */
 export const createApp = ({
@@ -60,6 +67,8 @@ export const createApp = ({
   trocarTipo,
   pedirSaida,
   definirValor,
+  iniciarAno,
+  iniciarMes,
   health,
   logger,
 }: ApiDependencies) =>
@@ -117,4 +126,6 @@ export const createApp = ({
       return result.ok
         ? c.body(null, 204)
         : c.json({ error: result.error }, STATUS_DO_ERRO[result.error]);
-    });
+    })
+    .post('/iniciar-ano', async (c) => c.json(await iniciarAno()))
+    .post('/iniciar-mes', async (c) => c.json(await iniciarMes()));

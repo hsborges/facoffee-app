@@ -4,8 +4,9 @@ http:
       rule: Path(`/api/usuario`) || PathPrefix(`/api/usuario/`)
       middlewares: [auth, acesso, strip-api-prefix]
       service: usuario
+    # The agendador's triggers are internal (ADR 0017): without a router they answer 404.
     participacao:
-      rule: Path(`/api/participacao`) || PathPrefix(`/api/participacao/`)
+      rule: (Path(`/api/participacao`) || PathPrefix(`/api/participacao/`)) && !Path(`/api/participacao/iniciar-ano`) && !Path(`/api/participacao/iniciar-mes`)
       middlewares: [auth, acesso, strip-api-prefix]
       service: participacao
     financeiro:

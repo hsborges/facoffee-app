@@ -19,7 +19,16 @@ Alcançada só pelo [gateway](../../gateway/), que valida o token e envia a iden
 
 Especificação completa em [`gateway/openapi.yaml`](../../gateway/openapi.yaml).
 
-Banco, outbox, publicação e consumidor vêm do [template de serviço](../../templates/service/). A tabela `participantes` guarda quem já entrou, o tipo de cota, a troca pendente (`troca_tipo_de_cota` a partir de `troca_a_partir_de`) e se está participando; `valores_da_cota`, o valor de cada tipo de cota por ano. Meses e anos viram à meia-noite de Campo Grande ([ADR 0015](../../docs/adr/0015-fuso-horario-do-dominio.md)).
+### Gatilhos do agendador
+
+Rotas internas, sem identidade, chamadas pelo [agendador](../agendador/) a cada hora; o gateway não as encaminha ([ADR 0017](../../docs/adr/0017-gatilhos-de-tempo-do-agendador.md)).
+
+| Rota interna | Resposta |
+|---|---|
+| `POST /iniciar-ano` | Cada tipo de cota sem valor no ano atual repete o valor do ano anterior e publica *Valor da cota definido*: 200 com `{ valoresRepetidos }`. |
+| `POST /iniciar-mes` | Cada participante ativo que ainda não deve a cota do mês passa a devê-la, com o valor do seu tipo de cota naquele mês, e publica *Cota devida*: 200 com `{ cotasDevidas, semValorDaCota }`. Repetir no mesmo mês só alcança quem entrou depois; quem não tem valor para o tipo de cota fica para o próximo disparo. |
+
+Banco, outbox, publicação e consumidor vêm do [template de serviço](../../templates/service/). A tabela `participantes` guarda quem já entrou, o tipo de cota, a troca pendente (`troca_tipo_de_cota` a partir de `troca_a_partir_de`) e se está participando; `valores_da_cota`, o valor de cada tipo de cota por ano; `cotas_devidas`, a cota de cada participante por mês, que não muda depois de devida. Meses e anos viram à meia-noite de Campo Grande ([ADR 0015](../../docs/adr/0015-fuso-horario-do-dominio.md)).
 
 ## Eventos consumidos
 

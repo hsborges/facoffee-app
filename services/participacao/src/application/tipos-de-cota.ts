@@ -1,9 +1,11 @@
+import { anoDe } from '../domain/calendario.js';
 import type { Event } from '../domain/event.js';
-import type { TipoDeCota } from '../domain/participante.js';
+import { TIPOS_DE_COTA, type TipoDeCota } from '../domain/participante.js';
 import { fail, ok, type Result } from '../domain/result.js';
 import {
   type DefinirValorErro,
   definirValorDaCota,
+  repetirValorDoAnoAnterior,
   type ValorDaCota,
 } from '../domain/tipo-de-cota.js';
 import type { Clock } from './participantes.js';
@@ -34,4 +36,27 @@ export const definirValor =
     if (!result.ok) return result;
     const salvo = await valores.salvar(result.value.valor, [result.value.evento]);
     return salvo ? ok(undefined) : fail('valor-ja-definido');
+  };
+
+/**
+ * Use case: *Todo início de ano*, triggered by the agendador; each tipo de cota without a valor
+ * for the current year repeats the previous one and stores *Valor da cota definido* in the outbox.
+ * Running it again in the same year repeats nothing.
+ */
+export const iniciarAno =
+  (valores: ValoresDaCota, clock: Clock) =>
+  async (): Promise<{ readonly valoresRepetidos: number }> => {
+    const agora = clock.now();
+    const ano = anoDe(agora);
+    const salvos = await Promise.all(
+      TIPOS_DE_COTA.map(async (tipoDeCota) => {
+        const repetido = repetirValorDoAnoAnterior(
+          await valores.buscar(tipoDeCota, ano),
+          await valores.buscar(tipoDeCota, ano - 1),
+          { eventId: clock.newId(), agora },
+        );
+        return repetido !== undefined && valores.salvar(repetido.valor, [repetido.evento]);
+      }),
+    );
+    return { valoresRepetidos: salvos.filter(Boolean).length };
   };

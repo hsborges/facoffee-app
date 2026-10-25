@@ -2,15 +2,17 @@ import { randomUUID } from 'node:crypto';
 import type { AddressInfo } from 'node:net';
 import { serve } from '@hono/node-server';
 import { createApp } from './api/app.js';
+import { iniciarMes } from './application/cotas.js';
 import {
   encerrarAoDesativarAcesso,
   pedirEntrada,
   pedirSaida,
   trocarTipo,
 } from './application/participantes.js';
-import { definirValor } from './application/tipos-de-cota.js';
+import { definirValor, iniciarAno } from './application/tipos-de-cota.js';
 import type { Config } from './infra/config.js';
 import { startConsumer } from './infra/consumer.js';
+import { cotaRepository } from './infra/db/cota-repository.js';
 import { connectDatabase } from './infra/db/database.js';
 import { participanteRepository } from './infra/db/participante-repository.js';
 import { valorDaCotaRepository } from './infra/db/valor-da-cota-repository.js';
@@ -44,11 +46,14 @@ export const startService = async (config: Config, logger: Logger) => {
   });
 
   const repository = participanteRepository(database.db);
+  const valores = valorDaCotaRepository(database.db);
   const app = createApp({
     pedirEntrada: pedirEntrada(repository, clock),
     trocarTipo: trocarTipo(repository, clock),
     pedirSaida: pedirSaida(repository, clock),
-    definirValor: definirValor(valorDaCotaRepository(database.db), clock),
+    definirValor: definirValor(valores, clock),
+    iniciarAno: iniciarAno(valores, clock),
+    iniciarMes: iniciarMes(cotaRepository(database.db), valores, clock),
     health: async () => ({
       database: await database.isHealthy(),
       rabbitmq: connection.isConnected(),
