@@ -6,6 +6,7 @@ Divisão de custos da copa da FACOM.
 - [Modelos de domínio](docs/MODELOS_DOMINIO.md) — mapa conceitual, Event Storming, contextos
 - [Design System](docs/SYSTEM_DESIGN.md) — identidade visual
 - [Arquitetura](docs/arquitetura.png)
+- [Práticas de engenharia](AGENTS.md) — fluxo, commits, versionamento, TDD, DDD, estilo
 
 ## Estrutura
 
