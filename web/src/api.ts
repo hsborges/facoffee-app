@@ -36,3 +36,69 @@ export const obterUsuarioLogado = async (token: string): Promise<UsuarioLogado> 
   const usuario = await resposta.json().catch(() => undefined);
   return usuario ? { situacao: 'ativo', usuario } : { situacao: 'erro' };
 };
+
+/** Tipo de cota: *Só café* or *Completa*. */
+export type TipoDeCota = 'so-cafe' | 'completa';
+
+/** The logged-in person's participação, as answered by `GET /api/participacao/participante/eu`. */
+export type Participacao = {
+  readonly tipoDeCota: TipoDeCota;
+  readonly participando: boolean;
+  /** A troca de tipo de cota waiting for the month `aPartirDe` (`AAAA-MM`). */
+  readonly troca: { readonly tipoDeCota: TipoDeCota; readonly aPartirDe: string } | null;
+};
+
+/**
+ * The logged-in participante's crédito or pendência, with their cotas and partes de complementos,
+ * as answered by `GET /api/financeiro/participante/eu`.
+ */
+export type Situacao = {
+  readonly ativo: boolean;
+  readonly creditoEmCentavos: number;
+  readonly pendenteEmCentavos: number;
+  readonly cotas: readonly {
+    readonly mes: string;
+    readonly tipoDeCota: TipoDeCota;
+    readonly valorEmCentavos: number;
+  }[];
+  readonly complementos: readonly {
+    readonly id: string;
+    readonly solicitadoEm: string;
+    readonly parteEmCentavos: number;
+  }[];
+};
+
+/** Saldo da caixinha and gastos do ano anterior, as answered by `GET /api/financeiro/caixinha`. */
+export type Caixinha = {
+  readonly saldoEmCentavos: number;
+  readonly gastosDoAnoAnteriorEmCentavos: number;
+};
+
+/** Outcome of reading a recurso: its valor, not found (404) or any other failure. */
+export type Leitura<T> =
+  | { readonly situacao: 'ok'; readonly valor: T }
+  | { readonly situacao: 'nao-encontrado' }
+  | { readonly situacao: 'erro' };
+
+/** Reads a recurso of the API; any failure but a 404, network included, is an error. */
+export const ler = async <T>(token: string, caminho: string): Promise<Leitura<T>> => {
+  const resposta = await chamarApi(token, caminho).catch(() => undefined);
+  if (resposta?.status === 404) return { situacao: 'nao-encontrado' };
+  if (!resposta?.ok) return { situacao: 'erro' };
+  const valor = await resposta.json().catch(() => undefined);
+  return valor === undefined ? { situacao: 'erro' } : { situacao: 'ok', valor };
+};
+
+/** Sends a comando (`POST`, with `corpo` as JSON if any); resolves whether it was done. */
+export const comandar = async (token: string, caminho: string, corpo?: unknown) => {
+  const init: RequestInit =
+    corpo === undefined
+      ? { method: 'POST' }
+      : {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(corpo),
+        };
+  const resposta = await chamarApi(token, caminho, init).catch(() => undefined);
+  return resposta?.ok ?? false;
+};
