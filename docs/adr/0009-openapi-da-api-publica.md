@@ -17,7 +17,8 @@ Forças em jogo:
 
 - A API pública é descrita num único documento OpenAPI 3.1, escrito à mão, em `gateway/openapi.yaml`.
 - Os caminhos usam a URL pública (`/api/<contexto>/...`), não a interna do serviço.
-- O documento declara o esquema de segurança Bearer (access token do Passaporte UFMS) e a resposta 401 do gateway, comuns a todas as rotas.
+- O documento declara o esquema de segurança Bearer e a resposta 401, comuns a todas as rotas.
+- O documento é público e descreve só o contrato para quem consome a API: rotas, parâmetros, respostas e como autenticar. Não expõe conhecimento, detalhes ou decisões internas: nada de ADRs, links para o repositório, serviços, gateway, Keycloak, mensageria, nomes de claims, algoritmos ou causas internas de erro.
 - Serviço que expõe, muda ou remove uma rota pública atualiza `gateway/openapi.yaml` no mesmo PR.
 - Endpoints internos (`/health`, o `/verify` do verificador) ficam fora.
 - O documento é exibido no [Swagger UI](https://github.com/swagger-api/swagger-ui) (imagem oficial `swaggerapi/swagger-ui`), num container `docs` sem porta publicada, servido pelo gateway em `/docs`, sem exigir token: o navegador abre a página antes de ter um. Os caminhos de servidor são relativos (`/`), então o "Try it out" chama o próprio gateway, na mesma origem, sem precisar de CORS.
@@ -38,4 +39,4 @@ Custos:
 Riscos:
 
 - Se a API crescer e a divergência aparecer, vale gerar o documento pelo código (ex.: `@hono/zod-openapi`), em novo ADR.
-- `/docs` expõe a descrição da API sem autenticação; ela não tem segredos, mas em produção pode ser preferível não publicá-la.
+- `/docs` publica a descrição da API sem autenticação; um detalhe interno descrito no documento fica exposto. A revisão de PR confere que só o contrato está lá.

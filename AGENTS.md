@@ -79,4 +79,4 @@ Ganhos, custos e riscos.
 ## Documentação
 
 - Todo export em `src/` tem comentário TSDoc (`/** ... */`) logo acima, verificado por `pnpm lint` ([ADR 0010](docs/adr/0010-tsdoc-obrigatorio-nos-exports.md)).
-- Rota pública nova ou alterada atualiza `gateway/openapi.yaml` no mesmo PR ([ADR 0009](docs/adr/0009-openapi-da-api-publica.md)).
+- Rota pública nova ou alterada atualiza `gateway/openapi.yaml` no mesmo PR ([ADR 0009](docs/adr/0009-openapi-da-api-publica.md)). Esse documento é público: descreve só o contrato, sem conhecimento, detalhes ou decisões internas (ADRs, serviços, infraestrutura, claims).
