@@ -47,7 +47,8 @@ export const App = () => {
 
   const sair = () => auth.signoutRedirect();
 
-  if (error)
+  // A failed silent renew keeps the page while the current token is still valid.
+  if (error && !isAuthenticated)
     return (
       <Aviso>
         <p role="alert">Não foi possível entrar no FACOFFEE.</p>
@@ -75,9 +76,14 @@ export const App = () => {
     return (
       <Aviso>
         <p role="alert">Não foi possível carregar o FACOFFEE.</p>
-        <button type="button" onClick={() => location.reload()}>
-          Tentar de novo
-        </button>
+        <div className="acoes">
+          <button type="button" onClick={() => location.reload()}>
+            Tentar de novo
+          </button>
+          <button type="button" className="fantasma" onClick={sair}>
+            Sair
+          </button>
+        </div>
       </Aviso>
     );
 
