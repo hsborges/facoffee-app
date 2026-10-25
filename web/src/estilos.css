@@ -230,6 +230,18 @@ legend {
   color: var(--muted-mocha);
 }
 
+.campo {
+  display: grid;
+  gap: 0.25rem;
+  max-width: 24rem;
+  margin-bottom: 1rem;
+}
+
+/* O comprovante só vale no PIX. */
+form:has(input[value="dinheiro"]:checked) .so-no-pix {
+  display: none;
+}
+
 section > button {
   margin-top: 1rem;
 }

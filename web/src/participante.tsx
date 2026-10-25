@@ -10,7 +10,8 @@ import {
 } from './api';
 import { dataEmCampoGrande, emReais, mesPorExtenso, NOME_DO_TIPO_DE_COTA } from './formato';
 
-const useLeitura = <T,>(token: string, caminho: string) => {
+/** Reads a recurso when mounted; gives the leitura (undefined while loading) and how to reload it. */
+export const useLeitura = <T,>(token: string, caminho: string) => {
   const [leitura, setLeitura] = useState<Leitura<T>>();
   const ultima = useRef(0);
   // Only the latest request sets the leitura: an older answer arriving late would show stale data.
@@ -25,9 +26,11 @@ const useLeitura = <T,>(token: string, caminho: string) => {
   return [leitura, carregar] as const;
 };
 
-const Carregando = () => <p role="status">Carregando…</p>;
+/** Announces that the page is loading. */
+export const Carregando = () => <p role="status">Carregando…</p>;
 
-const FalhaAoCarregar = ({ tentarDeNovo }: { tentarDeNovo: () => void }) => (
+/** Announces that the page could not load, with a button to try again. */
+export const FalhaAoCarregar = ({ tentarDeNovo }: { tentarDeNovo: () => void }) => (
   <>
     <p role="alert">Não foi possível carregar esta página.</p>
     <button type="button" onClick={tentarDeNovo}>
@@ -171,7 +174,7 @@ export const MinhaSituacao = ({
     setFeito(undefined);
     const comandado = await comandar(token, caminho, corpo);
     setEnviando(false);
-    if (comandado) setFeito(resultado[0]);
+    if (comandado.feito) setFeito(resultado[0]);
     else setFalha(resultado[1]);
     recarregar();
   };
@@ -189,7 +192,7 @@ export const MinhaSituacao = ({
     if (!confirm('Desativar seu acesso ao FACOFFEE? Só o gestor pode reativá-lo.')) return;
     setEnviando(true);
     setFalha(undefined);
-    if (await comandar(token, `/api/usuario/${usuarioId}/desativar`)) return sair();
+    if ((await comandar(token, `/api/usuario/${usuarioId}/desativar`)).feito) return sair();
     setEnviando(false);
     setFalha('Não foi possível desativar seu acesso.');
   };
