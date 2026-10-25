@@ -1,0 +1,50 @@
+{
+  "realm": "facoffee",
+  "enabled": true,
+  "roles": {
+    "realm": [
+      { "name": "gestor", "description": "Organiza a divisão dos custos da copa" },
+      { "name": "participante", "description": "Participa da divisão dos custos da copa" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "facoffee-web",
+      "name": "FACOFFEE web",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["http://localhost:5173/*"],
+      "webOrigins": ["http://localhost:5173"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:5173/*"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "gestor",
+      "email": "gestor@facoffee.local",
+      "firstName": "Gestor",
+      "lastName": "Teste",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "gestor", "temporary": false }],
+      "realmRoles": ["gestor", "participante", "default-roles-facoffee"]
+    },
+    {
+      "username": "participante",
+      "email": "participante@facoffee.local",
+      "firstName": "Participante",
+      "lastName": "Teste",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "participante", "temporary": false }],
+      "realmRoles": ["participante", "default-roles-facoffee"]
+    }
+  ]
+}
