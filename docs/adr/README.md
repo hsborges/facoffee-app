@@ -14,4 +14,4 @@ Registros de decisões de arquitetura. Um arquivo por decisão: `NNNN-titulo.md`
 | [0008](0008-dados-do-usuario-logado.md) | Dados do usuário logado | Aceito |
 | [0009](0009-openapi-da-api-publica.md) | OpenAPI da API pública | Aceito |
 | [0010](0010-tsdoc-obrigatorio-nos-exports.md) | TSDoc obrigatório nos exports | Aceito |
-| [0011](0011-acesso-desativado.md) | Acesso desativado | Proposto |
+| [0011](0011-acesso-desativado.md) | Acesso desativado | Aceito |
