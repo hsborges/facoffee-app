@@ -2,6 +2,7 @@ import { type Context, Hono } from 'hono';
 import {
   type EntrarErro,
   type NaoParticipando,
+  type Participante,
   TIPOS_DE_COTA,
   type TipoDeCota,
 } from '../domain/participante.js';
@@ -21,6 +22,9 @@ export type ApiDependencies = {
     solicitante: { readonly perfis: readonly string[] },
     valor: ValorDaCota,
   ) => Promise<Result<void, DefinirValorErro>>;
+  readonly consultarParticipante: (
+    id: string,
+  ) => Promise<Result<Participante, 'participante-nao-encontrado'>>;
   readonly iniciarAno: () => Promise<{ readonly valoresRepetidos: number }>;
   readonly iniciarMes: () => Promise<{
     readonly cotasDevidas: number;
@@ -56,7 +60,8 @@ const STATUS_DO_ERRO = {
 
 /**
  * HTTP API of the Participação context, for the logged-in person: `POST /entrar`,
- * `POST /trocar-tipo-de-cota`, `POST /sair` and, for the gestor, `POST /definir-valor-da-cota`.
+ * `POST /trocar-tipo-de-cota`, `POST /sair`, the leitura `GET /participante/eu` and, for the
+ * gestor, `POST /definir-valor-da-cota`.
  * Identity comes from the gateway in `X-User-Id` and `X-User-Roles` (ADR 0007); without it, 401.
  * `POST /iniciar-ano` and `POST /iniciar-mes` are the agendador's triggers, on the internal
  * network only: the gateway does not route them (ADR 0017).
@@ -67,6 +72,7 @@ export const createApp = ({
   trocarTipo,
   pedirSaida,
   definirValor,
+  consultarParticipante,
   iniciarAno,
   iniciarMes,
   health,
@@ -114,6 +120,12 @@ export const createApp = ({
       if (!id) return c.json({ error: 'unauthorized' }, 401);
       const result = await pedirSaida(id);
       return result.ok ? c.body(null, 204) : c.json({ error: result.error }, 409);
+    })
+    .get('/participante/eu', async (c) => {
+      const id = idLogado(c);
+      if (!id) return c.json({ error: 'unauthorized' }, 401);
+      const result = await consultarParticipante(id);
+      return result.ok ? c.json(result.value) : c.json({ error: result.error }, 404);
     })
     .post('/definir-valor-da-cota', async (c) => {
       if (!idLogado(c)) return c.json({ error: 'unauthorized' }, 401);

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   entrar,
   type Participante,
+  participanteNoMes,
   sair,
   tipoDeCotaNoMes,
   trocarTipoDeCota,
@@ -128,6 +129,34 @@ describe('sair', () => {
   it('who is not participando cannot leave', () => {
     for (const atual of [undefined, { ...participando, participando: false }]) {
       expect(sair(atual, contexto)).toEqual({ ok: false, error: 'nao-participando' });
+    }
+  });
+});
+
+describe('participanteNoMes', () => {
+  const trocado: Participante = {
+    ...participando,
+    troca: { tipoDeCota: 'completa', aPartirDe: '2026-11' },
+  };
+
+  it('keeps the troca while it waits for its month', () => {
+    expect(participanteNoMes(trocado, '2026-10')).toEqual(trocado);
+  });
+
+  it('drops the troca of whoever left, since entering again drops it too', () => {
+    expect(participanteNoMes({ ...trocado, participando: false }, '2026-10')).toEqual({
+      ...participando,
+      participando: false,
+    });
+  });
+
+  it('shows the tipo de cota of the troca once it takes effect, without the troca', () => {
+    for (const mes of ['2026-11', '2027-01']) {
+      expect(participanteNoMes(trocado, mes)).toEqual({
+        ...participando,
+        tipoDeCota: 'completa',
+        troca: null,
+      });
     }
   });
 });

@@ -4,6 +4,7 @@ import { serve } from '@hono/node-server';
 import { createApp } from './api/app.js';
 import { iniciarMes } from './application/cotas.js';
 import {
+  consultarParticipante,
   encerrarAoDesativarAcesso,
   pedirEntrada,
   pedirSaida,
@@ -52,6 +53,7 @@ export const startService = async (config: Config, logger: Logger) => {
     trocarTipo: trocarTipo(repository, clock),
     pedirSaida: pedirSaida(repository, clock),
     definirValor: definirValor(valores, clock),
+    consultarParticipante: consultarParticipante(repository, clock),
     iniciarAno: iniciarAno(valores, clock),
     iniciarMes: iniciarMes(cotaRepository(database.db), valores, clock),
     health: async () => ({

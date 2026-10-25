@@ -14,6 +14,7 @@ Alcançada só pelo [gateway](../../gateway/), que valida o token e envia a iden
 |---|---|
 | `POST /api/participacao/entrar` | Com `{ tipoDeCota: "so-cafe" \| "completa" }`, o usuário logado entra e publica *Participante entrou*: 204, 400 se o tipo é inválido, ou 409 se já está participando. Retornar é entrar de novo. |
 | `POST /api/participacao/trocar-tipo-de-cota` | Com `{ tipoDeCota }`, troca o tipo de cota a partir do mês seguinte, sem publicar evento (*Tipo de cota trocado* é interno): 204, 400 ou 409 se não está participando. |
+| `GET /api/participacao/participante/eu` | `{ id, tipoDeCota, participando, troca }` do usuário logado: o tipo de cota que vale no mês atual e, enquanto participa, a troca pendente (`{ tipoDeCota, aPartirDe }` ou `null`): 200, ou 404 se nunca participou. |
 | `POST /api/participacao/sair` | O usuário logado sai e publica *Participante saiu*: 204 ou 409 se não está participando. |
 | `POST /api/participacao/definir-valor-da-cota` | Com `{ tipoDeCota, ano, valorEmCentavos }`, o gestor (`X-User-Roles` com `gestor`) define o valor e publica *Valor da cota definido*: 204, 400 (pedido inválido ou ano passado), 403 se não é gestor, ou 409 se já foi definido para o tipo e o ano. |
 

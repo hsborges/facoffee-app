@@ -74,6 +74,19 @@ export const tipoDeCotaNoMes = (participante: Participante, mes: Mes): TipoDeCot
     : participante.tipoDeCota;
 
 /**
+ * The participante as seen in `mes`: the tipo de cota in effect, and the troca only while it still
+ * waits for its month and the person participates (entering again drops it).
+ */
+export const participanteNoMes = (participante: Participante, mes: Mes): Participante => {
+  const { troca, participando } = participante;
+  return {
+    ...participante,
+    tipoDeCota: tipoDeCotaNoMes(participante, mes),
+    troca: troca && participando && mes < troca.aPartirDe ? troca : null,
+  };
+};
+
+/**
  * *Trocar tipo de cota*: the new tipo only takes effect in the month after `agora`; the current
  * month keeps its tipo. A new troca replaces a pending one, and asking for the current tipo
  * cancels it. *Tipo de cota trocado* is internal, so no event is produced.
