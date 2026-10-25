@@ -8,7 +8,18 @@ Contexto de negócio. Pagamentos, crédito, pendências, complementos, gastos, r
 - **Consome:** Cota devida, Participante entrou, Participante saiu
 - **Arquivos:** Comprovante, Nota
 
-Banco, outbox, publicação e consumidor vêm do [template de serviço](../../templates/service/). Ainda sem rotas públicas: a API só tem `/health`.
+Banco, outbox, publicação e consumidor vêm do [template de serviço](../../templates/service/).
+
+## Comprovantes e notas
+
+Guardados num bucket S3 ([ADR 0018](../../docs/adr/0018-armazenamento-de-comprovantes-e-notas.md)). Upload em `multipart/form-data`, campo `arquivo`: até 5 MB, só PDF, JPEG ou PNG (pelo conteúdo, não pelo tipo declarado).
+
+| Rota | Quem |
+|---|---|
+| `POST /guardar-comprovante` (com `participanteId`) → `201 { id }` | só o gestor |
+| `POST /guardar-nota` → `201 { id }` | qualquer participante |
+| `GET /comprovante/:id` | o participante do comprovante e o gestor; outros recebem 404 |
+| `GET /nota/:id` | qualquer participante |
 
 ## Eventos consumidos
 
@@ -32,12 +43,15 @@ A tabela `participantes` guarda quem Participação já informou e se está ativ
 | `PORT` | `3000` (padrão) |
 | `DATABASE_URL` | `postgres://financeiro:financeiro@localhost:5432/financeiro` |
 | `RABBITMQ_URL` | `amqp://facoffee:facoffee@localhost:5672` |
+| `S3_ENDPOINT` | `http://localhost:8333` |
+| `S3_ACCESS_KEY` / `S3_SECRET_KEY` | `facoffee` / `facoffee-secret` |
+| `S3_BUCKET` | `financeiro` (criado no startup se não existir) |
 
 ## Comandos
 
 ```sh
 pnpm --filter @facoffee/financeiro test               # unidade
-pnpm --filter @facoffee/financeiro test:integration   # precisa de postgres e rabbitmq do compose
+pnpm --filter @facoffee/financeiro test:integration   # precisa de postgres, rabbitmq e seaweedfs do compose
 pnpm --filter @facoffee/financeiro db:generate        # gera migration após mudar src/infra/db/schema.ts
 cd infra && docker compose up -d --wait --build financeiro
 ```
