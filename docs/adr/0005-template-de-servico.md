@@ -1,6 +1,6 @@
 # 0005. Template de serviço
 
-- Status: Proposto
+- Status: Aceito
 - Data: 2026-10-25
 
 ## Contexto
