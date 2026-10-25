@@ -1,0 +1,94 @@
+openapi: 3.1.0
+info:
+  title: FACOFFEE API
+  version: 0.1.0
+  description: |
+    API pública do FACOFFEE, exposta pelo API Gateway ([ADR 0007](../docs/adr/0007-api-gateway.md)).
+    O gateway roteia `/api/<contexto>/*` para o serviço do contexto e valida o token antes de
+    encaminhar. Cada serviço documenta aqui as rotas que expõe ([ADR 0009](../docs/adr/0009-openapi-da-api-publica.md)).
+servers:
+  - url: https://localhost
+    description: Ambiente local (certificado autoassinado do Traefik)
+security:
+  - passaporte: []
+tags:
+  - name: usuario
+    description: Contexto Usuário
+paths:
+  /api/usuario/eu:
+    get:
+      tags: [usuario]
+      operationId: obterUsuarioLogado
+      summary: Usuário logado
+      description: >-
+        Dados e perfis de acesso do usuário logado, a partir do token
+        ([ADR 0008](../docs/adr/0008-dados-do-usuario-logado.md)).
+      responses:
+        '200':
+          description: Usuário logado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '500':
+          $ref: '#/components/responses/ErroInterno'
+components:
+  securitySchemes:
+    passaporte:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >-
+        Access token do Passaporte UFMS (Keycloak) emitido ao client `facoffee-web`, assinado
+        com RS256. Toda rota exige o token.
+  responses:
+    NaoAutorizado:
+      description: Token ausente, inválido, expirado ou emitido a outro client.
+      headers:
+        WWW-Authenticate:
+          schema:
+            type: string
+            const: Bearer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          example:
+            error: unauthorized
+    ErroInterno:
+      description: Falha interna, como as chaves públicas (JWKS) do Keycloak inacessíveis.
+  schemas:
+    Erro:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+    Perfil:
+      type: string
+      enum: [gestor, participante]
+      description: Perfil de acesso, de um papel do realm no Keycloak.
+    Usuario:
+      type: object
+      required: [id, nome, email, perfis]
+      properties:
+        id:
+          type: string
+          description: Identificador do usuário no Keycloak (claim `sub`).
+        nome:
+          type: string
+          description: Claim `name`; vazio se o token não tiver.
+        email:
+          type: string
+          description: Claim `email`; vazio se o token não tiver.
+        perfis:
+          type: array
+          items:
+            $ref: '#/components/schemas/Perfil'
+      example:
+        id: 4f1c2a9e-8b7d-4c3a-9e2f-1a2b3c4d5e6f
+        nome: João Silva
+        email: joao.silva@ufms.br
+        perfis: [participante]
