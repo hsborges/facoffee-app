@@ -466,7 +466,8 @@ paths:
       operationId: listarCreditoEPendentes
       summary: Crédito e pendentes
       description: |
-        Crédito e pendência de cada participante, inclusive de quem saiu. Só o gestor vê todos.
+        Crédito e pendência de cada participante, inclusive de quem saiu. Só o gestor lista os
+        participantes; cada um vê a própria situação em `participante/eu`.
       responses:
         '200':
           description: Situação de cada participante.
