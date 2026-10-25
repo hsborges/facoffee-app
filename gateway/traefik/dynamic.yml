@@ -1,15 +1,15 @@
 http:
   routers:
     usuario:
-      rule: PathPrefix(`/api/usuario`)
+      rule: Path(`/api/usuario`) || PathPrefix(`/api/usuario/`)
       middlewares: [auth, strip-api-prefix]
       service: usuario
     participacao:
-      rule: PathPrefix(`/api/participacao`)
+      rule: Path(`/api/participacao`) || PathPrefix(`/api/participacao/`)
       middlewares: [auth, strip-api-prefix]
       service: participacao
     financeiro:
-      rule: PathPrefix(`/api/financeiro`)
+      rule: Path(`/api/financeiro`) || PathPrefix(`/api/financeiro/`)
       middlewares: [auth, strip-api-prefix]
       service: financeiro
 
