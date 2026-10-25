@@ -595,6 +595,112 @@ paths:
                     error: gasto-pago-pela-caixinha
         '500':
           $ref: '#/components/responses/ErroInterno'
+  /api/financeiro/solicitar-complemento:
+    post:
+      tags: [financeiro]
+      operationId: solicitarComplemento
+      summary: Solicitar complemento
+      description: |
+        Pede um valor extra aos participantes quando o saldo da caixinha não cobre os gastos. Só o
+        gestor solicita complementos. O valor é dividido em partes iguais entre todos os
+        participantes ativos no momento, inclusive os pendentes e sem considerar o tipo de cota;
+        os centavos que não dividem vão um para cada participante, e a soma das partes é sempre o
+        valor total. Quem entra depois não deve parte; quem sai depois continua devendo. A parte
+        é abatida automaticamente do crédito do participante.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [valorEmCentavos]
+              properties:
+                valorEmCentavos:
+                  type: integer
+                  minimum: 1
+                  maximum: 2147483647
+                  description: Valor total do complemento em centavos de real.
+                  example: 1001
+      responses:
+        '201':
+          description: Complemento solicitado.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id]
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    description: Identificador do complemento.
+        '400':
+          description: Pedido inválido ou acima de 4 KB.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              example:
+                error: pedido-invalido
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/SomenteGestor'
+        '409':
+          description: |
+            Não há participante ativo, ou o valor é menor que o número de participantes ativos e
+            alguma parte ficaria sem nenhum centavo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              examples:
+                semParticipantesAtivos:
+                  value:
+                    error: sem-participantes-ativos
+                parteMenorQueUmCentavo:
+                  value:
+                    error: parte-menor-que-um-centavo
+        '500':
+          $ref: '#/components/responses/ErroInterno'
+  /api/financeiro/caixinha:
+    get:
+      tags: [financeiro]
+      operationId: consultarCaixinha
+      summary: Caixinha
+      description: |
+        Saldo da caixinha e gastos do ano anterior. Qualquer participante consulta a caixinha.
+      responses:
+        '200':
+          description: Saldo e gastos do ano anterior.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [saldoEmCentavos, gastosDoAnoAnteriorEmCentavos]
+                properties:
+                  saldoEmCentavos:
+                    type: integer
+                    description: |
+                      Pagamentos recebidos menos gastos pagos pela caixinha e reembolsos, em
+                      centavos de real. Um gasto pago do próprio bolso só sai da caixinha no
+                      reembolso. Fica negativo quando os gastos passam do que entrou.
+                  gastosDoAnoAnteriorEmCentavos:
+                    type: integer
+                    minimum: 0
+                    description: |
+                      Soma dos gastos feitos no ano anterior, pagos pela caixinha ou do próprio
+                      bolso, em centavos de real; o ano vira à meia-noite de Campo Grande (MS). É
+                      a base para o valor da cota.
+              example:
+                saldoEmCentavos: 4500
+                gastosDoAnoAnteriorEmCentavos: 384000
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/AcessoDesativado'
+        '500':
+          $ref: '#/components/responses/ErroInterno'
   /api/financeiro/participante:
     get:
       tags: [financeiro]

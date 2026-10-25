@@ -5,6 +5,8 @@ import type { RegistrarGastoErro } from '../application/gastos.js';
 import type { ReceberPagamentoErro } from '../application/pagamentos.js';
 import type { ReembolsarGastoErro } from '../application/reembolsos.js';
 import { type ArquivoInvalido, type Solicitante, TAMANHO_MAXIMO } from '../domain/arquivo.js';
+import type { Caixinha } from '../domain/caixinha.js';
+import type { SolicitarErro } from '../domain/complemento.js';
 import type { Situacao } from '../domain/credito.js';
 import { ORIGENS, type Origem, type PedidoDeGasto } from '../domain/gasto.js';
 import { FORMAS, type Forma, type PedidoDePagamento } from '../domain/pagamento.js';
@@ -39,6 +41,11 @@ export type ApiDependencies = {
     solicitante: Pick<Solicitante, 'perfis'>,
     gastoId: string,
   ) => Promise<Result<string, ReembolsarGastoErro>>;
+  readonly solicitarComplemento: (
+    solicitante: Pick<Solicitante, 'perfis'>,
+    valorTotalEmCentavos: number,
+  ) => Promise<Result<string, SolicitarErro>>;
+  readonly consultarCaixinha: () => Promise<Caixinha>;
   readonly listarCreditoEPendentes: (
     solicitante: Pick<Solicitante, 'perfis'>,
   ) => Promise<Result<readonly Situacao[], 'sem-permissao'>>;
@@ -73,6 +80,8 @@ const STATUS_DO_ERRO = {
   'gasto-nao-encontrado': 404,
   'gasto-pago-pela-caixinha': 409,
   'gasto-ja-reembolsado': 409,
+  'sem-participantes-ativos': 409,
+  'parte-menor-que-um-centavo': 409,
 } as const;
 
 // Bounded by the postgres integer column.
@@ -152,7 +161,9 @@ const baixado = (c: Context, result: Result<Arquivo, NaoEncontrado>) =>
  * and the gestor, and `GET /nota/:id` any participante. The gestor receives pagamentos with
  * `POST /receber-pagamento` (JSON; a pagamento por PIX references its comprovante). Any
  * participante registers a gasto with `POST /registrar-gasto` (JSON, referencing a nota they guardaram).
- * The gestor reembolsa a gasto pago do próprio bolso with `POST /gasto/:id/reembolsar`.
+ * The gestor reembolsa a gasto pago do próprio bolso with `POST /gasto/:id/reembolsar` and
+ * solicita a complemento with `POST /solicitar-complemento` (JSON, the valor total).
+ * Leituras *Saldo da caixinha* and *Gastos do ano anterior*: `GET /caixinha`, for any participante.
  * Leitura *Crédito e pendentes*: `GET /participante` lists every participante, only for the
  * gestor; `GET /participante/eu` gives the logged-in participante their own.
  * Without `X-User-Id`, 401.
@@ -166,6 +177,8 @@ export const createApp = ({
   receberPagamento,
   registrarGasto,
   reembolsarGasto,
+  solicitarComplemento,
+  consultarCaixinha,
   listarCreditoEPendentes,
   consultarCreditoEPendente,
   health,
@@ -241,6 +254,18 @@ export const createApp = ({
       const id = c.req.param('id');
       if (!UUID.test(id)) return c.json({ error: 'gasto-nao-encontrado' }, 404);
       return criado(c, await reembolsarGasto(quem, id.toLowerCase()));
+    })
+    .post('/solicitar-complemento', limiteDoPedido, async (c) => {
+      const quem = solicitante(c);
+      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      const corpo = (await c.req.json().catch(() => undefined)) as { valorEmCentavos?: unknown };
+      const valor = corpo?.valorEmCentavos;
+      if (!inteiroPositivo(valor)) return c.json({ error: 'pedido-invalido' }, 400);
+      return criado(c, await solicitarComplemento(quem, valor));
+    })
+    .get('/caixinha', async (c) => {
+      if (!solicitante(c)) return c.json({ error: 'unauthorized' }, 401);
+      return c.json(await consultarCaixinha());
     })
     .get('/participante', async (c) => {
       const quem = solicitante(c);

@@ -2,7 +2,7 @@
 export type Totais = {
   readonly id: string;
   readonly ativo: boolean;
-  /** Sum of the cotas devidas. */
+  /** Sum of the cotas devidas and partes de complementos. */
   readonly devidoEmCentavos: number;
   /** Sum of the pagamentos recebidos. */
   readonly pagoEmCentavos: number;
@@ -18,8 +18,8 @@ export type Situacao = {
 
 /**
  * Pagamentos minus what is devido: positive is crédito, negative is pendente, with no multa nor
- * juros. The crédito is abatido from the next cotas automatically, since they enter the same sum.
- * shortcut: partes de complementos are not devidas yet; add them to the devido with issue #25.
+ * juros. The crédito is abatido from the next cotas and partes de complementos automatically, since
+ * they enter the same sum.
  */
 export const situacao = ({ id, ativo, devidoEmCentavos, pagoEmCentavos }: Totais): Situacao => {
   const saldo = pagoEmCentavos - devidoEmCentavos;
