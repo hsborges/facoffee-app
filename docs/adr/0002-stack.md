@@ -1,6 +1,6 @@
 # 0002. Stack TypeScript/Node.js
 
-- Status: Proposto
+- Status: Aceito
 - Data: 2026-10-24
 
 ## Contexto

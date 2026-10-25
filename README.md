@@ -25,7 +25,7 @@ Divisão de custos da copa da FACOM.
 
 ## Stack
 
-TypeScript / Node.js 24. Detalhes em `docs/adr/`.
+TypeScript / Node.js 24. Detalhes no [ADR 0002: stack TypeScript/Node.js](docs/adr/0002-stack.md).
 
 ## Tarefas
 
