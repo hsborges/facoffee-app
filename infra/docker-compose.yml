@@ -111,6 +111,15 @@ services:
       OIDC_JWKS_URL: http://keycloak:8080/realms/facoffee/protocol/openid-connect/certs
       OIDC_CLIENT_ID: facoffee-web
 
+  # Swagger UI de gateway/openapi.yaml, servido pelo gateway em /docs (ADR 0009).
+  docs:
+    image: swaggerapi/swagger-ui:v5.34.0
+    environment:
+      BASE_URL: /docs
+      SWAGGER_JSON: /spec/openapi.yaml
+    volumes:
+      - ../gateway/openapi.yaml:/spec/openapi.yaml:ro
+
   # Sem porta publicada: só é alcançado pelo gateway (ADR 0007).
   usuario:
     build:

@@ -12,6 +12,10 @@ http:
       rule: Path(`/api/financeiro`) || PathPrefix(`/api/financeiro/`)
       middlewares: [auth, strip-api-prefix]
       service: financeiro
+    # Public on purpose: the browser loads the page before having a token (ADR 0009).
+    docs:
+      rule: Path(`/docs`) || PathPrefix(`/docs/`)
+      service: docs
 
   middlewares:
     auth:
@@ -33,3 +37,6 @@ http:
     financeiro:
       loadBalancer:
         servers: [{ url: http://financeiro:3000 }]
+    docs:
+      loadBalancer:
+        servers: [{ url: http://docs:8080 }]

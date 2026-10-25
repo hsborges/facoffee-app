@@ -3,12 +3,16 @@ info:
   title: FACOFFEE API
   version: 0.1.0
   description: |
-    API pública do FACOFFEE, exposta pelo API Gateway ([ADR 0007](../docs/adr/0007-api-gateway.md)).
+    API pública do FACOFFEE, exposta pelo API Gateway
+    ([ADR 0007](https://github.com/hsborges/facoffee-app/blob/main/docs/adr/0007-api-gateway.md)).
     O gateway roteia `/api/<contexto>/*` para o serviço do contexto e valida o token antes de
-    encaminhar. Cada serviço documenta aqui as rotas que expõe ([ADR 0009](../docs/adr/0009-openapi-da-api-publica.md)).
+    encaminhar. Cada serviço documenta aqui as rotas que expõe
+    ([ADR 0009](https://github.com/hsborges/facoffee-app/blob/main/docs/adr/0009-openapi-da-api-publica.md)).
+
+    Para testar no Swagger UI, clique em **Authorize** e cole um access token do Keycloak.
 servers:
-  - url: https://localhost
-    description: Ambiente local (certificado autoassinado do Traefik)
+  - url: /
+    description: O próprio gateway (local, https://localhost)
 security:
   - passaporte: []
 tags:
@@ -22,7 +26,7 @@ paths:
       summary: Usuário logado
       description: >-
         Dados e perfis de acesso do usuário logado, a partir do token
-        ([ADR 0008](../docs/adr/0008-dados-do-usuario-logado.md)).
+        ([ADR 0008](https://github.com/hsborges/facoffee-app/blob/main/docs/adr/0008-dados-do-usuario-logado.md)).
       responses:
         '200':
           description: Usuário logado
