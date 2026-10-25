@@ -160,6 +160,22 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  financeiro:
+    build:
+      context: ..
+      dockerfile: templates/service/Dockerfile
+      args:
+        PACKAGE: "@facoffee/financeiro"
+    environment:
+      SERVICE: finance
+      DATABASE_URL: postgres://financeiro:${FINANCEIRO_DB_PASSWORD}@postgres:5432/financeiro
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
   # Template de serviço (templates/service); sobe só com --profile example.
   example:
     profiles: [example]
