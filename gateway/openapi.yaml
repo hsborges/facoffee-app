@@ -460,6 +460,56 @@ paths:
                 error: comprovante-ja-usado
         '500':
           $ref: '#/components/responses/ErroInterno'
+  /api/financeiro/participante:
+    get:
+      tags: [financeiro]
+      operationId: listarCreditoEPendentes
+      summary: Crédito e pendentes
+      description: |
+        Crédito e pendência de cada participante, inclusive de quem saiu. Só o gestor lista os
+        participantes; cada um vê a própria situação em `participante/eu`.
+      responses:
+        '200':
+          description: Situação de cada participante.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CreditoEPendente'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/SomenteGestor'
+        '500':
+          $ref: '#/components/responses/ErroInterno'
+  /api/financeiro/participante/eu:
+    get:
+      tags: [financeiro]
+      operationId: obterCreditoEPendente
+      summary: Meu crédito ou pendência
+      description: Crédito e pendência do usuário logado.
+      responses:
+        '200':
+          description: Situação do usuário logado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreditoEPendente'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/AcessoDesativado'
+        '404':
+          description: O usuário nunca participou.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              example:
+                error: participante-nao-encontrado
+        '500':
+          $ref: '#/components/responses/ErroInterno'
   /api/financeiro/comprovante/{id}:
     get:
       tags: [financeiro]
@@ -647,6 +697,35 @@ components:
       description: |
         Tipo de cota: `so-cafe` dá direito ao café; `completa`, ao café, às bolachas, aos chás e
         aos demais itens da copa.
+    CreditoEPendente:
+      type: object
+      required: [id, ativo, creditoEmCentavos, pendenteEmCentavos]
+      description: |
+        Pagamentos recebidos menos o que é devido. O que foi pago a mais é crédito, abatido
+        automaticamente das próximas cotas; o que falta é pendência, sem multa nem juros. Crédito
+        e pendência continuam valendo depois da saída e no retorno. No máximo um dos dois valores
+        é diferente de zero.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador do participante.
+        ativo:
+          type: boolean
+          description: Se está participando agora.
+        creditoEmCentavos:
+          type: integer
+          minimum: 0
+          description: Crédito em centavos de real.
+        pendenteEmCentavos:
+          type: integer
+          minimum: 0
+          description: Valor pendente em centavos de real.
+      example:
+        id: 4f1c2a9e-8b7d-4c3a-9e2f-1a2b3c4d5e6f
+        ativo: true
+        creditoEmCentavos: 6000
+        pendenteEmCentavos: 0
     Perfil:
       type: string
       enum: [gestor, participante]

@@ -33,6 +33,15 @@ Guardados num bucket S3 ([ADR 0018](../../docs/adr/0018-armazenamento-de-comprov
 | participante que Financeiro não conhece (`participante-nao-encontrado`) | 404 |
 | comprovante já usado em outro pagamento (`comprovante-ja-usado`) | 409 |
 
+## Crédito e pendentes
+
+Pagamentos recebidos − cotas devidas: positivo é crédito, negativo é pendente, sem multa nem juros. Como tudo entra na mesma soma, o crédito abate as próximas cotas sozinho, e crédito e pendência continuam valendo depois da saída e no retorno. As partes de complementos entram na soma quando existirem ([#25](https://github.com/hsborges/facoffee-app/issues/25)).
+
+| Rota | Quem |
+|---|---|
+| `GET /participante` → `200 [{ id, ativo, creditoEmCentavos, pendenteEmCentavos }]` | só o gestor (os demais, 403) |
+| `GET /participante/eu` → `200 { id, ativo, creditoEmCentavos, pendenteEmCentavos }` | o próprio participante; 404 se Financeiro não o conhece |
+
 ## Eventos consumidos
 
 Fila `finance.events`. Cada evento é tratado uma vez só (o id vai para `processed_events`), e os tratadores também são idempotentes: um evento repetido com outro id não duplica cota nem participante.

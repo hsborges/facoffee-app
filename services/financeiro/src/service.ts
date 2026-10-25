@@ -9,6 +9,7 @@ import {
   guardarComprovante,
   guardarNota,
 } from './application/arquivos.js';
+import { consultarCreditoEPendente, listarCreditoEPendentes } from './application/credito.js';
 import { receberPagamento } from './application/pagamentos.js';
 import {
   type PayloadInvalido,
@@ -22,6 +23,7 @@ import type { Result } from './domain/result.js';
 import { connectArmazem } from './infra/armazem-s3.js';
 import type { Config } from './infra/config.js';
 import { type Handler, startConsumer } from './infra/consumer.js';
+import { buscarTotais } from './infra/db/credito-repository.js';
 import { connectDatabase } from './infra/db/database.js';
 import { pagamentoRepository } from './infra/db/pagamento-repository.js';
 import { participanteRepository } from './infra/db/participante-repository.js';
@@ -73,6 +75,8 @@ export const startService = async (config: Config, logger: Logger) => {
       comprovanteDoParticipante(armazem),
       { now: () => new Date(), newId: randomUUID },
     ),
+    listarCreditoEPendentes: listarCreditoEPendentes(buscarTotais(database.db)),
+    consultarCreditoEPendente: consultarCreditoEPendente(buscarTotais(database.db)),
     health: async () => ({
       database: await database.isHealthy(),
       rabbitmq: connection.isConnected(),

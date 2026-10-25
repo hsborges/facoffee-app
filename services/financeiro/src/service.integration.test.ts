@@ -263,3 +263,51 @@ it('receives repeated pagamentos em dinheiro, only from a participante Financeir
   expect(desconhecido.status).toBe(404);
   expect(await desconhecido.json()).toEqual({ error: 'participante-nao-encontrado' });
 });
+
+it('turns a pagamento adiantado into crédito, abatido by the next cotas, across saída e retorno', async () => {
+  const participante = randomUUID();
+  const url = `http://localhost:${running.port}`;
+  const gestor = { 'x-user-id': randomUUID(), 'x-user-roles': 'gestor' };
+  const situacao = async () =>
+    (await fetch(`${url}/participante/eu`, { headers: { 'x-user-id': participante } })).json();
+  const quando = async (esperada: Record<string, unknown>) => {
+    await eventually(async () => {
+      const atual = await situacao();
+      return Object.entries(esperada).every(([k, v]) => atual[k] === v);
+    });
+    expect(await situacao()).toEqual({ id: participante, ...esperada });
+  };
+
+  publicar(entrou(participante));
+  publicar(cotaDevida(participante, '2026-11'));
+  await quando({ ativo: true, creditoEmCentavos: 0, pendenteEmCentavos: 3000 });
+
+  const pago = await fetch(`${url}/receber-pagamento`, {
+    method: 'POST',
+    headers: { ...gestor, 'content-type': 'application/json' },
+    body: JSON.stringify({
+      participanteId: participante,
+      valorEmCentavos: 9000,
+      forma: 'dinheiro',
+    }),
+  });
+  expect(pago.status).toBe(201);
+  await quando({ ativo: true, creditoEmCentavos: 6000, pendenteEmCentavos: 0 });
+
+  publicar(cotaDevida(participante, '2026-12'));
+  publicar(saiu(participante));
+  await quando({ ativo: false, creditoEmCentavos: 3000, pendenteEmCentavos: 0 });
+
+  publicar(entrou(participante));
+  publicar(cotaDevida(participante, '2027-03'));
+  publicar(cotaDevida(participante, '2027-04'));
+  await quando({ ativo: true, creditoEmCentavos: 0, pendenteEmCentavos: 3000 });
+
+  const todos = (await (await fetch(`${url}/participante`, { headers: gestor })).json()) as {
+    id: string;
+  }[];
+  expect(todos.find((p) => p.id === participante)).toMatchObject({ pendenteEmCentavos: 3000 });
+  expect(
+    (await fetch(`${url}/participante`, { headers: { 'x-user-id': participante } })).status,
+  ).toBe(403);
+});
