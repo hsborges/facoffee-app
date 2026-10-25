@@ -230,6 +230,13 @@ legend {
   color: var(--muted-mocha);
 }
 
+.campo {
+  display: grid;
+  gap: 0.25rem;
+  max-width: 24rem;
+  margin-bottom: 1rem;
+}
+
 section > button {
   margin-top: 1rem;
 }

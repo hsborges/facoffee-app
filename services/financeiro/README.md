@@ -54,6 +54,10 @@ Guardados num bucket S3 ([ADR 0018](../../docs/adr/0018-armazenamento-de-comprov
 | gasto pago pela caixinha (`gasto-pago-pela-caixinha`) | 409 |
 | gasto já reembolsado (`gasto-ja-reembolsado`) | 409 |
 
+## Gastos
+
+`GET /gasto` (só o gestor; os demais, 403) → `200 [{ id, participanteId, valorEmCentavos, origem, notaId, feitoEm, reembolsado }]`, do mais recente ao mais antigo. É de onde o gestor escolhe o gasto a reembolsar; `reembolsado` é sempre `false` no gasto pago pela caixinha.
+
 ## Solicitar complemento
 
 `POST /solicitar-complemento` (só o gestor), em JSON: `valorEmCentavos` (o valor total, que o gestor calcula). Divide em partes iguais entre os participantes ativos no momento, inclusive os pendentes e sem olhar o tipo de cota; os centavos que sobram vão um para cada, na ordem do id, e a soma das partes é sempre o valor total. Responde `201 { id }` e publica *Complemento solicitado* pela outbox. Fica nas tabelas `complementos` e `partes`; cada parte é devida como uma cota, então quem entra depois não deve e quem sai depois continua devendo.

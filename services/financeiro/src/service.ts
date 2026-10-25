@@ -13,7 +13,7 @@ import {
 import { consultarCaixinha } from './application/caixinha.js';
 import { solicitarComplemento } from './application/complementos.js';
 import { consultarCreditoEPendente, listarCreditoEPendentes } from './application/credito.js';
-import { registrarGasto } from './application/gastos.js';
+import { listarGastos, registrarGasto } from './application/gastos.js';
 import { receberPagamento } from './application/pagamentos.js';
 import {
   type PayloadInvalido,
@@ -32,7 +32,7 @@ import { caixinhaRepository } from './infra/db/caixinha-repository.js';
 import { complementoRepository } from './infra/db/complemento-repository.js';
 import { buscarDevido, buscarTotais } from './infra/db/credito-repository.js';
 import { connectDatabase } from './infra/db/database.js';
-import { gastoRepository } from './infra/db/gasto-repository.js';
+import { buscarGastos, gastoRepository } from './infra/db/gasto-repository.js';
 import { pagamentoRepository } from './infra/db/pagamento-repository.js';
 import { participanteRepository } from './infra/db/participante-repository.js';
 import { reembolsoRepository } from './infra/db/reembolso-repository.js';
@@ -99,6 +99,7 @@ export const startService = async (config: Config, logger: Logger) => {
     consultarCaixinha: consultarCaixinha(caixinhaRepository(database.db), {
       now: () => new Date(),
     }),
+    listarGastos: listarGastos(buscarGastos(database.db)),
     listarCreditoEPendentes: listarCreditoEPendentes(buscarTotais(database.db)),
     consultarCreditoEPendente: consultarCreditoEPendente(
       buscarTotais(database.db),

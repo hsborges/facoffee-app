@@ -1,11 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { dataEmCampoGrande, emReais, mesPorExtenso } from './formato';
+import { dataEmCampoGrande, emCentavos, emReais, mesPorExtenso } from './formato';
 
 describe('emReais', () => {
   it('shows centavos as reais', () => {
     expect(emReais(3000)).toBe('R$\u00a030,00');
     expect(emReais(123456)).toBe('R$\u00a01.234,56');
     expect(emReais(-1500)).toBe('-R$\u00a015,00');
+  });
+});
+
+describe('emCentavos', () => {
+  it('reads reais typed in a number input as centavos, without float residue', () => {
+    expect(emCentavos('30')).toBe(3000);
+    expect(emCentavos('45.9')).toBe(4590);
+    expect(emCentavos('0.29')).toBe(29);
+    expect(emCentavos('1234.56')).toBe(123456);
   });
 });
 

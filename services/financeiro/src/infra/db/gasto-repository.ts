@@ -1,8 +1,27 @@
-import { eq } from 'drizzle-orm';
-import type { Gastos } from '../../application/gastos.js';
+import { desc, eq, isNotNull } from 'drizzle-orm';
+import type { BuscarGastos, Gastos } from '../../application/gastos.js';
 import { fail, ok } from '../../domain/result.js';
 import type { Executor } from './database.js';
-import { gastos, participantes } from './schema.js';
+import { gastos, participantes, reembolsos } from './schema.js';
+
+/** {@link BuscarGastos} on PostgreSQL. */
+export const buscarGastos =
+  (db: Executor): BuscarGastos =>
+  () =>
+    // ponytail: every gasto at once, paginate if the list gets long
+    db
+      .select({
+        id: gastos.id,
+        participanteId: gastos.participanteId,
+        valorEmCentavos: gastos.valorEmCentavos,
+        origem: gastos.origem,
+        notaId: gastos.notaId,
+        feitoEm: gastos.feitoEm,
+        reembolsado: isNotNull(reembolsos.id).mapWith(Boolean),
+      })
+      .from(gastos)
+      .leftJoin(reembolsos, eq(reembolsos.gastoId, gastos.id))
+      .orderBy(desc(gastos.feitoEm), desc(gastos.id));
 
 /** {@link Gastos} on PostgreSQL. */
 export const gastoRepository = (db: Executor): Gastos => ({

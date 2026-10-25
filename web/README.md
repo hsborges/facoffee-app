@@ -23,4 +23,5 @@ Entre com um usuário de teste do [realm local](../infra/README.md#keycloak) (`g
 | `src/api.ts` | Chamadas à API pelo gateway |
 | `src/formato.ts` | Valores, meses e datas em português |
 | `src/participante.tsx` | Páginas do participante: Minha situação e Caixinha |
+| `src/gestor.tsx` | Páginas do gestor: Participantes, Gastos, Valor da cota e o complemento na Caixinha |
 | `src/app.tsx` | Login, layout e rotas |

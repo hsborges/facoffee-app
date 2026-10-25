@@ -83,8 +83,8 @@ describe('comandar', () => {
   it('posts the comando as JSON with the access token', async () => {
     const fetch = responde(async () => new Response(null, { status: 204 }));
 
-    expect(await comandar('token', '/api/participacao/entrar', { tipoDeCota: 'completa' })).toBe(
-      true,
+    expect(await comandar('token', '/api/participacao/entrar', { tipoDeCota: 'completa' })).toEqual(
+      { feito: true },
     );
     const [caminho, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
     expect(caminho).toBe('/api/participacao/entrar');
@@ -97,16 +97,33 @@ describe('comandar', () => {
 
   it('posts without a body when the comando has none', async () => {
     const fetch = responde(async () => new Response(null, { status: 204 }));
-    expect(await comandar('token', '/api/participacao/sair')).toBe(true);
+    expect(await comandar('token', '/api/participacao/sair')).toEqual({ feito: true });
     const [, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
     expect(init.body).toBeUndefined();
   });
 
+  it('posts a form as multipart and resolves the id of what it created', async () => {
+    const fetch = responde(async () => Response.json({ id: 'nota' }, { status: 201 }));
+    const form = new FormData();
+    form.append('arquivo', new Blob(['%PDF']), 'nota.pdf');
+
+    expect(await comandar('token', '/api/financeiro/guardar-nota', form)).toEqual({
+      feito: true,
+      id: 'nota',
+    });
+    const [, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
+    expect(init.body).toBe(form);
+    expect(new Headers(init.headers).get('content-type')).toBeNull();
+  });
+
   it('a refused comando or a network failure is not done', async () => {
     responde(async () => Response.json({ error: 'nao-participando' }, { status: 409 }));
-    expect(await comandar('token', '/api/participacao/sair')).toBe(false);
+    expect(await comandar('token', '/api/participacao/sair')).toEqual({
+      feito: false,
+      erro: 'nao-participando',
+    });
 
     responde(() => Promise.reject(new TypeError('Failed to fetch')));
-    expect(await comandar('token', '/api/participacao/sair')).toBe(false);
+    expect(await comandar('token', '/api/participacao/sair')).toEqual({ feito: false });
   });
 });

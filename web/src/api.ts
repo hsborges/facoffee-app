@@ -48,14 +48,38 @@ export type Participacao = {
   readonly troca: { readonly tipoDeCota: TipoDeCota; readonly aPartirDe: string } | null;
 };
 
+/** A usuário who has accessed the FACOFFEE, as listed by `GET /api/usuario` (gestor only). */
+export type UsuarioRegistrado = {
+  readonly id: string;
+  readonly nome: string;
+  readonly email: string;
+  readonly desativado: boolean;
+};
+
+/** A participante's crédito or pendência, as listed by `GET /api/financeiro/participante`. */
+export type CreditoEPendente = {
+  readonly id: string;
+  readonly ativo: boolean;
+  readonly creditoEmCentavos: number;
+  readonly pendenteEmCentavos: number;
+};
+
+/** A gasto, as listed by `GET /api/financeiro/gasto`. */
+export type Gasto = {
+  readonly id: string;
+  readonly participanteId: string;
+  readonly valorEmCentavos: number;
+  readonly origem: 'caixinha' | 'proprio-bolso';
+  readonly notaId: string;
+  readonly feitoEm: string;
+  readonly reembolsado: boolean;
+};
+
 /**
  * The logged-in participante's crédito or pendência, with their cotas and partes de complementos,
  * as answered by `GET /api/financeiro/participante/eu`.
  */
-export type Situacao = {
-  readonly ativo: boolean;
-  readonly creditoEmCentavos: number;
-  readonly pendenteEmCentavos: number;
+export type Situacao = CreditoEPendente & {
   readonly cotas: readonly {
     readonly mes: string;
     readonly tipoDeCota: TipoDeCota;
@@ -89,16 +113,31 @@ export const ler = async <T>(token: string, caminho: string): Promise<Leitura<T>
   return valor === undefined ? { situacao: 'erro' } : { situacao: 'ok', valor };
 };
 
-/** Sends a comando (`POST`, with `corpo` as JSON if any); resolves whether it was done. */
-export const comandar = async (token: string, caminho: string, corpo?: unknown) => {
+/** Outcome of a comando: done, with the id of what it created if any, or refused with the error. */
+export type Comando =
+  | { readonly feito: true; readonly id?: string }
+  | { readonly feito: false; readonly erro?: string };
+
+/**
+ * Sends a comando (`POST`): `corpo` goes as multipart if a `FormData`, as JSON otherwise.
+ * A network failure is refused without an error.
+ */
+export const comandar = async (
+  token: string,
+  caminho: string,
+  corpo?: unknown,
+): Promise<Comando> => {
   const init: RequestInit =
     corpo === undefined
       ? { method: 'POST' }
-      : {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(corpo),
-        };
+      : corpo instanceof FormData
+        ? { method: 'POST', body: corpo }
+        : {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(corpo),
+          };
   const resposta = await chamarApi(token, caminho, init).catch(() => undefined);
-  return resposta?.ok ?? false;
+  const { id, error } = (await resposta?.json().catch(() => undefined)) ?? {};
+  return resposta?.ok ? { feito: true, id } : { feito: false, erro: error };
 };

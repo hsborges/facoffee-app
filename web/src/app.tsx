@@ -3,6 +3,7 @@ import { useAuth, useAutoSignin } from 'react-oidc-context';
 import { NavLink, Route, Routes } from 'react-router';
 import logo from '../../infra/keycloak/themes/facoffee/login/resources/img/facoffee-logo.svg';
 import { obterUsuarioLogado, type UsuarioLogado } from './api';
+import { Gastos, Participantes, SolicitarComplemento, ValorDaCota } from './gestor';
 import { navegacao } from './navegacao';
 import { Caixinha, MinhaSituacao } from './participante';
 
@@ -91,7 +92,15 @@ export const App = () => {
   const itens = navegacao(eu.usuario.perfis);
   const paginas: Readonly<Record<string, ReactNode>> = {
     '/': <MinhaSituacao token={token} usuarioId={eu.usuario.id} sair={sair} />,
-    '/caixinha': <Caixinha token={token} />,
+    '/caixinha': (
+      <>
+        <Caixinha token={token} />
+        {eu.usuario.perfis.includes('gestor') && <SolicitarComplemento token={token} />}
+      </>
+    ),
+    '/participantes': <Participantes token={token} usuarioId={eu.usuario.id} />,
+    '/gastos': <Gastos token={token} />,
+    '/valor-da-cota': <ValorDaCota token={token} />,
   };
   return (
     <>
@@ -120,12 +129,11 @@ export const App = () => {
       </header>
       <main id="conteudo" tabIndex={-1}>
         <Routes>
-          {/* ponytail: placeholder gestor pages, the screens come in #30 */}
           {itens.map(({ caminho, titulo }) => (
             <Route
               key={caminho}
               path={caminho}
-              element={<Pagina titulo={titulo}>{paginas[caminho] ?? <p>Em construção.</p>}</Pagina>}
+              element={<Pagina titulo={titulo}>{paginas[caminho]}</Pagina>}
             />
           ))}
           <Route
