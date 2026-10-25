@@ -56,7 +56,7 @@ Guardados num bucket S3 ([ADR 0018](../../docs/adr/0018-armazenamento-de-comprov
 
 ## Gastos
 
-`GET /gasto` (qualquer participante) → `200 [{ id, participanteId, valorEmCentavos, origem, notaId, feitoEm, reembolsado }]`, do mais recente ao mais antigo. É de onde o gestor escolhe o gasto a reembolsar; `reembolsado` é sempre `false` no gasto pago pela caixinha.
+`GET /gasto` (só o gestor; os demais, 403) → `200 [{ id, participanteId, valorEmCentavos, origem, notaId, feitoEm, reembolsado }]`, do mais recente ao mais antigo. É de onde o gestor escolhe o gasto a reembolsar; `reembolsado` é sempre `false` no gasto pago pela caixinha.
 
 ## Solicitar complemento
 

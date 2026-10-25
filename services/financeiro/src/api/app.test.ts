@@ -11,7 +11,7 @@ import {
 } from '../application/arquivos.js';
 import { solicitarComplemento } from '../application/complementos.js';
 import { consultarCreditoEPendente, listarCreditoEPendentes } from '../application/credito.js';
-import { registrarGasto } from '../application/gastos.js';
+import { listarGastos, registrarGasto } from '../application/gastos.js';
 import { receberPagamento } from '../application/pagamentos.js';
 import { reembolsarGasto } from '../application/reembolsos.js';
 import { TAMANHO_MAXIMO } from '../domain/arquivo.js';
@@ -99,7 +99,7 @@ const app = (deps: Partial<ApiDependencies> = {}) => {
       saldoEmCentavos: -1500,
       gastosDoAnoAnteriorEmCentavos: 90000,
     }),
-    listarGastos: async () => [],
+    listarGastos: listarGastos(async () => []),
     listarCreditoEPendentes: listarCreditoEPendentes(buscarTotais),
     consultarCreditoEPendente: consultarCreditoEPendente(buscarTotais, async () => devido),
     health: async () => ({ database: true, rabbitmq: true, armazenamento: true }),
@@ -416,15 +416,22 @@ describe('POST /gasto/:id/reembolsar', () => {
 });
 
 describe('GET /gasto', () => {
-  it('gives any participante the gastos, with whether each was reembolsado', async () => {
+  it('gives the gestor the gastos, with whether each was reembolsado', async () => {
     const gastos = [{ ...gastoDoBolso, reembolsado: false }];
-    const response = await app({ listarGastos: async () => gastos }).request('/gasto', {
-      headers: doParticipante,
-    });
+    const response = await app({ listarGastos: listarGastos(async () => gastos) }).request(
+      '/gasto',
+      { headers: gestor },
+    );
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual([
       { ...gastoDoBolso, feitoEm: gastoDoBolso.feitoEm.toISOString(), reembolsado: false },
     ]);
+  });
+
+  it('403 when not the gestor and 401 without the logged-in person', async () => {
+    const response = await app().request('/gasto', { headers: doParticipante });
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ error: 'sem-permissao' });
     expect((await app().request('/gasto')).status).toBe(401);
   });
 });

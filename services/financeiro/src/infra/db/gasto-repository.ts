@@ -1,12 +1,12 @@
 import { desc, eq, isNotNull } from 'drizzle-orm';
-import type { Gastos, ListarGastos } from '../../application/gastos.js';
+import type { BuscarGastos, Gastos } from '../../application/gastos.js';
 import { fail, ok } from '../../domain/result.js';
 import type { Executor } from './database.js';
 import { gastos, participantes, reembolsos } from './schema.js';
 
-/** {@link ListarGastos} on PostgreSQL. */
-export const listarGastos =
-  (db: Executor): ListarGastos =>
+/** {@link BuscarGastos} on PostgreSQL. */
+export const buscarGastos =
+  (db: Executor): BuscarGastos =>
   () =>
     // ponytail: every gasto at once, paginate if the list gets long
     db
@@ -21,7 +21,7 @@ export const listarGastos =
       })
       .from(gastos)
       .leftJoin(reembolsos, eq(reembolsos.gastoId, gastos.id))
-      .orderBy(desc(gastos.feitoEm));
+      .orderBy(desc(gastos.feitoEm), desc(gastos.id));
 
 /** {@link Gastos} on PostgreSQL. */
 export const gastoRepository = (db: Executor): Gastos => ({
