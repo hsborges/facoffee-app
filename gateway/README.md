@@ -8,6 +8,7 @@ Ponto de entrada HTTPS (rede pública). Roteia via REST para Usuário, Participa
 | `/api/participacao/*` | `http://participacao:3000/*`, exceto os gatilhos internos `iniciar-ano` e `iniciar-mes` (404, [ADR 0017](../docs/adr/0017-gatilhos-de-tempo-do-agendador.md)) |
 | `/api/financeiro/*` | `http://financeiro:3000/*` |
 | `/docs/*` | `http://docs:8080/docs/*` (Swagger UI, sem token) |
+| Qualquer outro caminho fora de `/api` | `http://web:80` (FACOFFEE web, sem token, [ADR 0021](../docs/adr/0021-front-end-servido-pelo-gateway.md)) |
 
 Toda rota `/api/*` exige `Authorization: Bearer <access token do Keycloak>`. Sem token ou com token inválido: 401. Com token válido, o serviço recebe `X-User-Id` (o `sub`), `X-User-Roles` (papéis do realm, separados por vírgula), `X-User-Name` (o `name`) e `X-User-Email` (o `email`); nome e e-mail vêm codificados com `encodeURIComponent` ([ADR 0008](../docs/adr/0008-dados-do-usuario-logado.md)). Header ausente no token vai vazio. Em seguida, o serviço Usuário registra o usuário e confere se o acesso foi desativado: 403 e a requisição para ([ADR 0011](../docs/adr/0011-acesso-desativado.md), [ADR 0012](../docs/adr/0012-registro-do-usuario-no-primeiro-acesso.md)).
 

@@ -1,9 +1,11 @@
+import { mesDe } from '../domain/calendario.js';
 import type { Event } from '../domain/event.js';
 import {
   type EntrarErro,
   entrar,
   type NaoParticipando,
   type Participante,
+  participanteNoMes,
   sair,
   type TipoDeCota,
   trocarTipoDeCota,
@@ -67,6 +69,19 @@ export const pedirSaida =
     if (!result.ok) return result;
     const salvo = await repository.salvarSaida(result.value.participante, [result.value.evento]);
     return salvo ? ok(undefined) : fail('nao-participando');
+  };
+
+/**
+ * Leitura of the logged-in person's participação: the tipo de cota in effect now and the troca
+ * still waiting, if any.
+ */
+export const consultarParticipante =
+  (repository: Pick<Repository, 'buscar'>, clock: Pick<Clock, 'now'>) =>
+  async (id: string): Promise<Result<Participante, 'participante-nao-encontrado'>> => {
+    const participante = await repository.buscar(id);
+    return participante
+      ? ok(participanteNoMes(participante, mesDe(clock.now())))
+      : fail('participante-nao-encontrado');
   };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

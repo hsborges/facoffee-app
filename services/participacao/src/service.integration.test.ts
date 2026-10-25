@@ -106,6 +106,14 @@ it('saves a troca de tipo de cota for the next month and publishes nothing', asy
   );
   expect(rows).toMatchObject([{ tipo_de_cota: 'so-cafe', troca_tipo_de_cota: 'completa' }]);
   expect(rows[0].troca_a_partir_de).toMatch(/^\d{4}-\d{2}$/);
+
+  const eu = await fetch(`${url}/participante/eu`, { headers: { 'x-user-id': id } });
+  expect(await eu.json()).toEqual({
+    id,
+    tipoDeCota: 'so-cafe',
+    participando: true,
+    troca: { tipoDeCota: 'completa', aPartirDe: rows[0].troca_a_partir_de },
+  });
 });
 
 it('turns Usuário desativado into Participante saiu once, even after a saída or a redelivery', async () => {

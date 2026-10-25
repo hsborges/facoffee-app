@@ -7,7 +7,7 @@ import type { ReembolsarGastoErro } from '../application/reembolsos.js';
 import { type ArquivoInvalido, type Solicitante, TAMANHO_MAXIMO } from '../domain/arquivo.js';
 import type { Caixinha } from '../domain/caixinha.js';
 import type { SolicitarErro } from '../domain/complemento.js';
-import type { Situacao } from '../domain/credito.js';
+import type { MinhaSituacao, Situacao } from '../domain/credito.js';
 import { ORIGENS, type Origem, type PedidoDeGasto } from '../domain/gasto.js';
 import { FORMAS, type Forma, type PedidoDePagamento } from '../domain/pagamento.js';
 import type { Result } from '../domain/result.js';
@@ -51,7 +51,7 @@ export type ApiDependencies = {
   ) => Promise<Result<readonly Situacao[], 'sem-permissao'>>;
   readonly consultarCreditoEPendente: (
     solicitante: Pick<Solicitante, 'id'>,
-  ) => Promise<Result<Situacao, 'participante-nao-encontrado'>>;
+  ) => Promise<Result<MinhaSituacao, 'participante-nao-encontrado'>>;
   readonly health: () => Promise<Readonly<Record<string, boolean>>>;
   readonly logger: Logger;
 };
@@ -165,7 +165,8 @@ const baixado = (c: Context, result: Result<Arquivo, NaoEncontrado>) =>
  * solicita a complemento with `POST /solicitar-complemento` (JSON, the valor total).
  * Leituras *Saldo da caixinha* and *Gastos do ano anterior*: `GET /caixinha`, for any participante.
  * Leitura *Crédito e pendentes*: `GET /participante` lists every participante, only for the
- * gestor; `GET /participante/eu` gives the logged-in participante their own.
+ * gestor; `GET /participante/eu` gives the logged-in participante their own, with their cotas and
+ * partes de complementos.
  * Without `X-User-Id`, 401.
  * Logs every request except health probes; unhandled errors become 500.
  */

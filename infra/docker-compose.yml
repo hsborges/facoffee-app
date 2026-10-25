@@ -128,6 +128,12 @@ services:
     volumes:
       - ../gateway/openapi.yaml:/spec/openapi.yaml:ro
 
+  # FACOFFEE web (build do Vite), servido pelo gateway em / (ADR 0021).
+  web:
+    build:
+      context: ..
+      dockerfile: web/Dockerfile
+
   # Sem porta publicada: só é alcançado pelo gateway (ADR 0007).
   usuario:
     build:

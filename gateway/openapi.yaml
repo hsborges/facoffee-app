@@ -241,6 +241,36 @@ paths:
           $ref: '#/components/responses/NaoParticipando'
         '500':
           $ref: '#/components/responses/ErroInterno'
+  /api/participacao/participante/eu:
+    get:
+      tags: [participacao]
+      operationId: obterParticipacao
+      summary: Minha participação
+      description: |
+        Se o usuário logado está participando, o tipo de cota que vale no mês atual (horário de
+        Campo Grande) e, enquanto participa, a troca de tipo de cota que ainda espera o mês
+        seguinte, se houver.
+      responses:
+        '200':
+          description: Participação do usuário logado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Participacao'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/AcessoDesativado'
+        '404':
+          description: O usuário nunca participou.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              example:
+                error: participante-nao-encontrado
+        '500':
+          $ref: '#/components/responses/ErroInterno'
   /api/participacao/definir-valor-da-cota:
     post:
       tags: [participacao]
@@ -729,14 +759,16 @@ paths:
       tags: [financeiro]
       operationId: obterCreditoEPendente
       summary: Meu crédito ou pendência
-      description: Crédito e pendência do usuário logado.
+      description: |
+        Crédito e pendência do usuário logado, com as cotas e as partes de complementos que ele
+        deve ou já deveu.
       responses:
         '200':
           description: Situação do usuário logado.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreditoEPendente'
+                $ref: '#/components/schemas/MinhaSituacao'
         '401':
           $ref: '#/components/responses/NaoAutorizado'
         '403':
@@ -967,6 +999,96 @@ components:
         ativo: true
         creditoEmCentavos: 6000
         pendenteEmCentavos: 0
+    MinhaSituacao:
+      allOf:
+        - $ref: '#/components/schemas/CreditoEPendente'
+        - type: object
+          required: [cotas, complementos]
+          properties:
+            cotas:
+              type: array
+              description: Cotas devidas, da mais recente à mais antiga.
+              items:
+                type: object
+                required: [mes, tipoDeCota, valorEmCentavos]
+                properties:
+                  mes:
+                    type: string
+                    pattern: '^\d{4}-\d{2}$'
+                    description: Mês da cota (`AAAA-MM`).
+                    example: '2026-11'
+                  tipoDeCota:
+                    $ref: '#/components/schemas/TipoDeCota'
+                  valorEmCentavos:
+                    type: integer
+                    minimum: 1
+                    description: Valor da cota em centavos de real; não muda depois de devida.
+            complementos:
+              type: array
+              description: Partes de complementos devidas, da mais recente à mais antiga.
+              items:
+                type: object
+                required: [id, solicitadoEm, parteEmCentavos]
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    description: Identificador do complemento.
+                  solicitadoEm:
+                    type: string
+                    format: date-time
+                    description: Quando o gestor solicitou o complemento.
+                  parteEmCentavos:
+                    type: integer
+                    minimum: 1
+                    description: Parte do usuário logado, em centavos de real.
+      example:
+        id: 4f1c2a9e-8b7d-4c3a-9e2f-1a2b3c4d5e6f
+        ativo: true
+        creditoEmCentavos: 0
+        pendenteEmCentavos: 3250
+        cotas:
+          - mes: '2026-11'
+            tipoDeCota: completa
+            valorEmCentavos: 3000
+        complementos:
+          - id: 9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d
+            solicitadoEm: '2026-11-20T15:00:00.000Z'
+            parteEmCentavos: 250
+    Participacao:
+      type: object
+      required: [id, tipoDeCota, participando, troca]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador do participante.
+        tipoDeCota:
+          $ref: '#/components/schemas/TipoDeCota'
+        participando:
+          type: boolean
+          description: Se está participando agora; quem saiu volta pedindo a entrada.
+        troca:
+          description: Troca de tipo de cota que ainda não vale; nula se não houver.
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [tipoDeCota, aPartirDe]
+              properties:
+                tipoDeCota:
+                  $ref: '#/components/schemas/TipoDeCota'
+                aPartirDe:
+                  type: string
+                  pattern: '^\d{4}-\d{2}$'
+                  description: Mês em que a troca passa a valer (`AAAA-MM`).
+                  example: '2026-12'
+      example:
+        id: 4f1c2a9e-8b7d-4c3a-9e2f-1a2b3c4d5e6f
+        tipoDeCota: so-cafe
+        participando: true
+        troca:
+          tipoDeCota: completa
+          aPartirDe: '2026-12'
     Perfil:
       type: string
       enum: [gestor, participante]

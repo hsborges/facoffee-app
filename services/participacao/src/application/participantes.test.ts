@@ -3,6 +3,7 @@ import type { Event } from '../domain/event.js';
 import type { Participante } from '../domain/participante.js';
 import {
   type Clock,
+  consultarParticipante,
   encerrarAoDesativarAcesso,
   pedirEntrada,
   pedirSaida,
@@ -45,6 +46,7 @@ const inMemory = () => {
     pedirEntrada: pedirEntrada(repository, clock),
     trocarTipo: trocarTipo(repository, clock),
     pedirSaida: pedirSaida(repository, clock),
+    consultar: consultarParticipante(repository, clock),
     encerrar: encerrarAoDesativarAcesso(repository, clock),
   };
 };
@@ -144,6 +146,38 @@ describe('pedirSaida', () => {
     const { events, pedirSaida } = inMemory();
     expect(await pedirSaida('p-1')).toEqual({ ok: false, error: 'nao-participando' });
     expect(events).toEqual([]);
+  });
+});
+
+describe('consultarParticipante', () => {
+  it('gives the participante with the tipo de cota of now and the troca still waiting', async () => {
+    const { participantes, consultar } = inMemory();
+    participantes.set('p-1', {
+      id: 'p-1',
+      tipoDeCota: 'so-cafe',
+      participando: true,
+      troca: { tipoDeCota: 'completa', aPartirDe: '2026-11' },
+    });
+    participantes.set('p-2', {
+      id: 'p-2',
+      tipoDeCota: 'so-cafe',
+      participando: false,
+      troca: { tipoDeCota: 'completa', aPartirDe: '2026-12' },
+    });
+
+    expect(await consultar('p-1')).toEqual({
+      ok: true,
+      value: { id: 'p-1', tipoDeCota: 'completa', participando: true, troca: null },
+    });
+    expect(await consultar('p-2')).toEqual({
+      ok: true,
+      value: { id: 'p-2', tipoDeCota: 'so-cafe', participando: false, troca: null },
+    });
+  });
+
+  it('does not find someone who never participated', async () => {
+    const { consultar } = inMemory();
+    expect(await consultar('p-1')).toEqual({ ok: false, error: 'participante-nao-encontrado' });
   });
 });
 

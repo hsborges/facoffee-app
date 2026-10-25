@@ -1,7 +1,7 @@
-import { asc, eq, sql, sum } from 'drizzle-orm';
-import type { BuscarTotais } from '../../application/credito.js';
+import { asc, desc, eq, sql, sum } from 'drizzle-orm';
+import type { BuscarDevido, BuscarTotais } from '../../application/credito.js';
 import type { Executor } from './database.js';
-import { cotas, pagamentos, partes, participantes } from './schema.js';
+import { complementos, cotas, pagamentos, partes, participantes } from './schema.js';
 
 /**
  * {@link BuscarTotais} on PostgreSQL: sums cotas, partes de complementos and pagamentos per
@@ -49,4 +49,32 @@ export const buscarTotais =
       .leftJoin(pago, eq(pago.participanteId, participantes.id))
       .where(id === undefined ? undefined : eq(participantes.id, id))
       .orderBy(asc(participantes.id));
+  };
+
+/** {@link BuscarDevido} on PostgreSQL, newest first. */
+export const buscarDevido =
+  (db: Executor): BuscarDevido =>
+  async (id) => {
+    const [cotasDevidas, complementosDevidos] = await Promise.all([
+      db
+        .select({
+          mes: cotas.mes,
+          tipoDeCota: cotas.tipoDeCota,
+          valorEmCentavos: cotas.valorEmCentavos,
+        })
+        .from(cotas)
+        .where(eq(cotas.participanteId, id))
+        .orderBy(desc(cotas.mes)),
+      db
+        .select({
+          id: complementos.id,
+          solicitadoEm: complementos.solicitadoEm,
+          parteEmCentavos: partes.valorEmCentavos,
+        })
+        .from(partes)
+        .innerJoin(complementos, eq(complementos.id, partes.complementoId))
+        .where(eq(partes.participanteId, id))
+        .orderBy(desc(complementos.solicitadoEm)),
+    ]);
+    return { cotas: cotasDevidas, complementos: complementosDevidos };
   };

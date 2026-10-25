@@ -28,6 +28,10 @@ const app = (deps: Partial<ApiDependencies> = {}) =>
       if (valor.ano < 2026) return fail('ano-passado');
       return valor.valorEmCentavos === 9999 ? fail('valor-ja-definido') : ok(undefined);
     },
+    consultarParticipante: async (id) =>
+      id === participando
+        ? ok({ id, tipoDeCota: 'so-cafe', participando: true, troca: null })
+        : fail('participante-nao-encontrado'),
     iniciarAno: async () => ({ valoresRepetidos: 1 }),
     iniciarMes: async () => ({ cotasDevidas: 2, semValorDaCota: 0 }),
     health: async () => ({ database: true, rabbitmq: true }),
@@ -101,6 +105,28 @@ describe('POST /sair', () => {
     const response = await post('/sair', { 'x-user-id': novo });
     expect(response.status).toBe(409);
     expect(await response.json()).toEqual({ error: 'nao-participando' });
+  });
+});
+
+describe('GET /participante/eu', () => {
+  it('200 with the participação of the logged-in person', async () => {
+    const response = await app().request('/participante/eu', {
+      headers: { 'x-user-id': participando },
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      id: participando,
+      tipoDeCota: 'so-cafe',
+      participando: true,
+      troca: null,
+    });
+  });
+
+  it('404 for someone who never participated and 401 without the gateway identity', async () => {
+    const response = await app().request('/participante/eu', { headers: { 'x-user-id': novo } });
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: 'participante-nao-encontrado' });
+    expect((await app().request('/participante/eu')).status).toBe(401);
   });
 });
 

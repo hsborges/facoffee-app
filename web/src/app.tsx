@@ -4,6 +4,7 @@ import { NavLink, Route, Routes } from 'react-router';
 import logo from '../../infra/keycloak/themes/facoffee/login/resources/img/facoffee-logo.svg';
 import { obterUsuarioLogado, type UsuarioLogado } from './api';
 import { navegacao } from './navegacao';
+import { Caixinha, MinhaSituacao } from './participante';
 
 const Pagina = ({ titulo, children }: { titulo: string; children: ReactNode }) => {
   useEffect(() => {
@@ -57,7 +58,7 @@ export const App = () => {
         </button>
       </Aviso>
     );
-  if (!isAuthenticated || !eu)
+  if (!isAuthenticated || !token || !eu)
     return (
       <Aviso>
         <p role="status">Carregando…</p>
@@ -88,6 +89,10 @@ export const App = () => {
     );
 
   const itens = navegacao(eu.usuario.perfis);
+  const paginas: Readonly<Record<string, ReactNode>> = {
+    '/': <MinhaSituacao token={token} usuarioId={eu.usuario.id} sair={sair} />,
+    '/caixinha': <Caixinha token={token} />,
+  };
   return (
     <>
       <a className="pular" href="#conteudo">
@@ -115,16 +120,12 @@ export const App = () => {
       </header>
       <main id="conteudo" tabIndex={-1}>
         <Routes>
-          {/* ponytail: placeholder pages, the screens come in #29 (participante) and #30 (gestor) */}
+          {/* ponytail: placeholder gestor pages, the screens come in #30 */}
           {itens.map(({ caminho, titulo }) => (
             <Route
               key={caminho}
               path={caminho}
-              element={
-                <Pagina titulo={titulo}>
-                  <p>Em construção.</p>
-                </Pagina>
-              }
+              element={<Pagina titulo={titulo}>{paginas[caminho] ?? <p>Em construção.</p>}</Pagina>}
             />
           ))}
           <Route
