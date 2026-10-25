@@ -35,7 +35,12 @@ export const App = () => {
   const [eu, setEu] = useState<UsuarioLogado>();
 
   useEffect(() => {
-    if (token) obterUsuarioLogado(token).then(setEu);
+    if (!token) return;
+    let atual = true;
+    obterUsuarioLogado(token).then((resultado) => atual && setEu(resultado));
+    return () => {
+      atual = false;
+    };
   }, [token]);
 
   const sair = () => auth.signoutRedirect();
