@@ -30,6 +30,8 @@ const sign = (claims: JWTPayload = {}, key = privateKey, alg = 'RS256') =>
     exp: Math.floor(Date.now() / 1000) + 300,
     azp: clientId,
     realm_access: { roles: ['gestor', 'participante'] },
+    name: 'João Café',
+    email: 'joao@ufms.br',
     ...claims,
   })
     .setProtectedHeader({ alg })
@@ -44,12 +46,18 @@ describe('GET /verify', () => {
     expect(response.status).toBe(204);
     expect(response.headers.get('x-user-id')).toBe('user-1');
     expect(response.headers.get('x-user-roles')).toBe('gestor,participante');
+    expect(response.headers.get('x-user-name')).toBe('Jo%C3%A3o%20Caf%C3%A9');
+    expect(response.headers.get('x-user-email')).toBe('joao%40ufms.br');
   });
 
-  it('empty roles when the token has none', async () => {
-    const response = await verify(`Bearer ${await sign({ realm_access: undefined })}`);
+  it('empty roles, name and email when the token has none', async () => {
+    const response = await verify(
+      `Bearer ${await sign({ realm_access: undefined, name: undefined, email: undefined })}`,
+    );
     expect(response.status).toBe(204);
     expect(response.headers.get('x-user-roles')).toBe('');
+    expect(response.headers.get('x-user-name')).toBe('');
+    expect(response.headers.get('x-user-email')).toBe('');
   });
 
   it('401 without a bearer token', async () => {

@@ -14,6 +14,9 @@ const realmRoles = (claim: unknown): readonly string[] => {
   return Array.isArray(roles) ? roles.filter((role) => typeof role === 'string') : [];
 };
 
+// Percent-encoded: header values must be ASCII, and names have accents.
+const textClaim = (claim: unknown) => (typeof claim === 'string' ? encodeURIComponent(claim) : '');
+
 // Traefik ForwardAuth target: any non-2xx response is returned to the client and the request stops.
 export const createApp = ({ issuer, clientId, keys }: VerifierConfig) =>
   new Hono()
@@ -40,5 +43,7 @@ export const createApp = ({ issuer, clientId, keys }: VerifierConfig) =>
       }
       c.header('X-User-Id', verified.payload.sub);
       c.header('X-User-Roles', realmRoles(verified.payload.realm_access).join(','));
+      c.header('X-User-Name', textClaim(verified.payload.name));
+      c.header('X-User-Email', textClaim(verified.payload.email));
       return c.body(null, 204);
     });
