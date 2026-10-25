@@ -2,6 +2,7 @@ import { bigint, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-co
 
 const instant = (name: string) => timestamp(name, { withTimezone: true });
 
+/** Example aggregates. */
 export const examples = pgTable('examples', {
   id: uuid('id').primaryKey(),
   name: text('name').notNull(),
@@ -9,7 +10,7 @@ export const examples = pgTable('examples', {
   confirmedAt: instant('confirmed_at'),
 });
 
-// Events written in the aggregate's transaction; the relay publishes them in `seq` order.
+/** Events written in the aggregate's transaction; the relay publishes them in `seq` order. */
 export const outbox = pgTable('outbox', {
   seq: bigint('seq', { mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
   id: uuid('id').notNull().unique(),
@@ -19,7 +20,7 @@ export const outbox = pgTable('outbox', {
   publishedAt: instant('published_at'),
 });
 
-// Ids of events already handled by the consumer (idempotency).
+/** Ids of events already handled by the consumer (idempotency). */
 export const processedEvents = pgTable('processed_events', {
   id: uuid('id').primaryKey(),
   processedAt: instant('processed_at').notNull().defaultNow(),
