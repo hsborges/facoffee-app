@@ -1,13 +1,60 @@
 import { describe, expect, it } from 'vitest';
+import {
+  type Armazem,
+  type Arquivo,
+  baixarComprovante,
+  baixarNota,
+  guardarComprovante,
+  guardarNota,
+} from '../application/arquivos.js';
+import { TAMANHO_MAXIMO } from '../domain/arquivo.js';
 import { createLogger } from '../infra/logger.js';
 import { type ApiDependencies, createApp } from './app.js';
 
-const app = (deps: Partial<ApiDependencies> = {}) =>
-  createApp({
-    health: async () => ({ database: true, rabbitmq: true }),
+const participante = '7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d';
+const outro = '11111111-1111-4111-8111-111111111111';
+const gestor = { 'x-user-id': '22222222-2222-4222-8222-222222222222', 'x-user-roles': 'gestor' };
+const doParticipante = { 'x-user-id': participante, 'x-user-roles': 'participante' };
+const doOutro = { 'x-user-id': outro, 'x-user-roles': 'participante' };
+
+const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]);
+
+const app = (deps: Partial<ApiDependencies> = {}) => {
+  const arquivos = new Map<string, Arquivo>();
+  const armazem: Armazem = {
+    guardar: async (chave, arquivo) => {
+      arquivos.set(chave, arquivo);
+    },
+    obter: async (chave) => arquivos.get(chave),
+  };
+  let ids = 0;
+  const newId = () => `0000000${++ids}-0000-4000-8000-000000000000`;
+  return createApp({
+    guardarComprovante: guardarComprovante(armazem, newId),
+    guardarNota: guardarNota(armazem, newId),
+    baixarComprovante: baixarComprovante(armazem),
+    baixarNota: baixarNota(armazem),
+    health: async () => ({ database: true, rabbitmq: true, armazenamento: true }),
     logger: createLogger('test', () => {}),
     ...deps,
   });
+};
+
+const formulario = (campos: Record<string, string | Uint8Array>) => {
+  const form = new FormData();
+  for (const [nome, valor] of Object.entries(campos)) {
+    if (typeof valor === 'string') form.append(nome, valor);
+    else form.append(nome, new Blob([valor as BlobPart]), 'arquivo');
+  }
+  return form;
+};
+
+const enviar = (
+  api: ReturnType<typeof app>,
+  path: string,
+  headers: Record<string, string>,
+  body: BodyInit,
+) => api.request(path, { method: 'POST', headers, body });
 
 describe('GET /health', () => {
   it('200 when every dependency is healthy', async () => {
@@ -15,14 +62,113 @@ describe('GET /health', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
       status: 'ok',
-      dependencies: { database: true, rabbitmq: true },
+      dependencies: { database: true, rabbitmq: true, armazenamento: true },
     });
   });
 
   it('503 when a dependency fails', async () => {
     const response = await app({
-      health: async () => ({ database: true, rabbitmq: false }),
+      health: async () => ({ database: true, rabbitmq: true, armazenamento: false }),
     }).request('/health');
     expect(response.status).toBe(503);
+  });
+});
+
+describe('comprovante', () => {
+  const guardado = async () => {
+    const api = app();
+    const response = await enviar(
+      api,
+      '/guardar-comprovante',
+      gestor,
+      formulario({ arquivo: PNG, participanteId: participante }),
+    );
+    expect(response.status).toBe(201);
+    const { id } = (await response.json()) as { id: string };
+    return { api, id };
+  };
+
+  it('is guardado by the gestor and downloaded by its participante, with the real type', async () => {
+    const { api, id } = await guardado();
+    const response = await api.request(`/comprovante/${id}`, { headers: doParticipante });
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toBe('image/png');
+    expect(response.headers.get('x-content-type-options')).toBe('nosniff');
+    expect(new Uint8Array(await response.arrayBuffer())).toEqual(PNG);
+  });
+
+  it('404 for another participante, as if it did not exist', async () => {
+    const { api, id } = await guardado();
+    expect((await api.request(`/comprovante/${id}`, { headers: doOutro })).status).toBe(404);
+    expect((await api.request('/comprovante/abc', { headers: gestor })).status).toBe(404);
+  });
+
+  it('401 without the logged-in person', async () => {
+    const { api, id } = await guardado();
+    expect((await api.request(`/comprovante/${id}`)).status).toBe(401);
+    const form = formulario({ arquivo: PNG, participanteId: participante });
+    expect((await enviar(api, '/guardar-comprovante', {}, form)).status).toBe(401);
+  });
+
+  it('403 when not the gestor', async () => {
+    const form = formulario({ arquivo: PNG, participanteId: participante });
+    const response = await enviar(app(), '/guardar-comprovante', doParticipante, form);
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ error: 'sem-permissao' });
+  });
+
+  it('400 without arquivo or a valid participanteId', async () => {
+    for (const form of [
+      formulario({ participanteId: participante }),
+      formulario({ arquivo: PNG, participanteId: 'abc' }),
+      formulario({ arquivo: PNG }),
+    ]) {
+      const response = await enviar(app(), '/guardar-comprovante', gestor, form);
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ error: 'pedido-invalido' });
+    }
+  });
+});
+
+describe('nota', () => {
+  it('is guardada and downloaded by any participante', async () => {
+    const api = app();
+    const response = await enviar(api, '/guardar-nota', doOutro, formulario({ arquivo: PNG }));
+    expect(response.status).toBe(201);
+    const { id } = (await response.json()) as { id: string };
+    const baixada = await api.request(`/nota/${id}`, { headers: doParticipante });
+    expect(baixada.status).toBe(200);
+    expect(new Uint8Array(await baixada.arrayBuffer())).toEqual(PNG);
+  });
+
+  it('400 for a type not accepted', async () => {
+    const html = new TextEncoder().encode('<html>');
+    const response = await enviar(app(), '/guardar-nota', doOutro, formulario({ arquivo: html }));
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: 'tipo-nao-aceito' });
+  });
+
+  it('413 above 5 MB', async () => {
+    const grande = new Uint8Array(TAMANHO_MAXIMO + 1);
+    grande.set(PNG);
+    const response = await enviar(app(), '/guardar-nota', doOutro, formulario({ arquivo: grande }));
+    expect(response.status).toBe(413);
+    expect(await response.json()).toEqual({ error: 'arquivo-grande-demais' });
+  });
+
+  it('413 for a body far above the limit, before reading it', async () => {
+    const response = await enviar(
+      app(),
+      '/guardar-nota',
+      doOutro,
+      new Uint8Array(TAMANHO_MAXIMO * 2),
+    );
+    expect(response.status).toBe(413);
+  });
+
+  it('404 for a nota that does not exist and 401 without the logged-in person', async () => {
+    const api = app();
+    expect((await api.request(`/nota/${outro}`, { headers: doOutro })).status).toBe(404);
+    expect((await api.request(`/nota/${outro}`)).status).toBe(401);
   });
 });

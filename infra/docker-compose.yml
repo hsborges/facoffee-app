@@ -170,10 +170,16 @@ services:
       SERVICE: finance
       DATABASE_URL: postgres://financeiro:${FINANCEIRO_DB_PASSWORD}@postgres:5432/financeiro
       RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      S3_ENDPOINT: http://seaweedfs:8333
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_BUCKET: financeiro
     depends_on:
       postgres:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      seaweedfs:
         condition: service_healthy
 
   # Dispara os gatilhos de tempo de Participação a cada hora (ADR 0017). Sem servidor HTTP.

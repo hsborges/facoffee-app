@@ -1,6 +1,13 @@
+import { randomUUID } from 'node:crypto';
 import type { AddressInfo } from 'node:net';
 import { serve } from '@hono/node-server';
 import { createApp } from './api/app.js';
+import {
+  baixarComprovante,
+  baixarNota,
+  guardarComprovante,
+  guardarNota,
+} from './application/arquivos.js';
 import {
   type PayloadInvalido,
   type Repository,
@@ -10,6 +17,7 @@ import {
 } from './application/participantes.js';
 import type { Event } from './domain/event.js';
 import type { Result } from './domain/result.js';
+import { connectArmazem } from './infra/armazem-s3.js';
 import type { Config } from './infra/config.js';
 import { type Handler, startConsumer } from './infra/consumer.js';
 import { connectDatabase } from './infra/db/database.js';
@@ -29,11 +37,13 @@ const handler =
   };
 
 /**
- * Composition root: wires domain, application and infrastructure, then starts the HTTP server,
- * the outbox relay and the consumer of *Participante entrou*, *Participante saiu* and *Cota devida*.
+ * Composition root: wires domain, application and infrastructure (including the S3 armazenamento
+ * of comprovantes and notas), then starts the HTTP server, the outbox relay and the consumer of
+ * *Participante entrou*, *Participante saiu* and *Cota devida*.
  * `stop` closes the server first, then the relay, consumer and connections.
  */
 export const startService = async (config: Config, logger: Logger) => {
+  const { armazem, ...armazenamento } = await connectArmazem(config.s3);
   const database = await connectDatabase(config.databaseUrl);
   const connection = connectRabbitmq(config.rabbitmqUrl, logger);
   const publisher = createPublisher(connection);
@@ -51,9 +61,14 @@ export const startService = async (config: Config, logger: Logger) => {
   });
 
   const app = createApp({
+    guardarComprovante: guardarComprovante(armazem, randomUUID),
+    guardarNota: guardarNota(armazem, randomUUID),
+    baixarComprovante: baixarComprovante(armazem),
+    baixarNota: baixarNota(armazem),
     health: async () => ({
       database: await database.isHealthy(),
       rabbitmq: connection.isConnected(),
+      armazenamento: await armazenamento.isHealthy(),
     }),
     logger,
   });
@@ -72,6 +87,7 @@ export const startService = async (config: Config, logger: Logger) => {
       await publisher.close();
       await connection.close();
       await database.close();
+      armazenamento.close();
       logger.info('service stopped');
     },
   };

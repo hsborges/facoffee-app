@@ -1,4 +1,4 @@
-// Needs the local compose: cd infra && docker compose up -d --wait postgres rabbitmq
+// Needs the local compose: cd infra && docker compose up -d --wait postgres rabbitmq seaweedfs
 import { randomUUID } from 'node:crypto';
 import { setTimeout as sleep } from 'node:timers/promises';
 import amqplib from 'amqplib';
@@ -23,6 +23,12 @@ const config = {
   databaseUrl:
     process.env.DATABASE_URL ?? 'postgres://financeiro:financeiro@localhost:5432/financeiro',
   rabbitmqUrl: process.env.RABBITMQ_URL ?? 'amqp://facoffee:facoffee@localhost:5672',
+  s3: {
+    endpoint: process.env.S3_ENDPOINT ?? 'http://localhost:8333',
+    accessKey: process.env.S3_ACCESS_KEY ?? 'facoffee',
+    secretKey: process.env.S3_SECRET_KEY ?? 'facoffee-secret',
+    bucket: 'financeiro',
+  },
 };
 vi.setConfig({ testTimeout: 20_000, hookTimeout: 20_000 });
 
@@ -147,4 +153,32 @@ it('does not undo a saída handled while a Cota devida was in progress', async (
   await Promise.all([cota, saida]);
 
   expect(await repository.buscar(id)).toMatchObject({ ativo: false, cotas: [{ mes: '2026-11' }] });
+});
+
+it('guarda a comprovante in S3 and serves it only to its participante and the gestor', async () => {
+  const participante = randomUUID();
+  const gestor = { 'x-user-id': randomUUID(), 'x-user-roles': 'gestor' };
+  const pdf = new TextEncoder().encode('%PDF-1.7 comprovante');
+  const form = new FormData();
+  form.append('participanteId', participante);
+  form.append('arquivo', new Blob([pdf]), 'comprovante.pdf');
+  const url = `http://localhost:${running.port}`;
+
+  const guardado = await fetch(`${url}/guardar-comprovante`, {
+    method: 'POST',
+    headers: gestor,
+    body: form,
+  });
+  expect(guardado.status).toBe(201);
+  const { id } = (await guardado.json()) as { id: string };
+
+  const baixar = (headers: Record<string, string>) =>
+    fetch(`${url}/comprovante/${id}`, { headers });
+  const doParticipante = await baixar({ 'x-user-id': participante });
+  expect(doParticipante.status).toBe(200);
+  expect(doParticipante.headers.get('content-type')).toBe('application/pdf');
+  expect(new Uint8Array(await doParticipante.arrayBuffer())).toEqual(pdf);
+  expect((await baixar(gestor)).status).toBe(200);
+  expect((await baixar({ 'x-user-id': randomUUID() })).status).toBe(404);
+  expect((await fetch(`${url}/nota/${id}`, { headers: gestor })).status).toBe(404);
 });
