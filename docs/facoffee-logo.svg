@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 150" width="100%" height="100%">
+  <defs>
+    <!-- Importação de fonte geométrica similar (Montserrat Black) -->
+    <style>
+      
+      .logo-text {
+        font-family: 'Montserrat', 'Arial Black', sans-serif;
+        font-weight: 900;
+        font-size: 40px;
+        letter-spacing: 1.5px;
+      }
+    </style>
+    
+    <!-- Máscara para criar o corte em 'S' vazado no grão de café -->
+    <mask id="bean-cut">
+      <rect width="300" height="150" fill="white" />
+      <path d="M 132 76 C 148 76, 152 60, 153 47 C 154 34, 160 22, 174 22" fill="none" stroke="black" stroke-width="5.5" stroke-linecap="round" />
+    </mask>
+  </defs>
+
+  <!-- Ícone: Grão de Café -->
+  <g mask="url(#bean-cut)">
+    <ellipse cx="153" cy="49" rx="22" ry="32" transform="rotate(32 153 49)" fill="#413C31" />
+  </g>
+
+  <!-- Tipografia: FACOFFEE -->
+  <text x="150" y="128" text-anchor="middle" class="logo-text">
+    <tspan fill="#413C31">FA</tspan><tspan fill="#D5B290">COFFEE</tspan>
+  </text>
+</svg>
