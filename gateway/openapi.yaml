@@ -18,6 +18,8 @@ tags:
     description: Usuários
   - name: participacao
     description: Participação
+  - name: financeiro
+    description: Financeiro
 paths:
   /api/usuario:
     get:
@@ -297,6 +299,113 @@ paths:
                 error: valor-ja-definido
         '500':
           $ref: '#/components/responses/ErroInterno'
+  /api/financeiro/guardar-comprovante:
+    post:
+      tags: [financeiro]
+      operationId: guardarComprovante
+      summary: Guardar comprovante
+      description: |
+        Guarda o comprovante de um pagamento por PIX de um participante. Só o gestor guarda, já
+        que só ele recebe pagamentos. Devolve o identificador do comprovante, usado ao receber o
+        pagamento.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [arquivo, participanteId]
+              properties:
+                arquivo:
+                  $ref: '#/components/schemas/ArquivoEnviado'
+                participanteId:
+                  type: string
+                  format: uuid
+                  description: Participante que fez o pagamento; só ele e o gestor veem o comprovante.
+      responses:
+        '201':
+          $ref: '#/components/responses/ArquivoGuardado'
+        '400':
+          $ref: '#/components/responses/ArquivoRecusado'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/SomenteGestor'
+        '413':
+          $ref: '#/components/responses/ArquivoGrandeDemais'
+        '500':
+          $ref: '#/components/responses/ErroInterno'
+  /api/financeiro/guardar-nota:
+    post:
+      tags: [financeiro]
+      operationId: guardarNota
+      summary: Guardar nota
+      description: |
+        Guarda a nota fiscal ou o recibo de um gasto. Qualquer participante guarda. Devolve o
+        identificador da nota, usado ao registrar o gasto.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [arquivo]
+              properties:
+                arquivo:
+                  $ref: '#/components/schemas/ArquivoEnviado'
+      responses:
+        '201':
+          $ref: '#/components/responses/ArquivoGuardado'
+        '400':
+          $ref: '#/components/responses/ArquivoRecusado'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/AcessoDesativado'
+        '413':
+          $ref: '#/components/responses/ArquivoGrandeDemais'
+        '500':
+          $ref: '#/components/responses/ErroInterno'
+  /api/financeiro/comprovante/{id}:
+    get:
+      tags: [financeiro]
+      operationId: baixarComprovante
+      summary: Baixar comprovante
+      description: |
+        O arquivo do comprovante. Só o participante que fez o pagamento e o gestor veem o
+        comprovante; para os demais, ele não existe (404).
+      parameters:
+        - $ref: '#/components/parameters/IdDoArquivo'
+      responses:
+        '200':
+          $ref: '#/components/responses/Arquivo'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/AcessoDesativado'
+        '404':
+          $ref: '#/components/responses/ArquivoNaoEncontrado'
+        '500':
+          $ref: '#/components/responses/ErroInterno'
+  /api/financeiro/nota/{id}:
+    get:
+      tags: [financeiro]
+      operationId: baixarNota
+      summary: Baixar nota
+      description: O arquivo da nota de um gasto. Qualquer participante vê as notas.
+      parameters:
+        - $ref: '#/components/parameters/IdDoArquivo'
+      responses:
+        '200':
+          $ref: '#/components/responses/Arquivo'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/AcessoDesativado'
+        '404':
+          $ref: '#/components/responses/ArquivoNaoEncontrado'
+        '500':
+          $ref: '#/components/responses/ErroInterno'
 components:
   securitySchemes:
     login:
@@ -313,6 +422,15 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: Access token obtido ao entrar no FACOFFEE.
+  parameters:
+    IdDoArquivo:
+      name: id
+      in: path
+      required: true
+      description: Identificador do arquivo.
+      schema:
+        type: string
+        format: uuid
   responses:
     NaoAutorizado:
       description: Token ausente, inválido ou expirado.
@@ -358,7 +476,71 @@ components:
             error: nao-participando
     ErroInterno:
       description: Erro interno.
+    ArquivoGuardado:
+      description: Arquivo guardado.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [id]
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: Identificador do arquivo.
+    ArquivoRecusado:
+      description: Pedido sem arquivo ou com campos inválidos, arquivo vazio ou de tipo não aceito.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          examples:
+            pedidoInvalido:
+              value:
+                error: pedido-invalido
+            arquivoVazio:
+              value:
+                error: arquivo-vazio
+            tipoNaoAceito:
+              value:
+                error: tipo-nao-aceito
+    ArquivoGrandeDemais:
+      description: Arquivo com mais de 5 MB.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          example:
+            error: arquivo-grande-demais
+    Arquivo:
+      description: O arquivo, com o tipo reconhecido no envio.
+      content:
+        application/pdf:
+          schema:
+            type: string
+            format: binary
+        image/jpeg:
+          schema:
+            type: string
+            format: binary
+        image/png:
+          schema:
+            type: string
+            format: binary
+    ArquivoNaoEncontrado:
+      description: Arquivo inexistente ou que o usuário não pode ver.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          example:
+            error: not-found
   schemas:
+    ArquivoEnviado:
+      type: string
+      format: binary
+      description: |
+        PDF, JPEG ou PNG, com até 5 MB. O tipo é reconhecido pelo conteúdo, não pela extensão.
     Erro:
       type: object
       required: [error]
