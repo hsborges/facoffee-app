@@ -1,6 +1,6 @@
 # 0007. API Gateway
 
-- Status: Proposto
+- Status: Aceito
 - Data: 2026-10-25
 
 ## Contexto

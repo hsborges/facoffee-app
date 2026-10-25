@@ -10,4 +10,4 @@ Registros de decisões de arquitetura. Um arquivo por decisão: `NNNN-titulo.md`
 | [0004](0004-contratos-dos-eventos-de-dominio.md) | Contratos dos eventos de domínio | Substituído por 0006 |
 | [0005](0005-template-de-servico.md) | Template de serviço | Aceito |
 | [0006](0006-contratos-dos-eventos-em-ingles.md) | Contratos dos eventos em inglês | Aceito |
-| [0007](0007-api-gateway.md) | API Gateway | Proposto |
+| [0007](0007-api-gateway.md) | API Gateway | Aceito |
