@@ -2,6 +2,7 @@
 import { randomUUID } from 'node:crypto';
 import { setTimeout as sleep } from 'node:timers/promises';
 import amqplib from 'amqplib';
+import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, expect, it, vi } from 'vitest';
 import {
   type Repository,
@@ -12,6 +13,7 @@ import type { Event } from './domain/event.js';
 import { queues } from './infra/consumer.js';
 import { connectDatabase } from './infra/db/database.js';
 import { participanteRepository } from './infra/db/participante-repository.js';
+import { gastos } from './infra/db/schema.js';
 import { createLogger } from './infra/logger.js';
 import { EXCHANGE } from './infra/rabbitmq.js';
 import { startService } from './service.js';
@@ -310,4 +312,55 @@ it('turns a pagamento adiantado into crédito, abatido by the next cotas, across
   expect(
     (await fetch(`${url}/participante`, { headers: { 'x-user-id': participante } })).status,
   ).toBe(403);
+});
+
+it('registers a gasto do próprio bolso with its own nota, once per nota, by a known participante', async () => {
+  const participante = randomUUID();
+  publicar(entrou(participante));
+  expect(await eventually(async () => (await repository.buscar(participante)) !== undefined)).toBe(
+    true,
+  );
+
+  const url = `http://localhost:${running.port}`;
+  const guardarNota = async (quem: string) => {
+    const form = new FormData();
+    form.append('arquivo', new Blob([new TextEncoder().encode('%PDF-1.7 nota')]), 'nota.pdf');
+    const nota = await fetch(`${url}/guardar-nota`, {
+      method: 'POST',
+      headers: { 'x-user-id': quem },
+      body: form,
+    });
+    return ((await nota.json()) as { id: string }).id;
+  };
+  const notaId = await guardarNota(participante);
+
+  const registrar = (quem: string, nota = notaId) =>
+    fetch(`${url}/registrar-gasto`, {
+      method: 'POST',
+      headers: { 'x-user-id': quem, 'content-type': 'application/json' },
+      body: JSON.stringify({ valorEmCentavos: 4590, origem: 'proprio-bolso', notaId: nota }),
+    });
+  const outro = randomUUID();
+  const comNotaAlheia = await registrar(outro);
+  expect(comNotaAlheia.status).toBe(404);
+  expect(await comNotaAlheia.json()).toEqual({ error: 'nota-nao-encontrada' });
+  const desconhecido = await registrar(outro, await guardarNota(outro));
+  expect(desconhecido.status).toBe(404);
+  expect(await desconhecido.json()).toEqual({ error: 'participante-nao-encontrado' });
+
+  const registrado = await registrar(participante);
+  expect(registrado.status).toBe(201);
+  const { id } = (await registrado.json()) as { id: string };
+  expect((await registrar(participante)).status).toBe(409);
+
+  expect(await database.db.select().from(gastos).where(eq(gastos.notaId, notaId))).toEqual([
+    {
+      id,
+      participanteId: participante,
+      valorEmCentavos: 4590,
+      origem: 'proprio-bolso',
+      notaId,
+      feitoEm: expect.any(Date),
+    },
+  ]);
 });

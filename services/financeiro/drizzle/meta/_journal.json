@@ -15,6 +15,13 @@
       "when": 1792951057119,
       "tag": "0001_pagamentos",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792953159420,
+      "tag": "0002_gastos",
+      "breakpoints": true
     }
   ]
 }

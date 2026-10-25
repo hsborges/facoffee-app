@@ -8,8 +8,10 @@ import {
   comprovanteDoParticipante,
   guardarComprovante,
   guardarNota,
+  notaDoParticipante,
 } from './application/arquivos.js';
 import { consultarCreditoEPendente, listarCreditoEPendentes } from './application/credito.js';
+import { registrarGasto } from './application/gastos.js';
 import { receberPagamento } from './application/pagamentos.js';
 import {
   type PayloadInvalido,
@@ -25,6 +27,7 @@ import type { Config } from './infra/config.js';
 import { type Handler, startConsumer } from './infra/consumer.js';
 import { buscarTotais } from './infra/db/credito-repository.js';
 import { connectDatabase } from './infra/db/database.js';
+import { gastoRepository } from './infra/db/gasto-repository.js';
 import { pagamentoRepository } from './infra/db/pagamento-repository.js';
 import { participanteRepository } from './infra/db/participante-repository.js';
 import type { Logger } from './infra/logger.js';
@@ -75,6 +78,10 @@ export const startService = async (config: Config, logger: Logger) => {
       comprovanteDoParticipante(armazem),
       { now: () => new Date(), newId: randomUUID },
     ),
+    registrarGasto: registrarGasto(gastoRepository(database.db), notaDoParticipante(armazem), {
+      now: () => new Date(),
+      newId: randomUUID,
+    }),
     listarCreditoEPendentes: listarCreditoEPendentes(buscarTotais(database.db)),
     consultarCreditoEPendente: consultarCreditoEPendente(buscarTotais(database.db)),
     health: async () => ({

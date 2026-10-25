@@ -57,12 +57,15 @@ export const guardarComprovante =
     return guardado.ok ? ok(id) : guardado;
   };
 
-/** Any participante guarda the nota of a gasto; gives its id. */
+/** Any participante guarda the nota of a gasto they paid; gives its id. */
 export const guardarNota =
   (armazem: Armazem, newId: () => string) =>
-  async (conteudo: Uint8Array): Promise<Result<string, ArquivoInvalido>> => {
+  async (
+    solicitante: Pick<Solicitante, 'id'>,
+    conteudo: Uint8Array,
+  ): Promise<Result<string, ArquivoInvalido>> => {
     const id = newId();
-    const guardado = await guardar(armazem, `nota/${id}`, conteudo);
+    const guardado = await guardar(armazem, `nota/${id}`, conteudo, solicitante.id);
     return guardado.ok ? ok(id) : guardado;
   };
 
@@ -81,6 +84,12 @@ export const comprovanteDoParticipante =
   (armazem: Armazem) =>
   async (participanteId: string, id: string): Promise<boolean> =>
     (await armazem.obter(`comprovante/${id}`))?.participanteId === participanteId;
+
+/** Whether the nota was guardada by the participante. */
+export const notaDoParticipante =
+  (armazem: Armazem) =>
+  async (participanteId: string, id: string): Promise<boolean> =>
+    (await armazem.obter(`nota/${id}`))?.participanteId === participanteId;
 
 /** The nota of a gasto; every participante sees the notas of the caixinha. */
 export const baixarNota =

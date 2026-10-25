@@ -1,9 +1,11 @@
 import { type Context, Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import type { Arquivo, GuardarComprovanteErro, NaoEncontrado } from '../application/arquivos.js';
+import type { RegistrarGastoErro } from '../application/gastos.js';
 import type { ReceberPagamentoErro } from '../application/pagamentos.js';
 import { type ArquivoInvalido, type Solicitante, TAMANHO_MAXIMO } from '../domain/arquivo.js';
 import type { Situacao } from '../domain/credito.js';
+import { ORIGENS, type Origem, type PedidoDeGasto } from '../domain/gasto.js';
 import { FORMAS, type Forma, type PedidoDePagamento } from '../domain/pagamento.js';
 import type { Result } from '../domain/result.js';
 import type { Logger } from '../infra/logger.js';
@@ -15,7 +17,10 @@ export type ApiDependencies = {
     participanteId: string,
     conteudo: Uint8Array,
   ) => Promise<Result<string, GuardarComprovanteErro>>;
-  readonly guardarNota: (conteudo: Uint8Array) => Promise<Result<string, ArquivoInvalido>>;
+  readonly guardarNota: (
+    solicitante: Pick<Solicitante, 'id'>,
+    conteudo: Uint8Array,
+  ) => Promise<Result<string, ArquivoInvalido>>;
   readonly baixarComprovante: (
     solicitante: Solicitante,
     id: string,
@@ -25,6 +30,10 @@ export type ApiDependencies = {
     solicitante: Pick<Solicitante, 'perfis'>,
     pedido: PedidoDePagamento,
   ) => Promise<Result<string, ReceberPagamentoErro>>;
+  readonly registrarGasto: (
+    solicitante: Pick<Solicitante, 'id'>,
+    pedido: PedidoDeGasto,
+  ) => Promise<Result<string, RegistrarGastoErro>>;
   readonly listarCreditoEPendentes: (
     solicitante: Pick<Solicitante, 'perfis'>,
   ) => Promise<Result<readonly Situacao[], 'sem-permissao'>>;
@@ -54,6 +63,8 @@ const STATUS_DO_ERRO = {
   'comprovante-nao-encontrado': 404,
   'participante-nao-encontrado': 404,
   'comprovante-ja-usado': 409,
+  'nota-nao-encontrada': 404,
+  'nota-ja-usada': 409,
 } as const;
 
 // Bounded by the postgres integer column.
@@ -79,13 +90,26 @@ const pedidoDePagamento = async (c: Context): Promise<PedidoDePagamento | undefi
     : undefined;
 };
 
+const pedidoDeGasto = async (c: Context): Promise<PedidoDeGasto | undefined> => {
+  const corpo = (await c.req.json().catch(() => undefined)) as Record<string, unknown> | undefined;
+  const { valorEmCentavos, origem, notaId } = corpo ?? {};
+  const valido =
+    inteiroPositivo(valorEmCentavos) &&
+    ORIGENS.includes(origem as Origem) &&
+    typeof notaId === 'string' &&
+    UUID.test(notaId);
+  return valido
+    ? { valorEmCentavos, origem: origem as Origem, notaId: notaId.toLowerCase() }
+    : undefined;
+};
+
 // Room for the multipart boundaries and fields; the arquivo itself is checked in the domain.
 const limite = bodyLimit({
   maxSize: TAMANHO_MAXIMO + 64 * 1024,
   onError: (c) => c.json({ error: 'arquivo-grande-demais' }, 413),
 });
 
-// A pedido de pagamento is a few fields; anything bigger is refused before being read.
+// A pedido de pagamento or de gasto is a few fields; anything bigger is refused before being read.
 const limiteDoPedido = bodyLimit({
   maxSize: 4 * 1024,
   onError: (c) => c.json({ error: 'pedido-invalido' }, 400),
@@ -118,7 +142,8 @@ const baixado = (c: Context, result: Result<Arquivo, NaoEncontrado>) =>
  * `POST /guardar-comprovante` and any participante guarda notas with `POST /guardar-nota`
  * (multipart, up to 5 MB, PDF, JPEG or PNG); `GET /comprovante/:id` serves only the participante
  * and the gestor, and `GET /nota/:id` any participante. The gestor receives pagamentos with
- * `POST /receber-pagamento` (JSON; a pagamento por PIX references its comprovante).
+ * `POST /receber-pagamento` (JSON; a pagamento por PIX references its comprovante). Any
+ * participante registers a gasto with `POST /registrar-gasto` (JSON, referencing a nota they guardaram).
  * Leitura *Crédito e pendentes*: `GET /participante` lists every participante, only for the
  * gestor; `GET /participante/eu` gives the logged-in participante their own.
  * Without `X-User-Id`, 401.
@@ -130,6 +155,7 @@ export const createApp = ({
   baixarComprovante,
   baixarNota,
   receberPagamento,
+  registrarGasto,
   listarCreditoEPendentes,
   consultarCreditoEPendente,
   health,
@@ -166,10 +192,11 @@ export const createApp = ({
       return criado(c, await guardarComprovante(quem, participanteId.toLowerCase(), conteudo));
     })
     .post('/guardar-nota', limite, async (c) => {
-      if (!solicitante(c)) return c.json({ error: 'unauthorized' }, 401);
+      const quem = solicitante(c);
+      if (!quem) return c.json({ error: 'unauthorized' }, 401);
       const { conteudo } = await formulario(c);
       if (!conteudo) return c.json({ error: 'pedido-invalido' }, 400);
-      return criado(c, await guardarNota(conteudo));
+      return criado(c, await guardarNota(quem, conteudo));
     })
     .get('/comprovante/:id', async (c) => {
       const quem = solicitante(c);
@@ -190,6 +217,13 @@ export const createApp = ({
       const pedido = await pedidoDePagamento(c);
       if (!pedido) return c.json({ error: 'pedido-invalido' }, 400);
       return criado(c, await receberPagamento(quem, pedido));
+    })
+    .post('/registrar-gasto', limiteDoPedido, async (c) => {
+      const quem = solicitante(c);
+      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      const pedido = await pedidoDeGasto(c);
+      if (!pedido) return c.json({ error: 'pedido-invalido' }, 400);
+      return criado(c, await registrarGasto(quem, pedido));
     })
     .get('/participante', async (c) => {
       const quem = solicitante(c);

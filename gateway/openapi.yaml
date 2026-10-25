@@ -342,7 +342,7 @@ paths:
       summary: Guardar nota
       description: |
         Guarda a nota fiscal ou o recibo de um gasto. Qualquer participante guarda. Devolve o
-        identificador da nota, usado ao registrar o gasto.
+        identificador da nota, usado por quem a guardou ao registrar o gasto.
       requestBody:
         required: true
         content:
@@ -458,6 +458,84 @@ paths:
                 $ref: '#/components/schemas/Erro'
               example:
                 error: comprovante-ja-usado
+        '500':
+          $ref: '#/components/responses/ErroInterno'
+  /api/financeiro/registrar-gasto:
+    post:
+      tags: [financeiro]
+      operationId: registrarGasto
+      summary: Registrar gasto
+      description: |
+        Registra uma compra, um conserto, uma manutenção ou uma reposição que a pessoa logada
+        pagou, com dinheiro da caixinha ou do próprio bolso. Qualquer participante registra gastos.
+        Basta o valor total e a nota, guardada antes em `guardar-nota` pela própria pessoa logada;
+        cada nota vale para um gasto só. O gasto pago do próprio bolso só sai da caixinha no reembolso.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [valorEmCentavos, origem, notaId]
+              properties:
+                valorEmCentavos:
+                  type: integer
+                  minimum: 1
+                  maximum: 2147483647
+                  description: Valor total do gasto em centavos de real.
+                  example: 4590
+                origem:
+                  type: string
+                  enum: [caixinha, proprio-bolso]
+                  description: De onde saiu o dinheiro.
+                notaId:
+                  type: string
+                  format: uuid
+                  description: Nota do gasto.
+      responses:
+        '201':
+          description: Gasto registrado.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id]
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    description: Identificador do gasto.
+        '400':
+          description: Pedido inválido ou acima de 4 KB.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              example:
+                error: pedido-invalido
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '404':
+          description: Nota não guardada pela pessoa logada, ou ela não é um participante conhecido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              examples:
+                notaNaoEncontrada:
+                  value:
+                    error: nota-nao-encontrada
+                participanteNaoEncontrado:
+                  value:
+                    error: participante-nao-encontrado
+        '409':
+          description: A nota já foi usada em outro gasto.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              example:
+                error: nota-ja-usada
         '500':
           $ref: '#/components/responses/ErroInterno'
   /api/financeiro/participante:
