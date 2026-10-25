@@ -14,43 +14,155 @@ const app = (deps: Partial<ApiDependencies> = {}) =>
       pedidos.push({ id, tipoDeCota });
       return id === participando ? fail('ja-participando') : ok(undefined);
     },
+    trocarTipo: async (id, tipoDeCota) => {
+      pedidos.push({ id, tipoDeCota });
+      return id === participando ? ok(undefined) : fail('nao-participando');
+    },
+    pedirSaida: async (id) => {
+      pedidos.push({ id });
+      return id === participando ? ok(undefined) : fail('nao-participando');
+    },
+    definirValor: async (solicitante, valor) => {
+      pedidos.push({ solicitante, valor });
+      if (!solicitante.perfis.includes('gestor')) return fail('sem-permissao');
+      if (valor.ano < 2026) return fail('ano-passado');
+      return valor.valorEmCentavos === 9999 ? fail('valor-ja-definido') : ok(undefined);
+    },
     health: async () => ({ database: true, rabbitmq: true }),
     logger: createLogger('test', () => {}),
     ...deps,
   });
 
-describe('POST /entrada', () => {
-  const post = (headers: Record<string, string>, body: unknown) =>
-    app().request('/entrada', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', ...headers },
-      body: typeof body === 'string' ? body : JSON.stringify(body),
-    });
+const post = (path: string, headers: Record<string, string>, body?: unknown) =>
+  app().request(path, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', ...headers },
+    body: typeof body === 'string' ? body : JSON.stringify(body),
+  });
 
+describe('POST /entrada', () => {
   it('204 and enters the logged-in person with the chosen tipo de cota', async () => {
     pedidos.length = 0;
-    expect((await post({ 'x-user-id': novo }, { tipoDeCota: 'so-cafe' })).status).toBe(204);
+    expect((await post('/entrada', { 'x-user-id': novo }, { tipoDeCota: 'so-cafe' })).status).toBe(
+      204,
+    );
     expect(pedidos).toEqual([{ id: novo, tipoDeCota: 'so-cafe' }]);
   });
 
   it('409 when already participando', async () => {
-    const response = await post({ 'x-user-id': participando }, { tipoDeCota: 'completa' });
+    const response = await post(
+      '/entrada',
+      { 'x-user-id': participando },
+      { tipoDeCota: 'completa' },
+    );
     expect(response.status).toBe(409);
     expect(await response.json()).toEqual({ error: 'ja-participando' });
   });
 
   it('400 for a missing or unknown tipo de cota, or a body that is not json', async () => {
     for (const body of [{}, { tipoDeCota: 'cha' }, 'nope']) {
-      const response = await post({ 'x-user-id': novo }, body);
+      const response = await post('/entrada', { 'x-user-id': novo }, body);
       expect(response.status).toBe(400);
       expect(await response.json()).toEqual({ error: 'tipo-de-cota-invalido' });
     }
   });
+});
 
-  it('401 without the gateway identity or with an id that is not a uuid', async () => {
-    expect((await post({}, { tipoDeCota: 'completa' })).status).toBe(401);
-    expect((await post({ 'x-user-id': 'user-1' }, { tipoDeCota: 'completa' })).status).toBe(401);
+describe('POST /troca-cota', () => {
+  it('204 and trocas the tipo de cota of the logged-in person', async () => {
+    pedidos.length = 0;
+    const response = await post(
+      '/troca-cota',
+      { 'x-user-id': participando },
+      { tipoDeCota: 'completa' },
+    );
+    expect(response.status).toBe(204);
+    expect(pedidos).toEqual([{ id: participando, tipoDeCota: 'completa' }]);
   });
+
+  it('409 when not participando and 400 for an unknown tipo de cota', async () => {
+    const naoParticipa = await post(
+      '/troca-cota',
+      { 'x-user-id': novo },
+      { tipoDeCota: 'completa' },
+    );
+    expect(naoParticipa.status).toBe(409);
+    expect(await naoParticipa.json()).toEqual({ error: 'nao-participando' });
+    const invalido = await post('/troca-cota', { 'x-user-id': novo }, { tipoDeCota: 1 });
+    expect(invalido.status).toBe(400);
+  });
+});
+
+describe('POST /saida', () => {
+  it('204 when the logged-in person leaves, 409 when not participando', async () => {
+    expect((await post('/saida', { 'x-user-id': participando })).status).toBe(204);
+    const response = await post('/saida', { 'x-user-id': novo });
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: 'nao-participando' });
+  });
+});
+
+describe('POST /valor-da-cota', () => {
+  const valor = { tipoDeCota: 'completa', ano: 2027, valorEmCentavos: 3000 };
+  const gestor = { 'x-user-id': novo, 'x-user-roles': 'default-roles-facoffee,gestor' };
+
+  it('204 and passes the roles of the logged-in person along with the valor', async () => {
+    pedidos.length = 0;
+    expect((await post('/valor-da-cota', gestor, valor)).status).toBe(204);
+    expect(pedidos).toEqual([
+      { solicitante: { perfis: ['default-roles-facoffee', 'gestor'] }, valor },
+    ]);
+  });
+
+  it.each([
+    [
+      '403 for a participante who is not the gestor',
+      { 'x-user-id': novo },
+      valor,
+      403,
+      'sem-permissao',
+    ],
+    [
+      '409 when already defined',
+      gestor,
+      { ...valor, valorEmCentavos: 9999 },
+      409,
+      'valor-ja-definido',
+    ],
+    ['400 for a past year', gestor, { ...valor, ano: 2025 }, 400, 'ano-passado'],
+  ])('%s', async (_case, headers, body, status, error) => {
+    const response = await post('/valor-da-cota', headers, body);
+    expect(response.status).toBe(status);
+    expect(await response.json()).toEqual({ error });
+  });
+
+  it('400 for an unknown tipo de cota or a valor or year that is not a positive integer', async () => {
+    for (const body of [
+      { ...valor, tipoDeCota: 'cha' },
+      { ...valor, valorEmCentavos: 0 },
+      { ...valor, valorEmCentavos: 25.5 },
+      { ...valor, valorEmCentavos: '2500' },
+      { ...valor, valorEmCentavos: 2 ** 31 },
+      { ...valor, ano: undefined },
+      'nope',
+    ]) {
+      const response = await post('/valor-da-cota', gestor, body);
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ error: 'pedido-invalido' });
+    }
+  });
+});
+
+describe('identity', () => {
+  it.each(['/entrada', '/troca-cota', '/saida', '/valor-da-cota'])(
+    '401 on %s without the gateway identity or with an id that is not a uuid',
+    async (path) => {
+      expect((await post(path, {}, { tipoDeCota: 'completa' })).status).toBe(401);
+      expect((await post(path, { 'x-user-id': 'user-1' }, { tipoDeCota: 'completa' })).status).toBe(
+        401,
+      );
+    },
+  );
 });
 
 describe('GET /health', () => {

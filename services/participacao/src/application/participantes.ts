@@ -2,8 +2,11 @@ import type { Event } from '../domain/event.js';
 import {
   type EntrarErro,
   entrar,
+  type NaoParticipando,
   type Participante,
+  sair,
   type TipoDeCota,
+  trocarTipoDeCota,
 } from '../domain/participante.js';
 import { fail, ok, type Result } from '../domain/result.js';
 
@@ -18,6 +21,13 @@ export type Repository = {
     participante: Participante,
     events: readonly Event[],
   ) => Promise<boolean>;
+  /** Persists a troca de tipo de cota, unless the person left meanwhile; resolves `false` then. */
+  readonly salvarTroca: (participante: Participante) => Promise<boolean>;
+  /**
+   * Persists the saída and its events (outbox) in the same transaction, unless the person already
+   * left; resolves `false` then, without saving anything.
+   */
+  readonly salvarSaida: (participante: Participante, events: readonly Event[]) => Promise<boolean>;
 };
 
 /** Source of time and ids, kept out of the domain so tests are deterministic. */
@@ -35,4 +45,42 @@ export const pedirEntrada =
     if (!result.ok) return result;
     const salvo = await repository.salvarEntrada(result.value.participante, [result.value.evento]);
     return salvo ? ok(undefined) : fail('ja-participando');
+  };
+
+/** Use case: *Trocar tipo de cota*, from the next month on; publishes nothing. */
+export const trocarTipo =
+  (repository: Repository, clock: Clock) =>
+  async (id: string, tipoDeCota: TipoDeCota): Promise<Result<void, NaoParticipando>> => {
+    const result = trocarTipoDeCota(await repository.buscar(id), tipoDeCota, clock.now());
+    if (!result.ok) return result;
+    return (await repository.salvarTroca(result.value)) ? ok(undefined) : fail('nao-participando');
+  };
+
+/** Use case: *Pedir saída*; stores *Participante saiu* in the outbox. */
+export const pedirSaida =
+  (repository: Repository, clock: Clock) =>
+  async (id: string): Promise<Result<void, NaoParticipando>> => {
+    const result = sair(await repository.buscar(id), {
+      eventId: clock.newId(),
+      agora: clock.now(),
+    });
+    if (!result.ok) return result;
+    const salvo = await repository.salvarSaida(result.value.participante, [result.value.evento]);
+    return salvo ? ok(undefined) : fail('nao-participando');
+  };
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Handler for *Usuário desativado* (`user.user-deactivated.v1`): translates it into a saída, so
+ * *Participante saiu* is stored in the outbox. Whoever is not participando is ignored.
+ * The payload comes from the broker, so it is validated here.
+ */
+export const encerrarAoDesativarAcesso =
+  (repository: Repository, clock: Clock) =>
+  async (event: Event): Promise<Result<void, 'payload-invalido'>> => {
+    const id = (event.payload as { userId?: unknown }).userId;
+    if (typeof id !== 'string' || !UUID.test(id)) return fail('payload-invalido');
+    await pedirSaida(repository, clock)(id);
+    return ok(undefined);
   };
