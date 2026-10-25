@@ -1,6 +1,6 @@
 # API Gateway
 
-Ponto de entrada HTTPS (rede pública). Roteia via REST para Usuário, Participação e Financeiro e valida o token OIDC. Decisão em [ADR 0007](../docs/adr/0007-api-gateway.md).
+Ponto de entrada HTTPS e, no ambiente local, HTTP (rede pública, [ADR 0022](../docs/adr/0022-http-no-ambiente-local.md)). Roteia via REST para Usuário, Participação e Financeiro e valida o token OIDC. Decisão em [ADR 0007](../docs/adr/0007-api-gateway.md).
 
 | Rota pública | Encaminha para |
 |---|---|
