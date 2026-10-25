@@ -195,11 +195,15 @@ export const createApp = ({
       const quem = solicitante(c);
       if (!quem) return c.json({ error: 'unauthorized' }, 401);
       const result = await listarCreditoEPendentes(quem);
-      return result.ok ? c.json(result.value) : c.json({ error: result.error }, 403);
+      return result.ok
+        ? c.json(result.value)
+        : c.json({ error: result.error }, STATUS_DO_ERRO[result.error]);
     })
     .get('/participante/eu', async (c) => {
       const quem = solicitante(c);
       if (!quem) return c.json({ error: 'unauthorized' }, 401);
       const result = await consultarCreditoEPendente(quem);
-      return result.ok ? c.json(result.value) : c.json({ error: result.error }, 404);
+      return result.ok
+        ? c.json(result.value)
+        : c.json({ error: result.error }, STATUS_DO_ERRO[result.error]);
     });
