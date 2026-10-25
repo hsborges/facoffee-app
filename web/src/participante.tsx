@@ -1,4 +1,4 @@
-import { type FormEvent, useCallback, useEffect, useState } from 'react';
+import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import {
   type Caixinha as CaixinhaLida,
   comandar,
@@ -12,7 +12,13 @@ import { dataEmCampoGrande, emReais, mesPorExtenso, NOME_DO_TIPO_DE_COTA } from 
 
 const useLeitura = <T,>(token: string, caminho: string) => {
   const [leitura, setLeitura] = useState<Leitura<T>>();
-  const carregar = useCallback(() => ler<T>(token, caminho).then(setLeitura), [token, caminho]);
+  const ultima = useRef(0);
+  // Only the latest request sets the leitura: an older answer arriving late would show stale data.
+  const carregar = useCallback(async () => {
+    const minha = ++ultima.current;
+    const lida = await ler<T>(token, caminho);
+    if (minha === ultima.current) setLeitura(lida);
+  }, [token, caminho]);
   useEffect(() => {
     carregar();
   }, [carregar]);
