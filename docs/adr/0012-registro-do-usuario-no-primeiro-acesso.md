@@ -1,6 +1,6 @@
 # 0012. Registro do usuário no primeiro acesso
 
-- Status: Proposto
+- Status: Aceito
 - Data: 2026-10-25
 
 ## Contexto
