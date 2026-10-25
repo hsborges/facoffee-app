@@ -40,10 +40,10 @@ const post = (path: string, headers: Record<string, string>, body?: unknown) =>
     body: typeof body === 'string' ? body : JSON.stringify(body),
   });
 
-describe('POST /entrada', () => {
+describe('POST /entrar', () => {
   it('204 and enters the logged-in person with the chosen tipo de cota', async () => {
     pedidos.length = 0;
-    expect((await post('/entrada', { 'x-user-id': novo }, { tipoDeCota: 'so-cafe' })).status).toBe(
+    expect((await post('/entrar', { 'x-user-id': novo }, { tipoDeCota: 'so-cafe' })).status).toBe(
       204,
     );
     expect(pedidos).toEqual([{ id: novo, tipoDeCota: 'so-cafe' }]);
@@ -51,7 +51,7 @@ describe('POST /entrada', () => {
 
   it('409 when already participando', async () => {
     const response = await post(
-      '/entrada',
+      '/entrar',
       { 'x-user-id': participando },
       { tipoDeCota: 'completa' },
     );
@@ -61,18 +61,18 @@ describe('POST /entrada', () => {
 
   it('400 for a missing or unknown tipo de cota, or a body that is not json', async () => {
     for (const body of [{}, { tipoDeCota: 'cha' }, 'nope']) {
-      const response = await post('/entrada', { 'x-user-id': novo }, body);
+      const response = await post('/entrar', { 'x-user-id': novo }, body);
       expect(response.status).toBe(400);
       expect(await response.json()).toEqual({ error: 'tipo-de-cota-invalido' });
     }
   });
 });
 
-describe('POST /troca-cota', () => {
+describe('POST /trocar-tipo-de-cota', () => {
   it('204 and trocas the tipo de cota of the logged-in person', async () => {
     pedidos.length = 0;
     const response = await post(
-      '/troca-cota',
+      '/trocar-tipo-de-cota',
       { 'x-user-id': participando },
       { tipoDeCota: 'completa' },
     );
@@ -82,33 +82,33 @@ describe('POST /troca-cota', () => {
 
   it('409 when not participando and 400 for an unknown tipo de cota', async () => {
     const naoParticipa = await post(
-      '/troca-cota',
+      '/trocar-tipo-de-cota',
       { 'x-user-id': novo },
       { tipoDeCota: 'completa' },
     );
     expect(naoParticipa.status).toBe(409);
     expect(await naoParticipa.json()).toEqual({ error: 'nao-participando' });
-    const invalido = await post('/troca-cota', { 'x-user-id': novo }, { tipoDeCota: 1 });
+    const invalido = await post('/trocar-tipo-de-cota', { 'x-user-id': novo }, { tipoDeCota: 1 });
     expect(invalido.status).toBe(400);
   });
 });
 
-describe('POST /saida', () => {
+describe('POST /sair', () => {
   it('204 when the logged-in person leaves, 409 when not participando', async () => {
-    expect((await post('/saida', { 'x-user-id': participando })).status).toBe(204);
-    const response = await post('/saida', { 'x-user-id': novo });
+    expect((await post('/sair', { 'x-user-id': participando })).status).toBe(204);
+    const response = await post('/sair', { 'x-user-id': novo });
     expect(response.status).toBe(409);
     expect(await response.json()).toEqual({ error: 'nao-participando' });
   });
 });
 
-describe('POST /valor-da-cota', () => {
+describe('POST /definir-valor-da-cota', () => {
   const valor = { tipoDeCota: 'completa', ano: 2027, valorEmCentavos: 3000 };
   const gestor = { 'x-user-id': novo, 'x-user-roles': 'default-roles-facoffee,gestor' };
 
   it('204 and passes the roles of the logged-in person along with the valor', async () => {
     pedidos.length = 0;
-    expect((await post('/valor-da-cota', gestor, valor)).status).toBe(204);
+    expect((await post('/definir-valor-da-cota', gestor, valor)).status).toBe(204);
     expect(pedidos).toEqual([
       { solicitante: { perfis: ['default-roles-facoffee', 'gestor'] }, valor },
     ]);
@@ -131,7 +131,7 @@ describe('POST /valor-da-cota', () => {
     ],
     ['400 for a past year', gestor, { ...valor, ano: 2025 }, 400, 'ano-passado'],
   ])('%s', async (_case, headers, body, status, error) => {
-    const response = await post('/valor-da-cota', headers, body);
+    const response = await post('/definir-valor-da-cota', headers, body);
     expect(response.status).toBe(status);
     expect(await response.json()).toEqual({ error });
   });
@@ -146,7 +146,7 @@ describe('POST /valor-da-cota', () => {
       { ...valor, ano: undefined },
       'nope',
     ]) {
-      const response = await post('/valor-da-cota', gestor, body);
+      const response = await post('/definir-valor-da-cota', gestor, body);
       expect(response.status).toBe(400);
       expect(await response.json()).toEqual({ error: 'pedido-invalido' });
     }
@@ -154,12 +154,21 @@ describe('POST /valor-da-cota', () => {
 });
 
 describe('identity', () => {
-  it.each(['/entrada', '/troca-cota', '/saida', '/valor-da-cota'])(
+  it.each(['/entrar', '/trocar-tipo-de-cota', '/sair', '/definir-valor-da-cota'])(
     '401 on %s without the gateway identity or with an id that is not a uuid',
     async (path) => {
       expect((await post(path, {}, { tipoDeCota: 'completa' })).status).toBe(401);
       expect((await post(path, { 'x-user-id': 'user-1' }, { tipoDeCota: 'completa' })).status).toBe(
         401,
+      );
+    },
+  );
+
+  it.each(['/entrada', '/troca-cota', '/saida', '/valor-da-cota'])(
+    '404 on the old path %s',
+    async (path) => {
+      expect((await post(path, { 'x-user-id': novo }, { tipoDeCota: 'completa' })).status).toBe(
+        404,
       );
     },
   );

@@ -61,8 +61,8 @@ const post = (path: string, headers: Record<string, string>, body: unknown = {})
     body: JSON.stringify(body),
   });
 const entrar = (id: string, tipoDeCota: string) =>
-  post('/entrada', { 'x-user-id': id }, { tipoDeCota });
-const sair = (id: string) => post('/saida', { 'x-user-id': id });
+  post('/entrar', { 'x-user-id': id }, { tipoDeCota });
+const sair = (id: string) => post('/sair', { 'x-user-id': id });
 const eventos = (type: string, id: string) =>
   received.filter((e) => e.type === type && e.payload.participantId === id);
 const joined = (id: string) => eventos('participation.participant-joined', id);
@@ -96,7 +96,7 @@ it('saves a troca de tipo de cota for the next month and publishes nothing', asy
   const id = randomUUID();
   await entrar(id, 'so-cafe');
 
-  const troca = post('/troca-cota', { 'x-user-id': id }, { tipoDeCota: 'completa' });
+  const troca = post('/trocar-tipo-de-cota', { 'x-user-id': id }, { tipoDeCota: 'completa' });
   expect((await troca).status).toBe(204);
 
   const { rows } = await db.query(
@@ -136,11 +136,11 @@ it('publishes Valor da cota definido once and only for the gestor', async () => 
   const gestor = { 'x-user-id': randomUUID(), 'x-user-roles': 'participante,gestor' };
   const participante = { 'x-user-id': randomUUID(), 'x-user-roles': 'participante' };
 
-  expect((await post('/valor-da-cota', participante, valor)).status).toBe(403);
-  expect((await post('/valor-da-cota', gestor, valor)).status).toBe(204);
-  expect((await post('/valor-da-cota', gestor, { ...valor, valorEmCentavos: 3000 })).status).toBe(
-    409,
-  );
+  expect((await post('/definir-valor-da-cota', participante, valor)).status).toBe(403);
+  expect((await post('/definir-valor-da-cota', gestor, valor)).status).toBe(204);
+  expect(
+    (await post('/definir-valor-da-cota', gestor, { ...valor, valorEmCentavos: 3000 })).status,
+  ).toBe(409);
 
   const definidos = () =>
     received.filter(
@@ -161,7 +161,9 @@ it('concurrent requests publish Participante saiu and Valor da cota definido onc
 
   const valor = { tipoDeCota: 'completa', ano: 3000 + randomInt(1_000_000), valorEmCentavos: 3000 };
   const gestor = { 'x-user-id': randomUUID(), 'x-user-roles': 'gestor' };
-  const definicoes = await Promise.all([1, 2, 3].map(() => post('/valor-da-cota', gestor, valor)));
+  const definicoes = await Promise.all(
+    [1, 2, 3].map(() => post('/definir-valor-da-cota', gestor, valor)),
+  );
   expect(definicoes.map((r) => r.status).sort()).toEqual([204, 409, 409]);
 
   const definidos = () =>
