@@ -1,6 +1,6 @@
 http:
   routers:
-    # The contatos are internal to Notificação (ADR 0019): without a router it answers 404.
+    # The contatos are internal to Notificação (ADR 0020): without a router it answers 404.
     usuario:
       rule: (Path(`/api/usuario`) || PathPrefix(`/api/usuario/`)) && !Path(`/api/usuario/contato`) && !PathPrefix(`/api/usuario/contato/`)
       middlewares: [auth, acesso, strip-api-prefix]

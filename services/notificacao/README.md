@@ -4,7 +4,7 @@ Serviço de suporte. Avisos aos participantes por e-mail (Gmail) e WhatsApp.
 
 - **Consome:** Valor da cota definido, Pagamento recebido, Complemento solicitado, Reembolso feito
 
-Banco e consumidor vêm do [template de serviço](../../templates/service/); sem outbox, porque não publica eventos. Decisão em [ADR 0019](../../docs/adr/0019-envio-de-e-mails-da-notificacao.md).
+Banco e consumidor vêm do [template de serviço](../../templates/service/); sem outbox, porque não publica eventos. Decisão em [ADR 0020](../../docs/adr/0020-envio-de-e-mails-da-notificacao.md).
 
 ## Avisos por e-mail
 

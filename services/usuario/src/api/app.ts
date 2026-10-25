@@ -48,7 +48,7 @@ const usuarioLogado = (c: Context): Usuario | undefined => {
  * HTTP API of the Usuário context: `GET /eu` (ADR 0008), `POST /:id/desativar`,
  * `GET /acesso`, the gateway access check that also registers the usuário (ADR 0011, 0012),
  * `GET /` and `POST /:id/reativar` (ADR 0013). Without `X-User-Id`, 401.
- * `GET /contato/:id` is internal, for Notificação, and kept out of the gateway (ADR 0019).
+ * `GET /contato/:id` is internal, for Notificação, and kept out of the gateway (ADR 0020).
  * Logs every request except health probes and access checks; unhandled errors become 500.
  */
 export const createApp = ({

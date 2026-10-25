@@ -1,7 +1,7 @@
 import type { Event } from './event.js';
 import { fail, ok, type Result } from './result.js';
 
-/** Nome and e-mail of a participante, as told by Usuário (ADR 0019). */
+/** Nome and e-mail of a participante, as told by Usuário (ADR 0020). */
 export type Contato = { readonly id: string; readonly nome: string; readonly email: string };
 
 /** An aviso by e-mail, ready to be sent. */

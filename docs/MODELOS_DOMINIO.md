@@ -254,7 +254,7 @@ flowchart LR
     N -. "consulta contatos" .-> U
 ```
 
-As setas vão de quem publica para quem consome. A seta tracejada é uma consulta: Notificação busca em Usuário o nome e o e-mail de cada participante a avisar ([ADR 0019](adr/0019-envio-de-e-mails-da-notificacao.md)). A dependência entre os contextos de negócio tem uma só direção: Usuário → Participação → Financeiro. Participação traduz *Usuário desativado* para a linguagem do domínio, encerrando a participação. Assim, o termo "usuário" não entra no modelo de Participação.
+As setas vão de quem publica para quem consome. A seta tracejada é uma consulta: Notificação busca em Usuário o nome e o e-mail de cada participante a avisar ([ADR 0020](adr/0020-envio-de-e-mails-da-notificacao.md)). A dependência entre os contextos de negócio tem uma só direção: Usuário → Participação → Financeiro. Participação traduz *Usuário desativado* para a linguagem do domínio, encerrando a participação. Assim, o termo "usuário" não entra no modelo de Participação.
 
 ### Eventos entre contextos
 
@@ -280,4 +280,4 @@ Nenhum ponto crítico em aberto nesta versão.
 | 2.2 | 2026-10-24 | O diagrama de classes foi substituído por um [mapa conceitual](#1-mapa-conceitual). Pendente, Saldo da caixinha e Consumo passam a aparecer como conceitos. |
 | 2.3 | 2026-10-24 | Usuário passa a ser contexto de negócio, alinhado à arquitetura e ao [ADR 0001](adr/0001-arquitetura-servicos.md). O agendador é um processo agendado na rede interna que chama Participação. |
 | 2.4 | 2026-10-25 | Quem entra durante o mês também deve a cota daquele mês. Sem definição do gestor até o início do ano, o valor da cota repete o do ano anterior ([ADR 0017](adr/0017-gatilhos-de-tempo-do-agendador.md)). |
-| 2.5 | 2026-10-25 | Notificação consulta os contatos em Usuário para enviar os avisos por e-mail ([ADR 0019](adr/0019-envio-de-e-mails-da-notificacao.md)). |
+| 2.5 | 2026-10-25 | Notificação consulta os contatos em Usuário para enviar os avisos por e-mail ([ADR 0020](adr/0020-envio-de-e-mails-da-notificacao.md)). |

@@ -183,7 +183,7 @@ services:
       seaweedfs:
         condition: service_healthy
 
-  # E-mails no Mailpit (http://localhost:8025); em produção, SMTP do Gmail (ADR 0019).
+  # E-mails no Mailpit (http://localhost:8025); em produção, SMTP do Gmail (ADR 0020).
   notificacao:
     build:
       context: ..

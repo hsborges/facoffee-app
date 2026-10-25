@@ -10,7 +10,7 @@ import { type Enviar, guardar, startEnvio } from './infra/envio.js';
 import type { Logger } from './infra/logger.js';
 import { connectRabbitmq } from './infra/rabbitmq.js';
 
-// Internal route of Usuário, kept out of the gateway (ADR 0019).
+// Internal route of Usuário, kept out of the gateway (ADR 0020).
 const buscarContato =
   (usuarioUrl: string): BuscarContato =>
   async (id) => {
@@ -25,8 +25,8 @@ const buscarContato =
 /**
  * Composition root: consumes *Pagamento recebido*, *Complemento solicitado* and *Reembolso
  * feito*, stores their e-mails in the event's transaction, and sends them by SMTP apart, retrying
- * failures (ADR 0019). *Valor da cota definido* is consumed but sends nothing yet. `stop` closes the server first, then the
- * consumer, the sending and the connections.
+ * failures (ADR 0020). *Valor da cota definido* is consumed but sends nothing yet.
+ * `stop` closes the server first, then the consumer, the sending and the connections.
  */
 export const startService = async (config: Config, logger: Logger) => {
   const database = await connectDatabase(config.databaseUrl);
