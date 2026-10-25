@@ -79,7 +79,7 @@ describe('POST /:id/desativacao', () => {
   });
 });
 
-// Called by the gateway ForwardAuth before every request (ADR 0009).
+// Called by the gateway ForwardAuth before every request (ADR 0011).
 describe('GET /acesso', () => {
   it('204 for an active usuário and 403 for a deactivated one', async () => {
     expect((await app().request('/acesso', { headers: { 'x-user-id': ativo } })).status).toBe(204);

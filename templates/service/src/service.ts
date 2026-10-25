@@ -13,7 +13,10 @@ import { connectRabbitmq, createPublisher } from './infra/rabbitmq.js';
 
 const clock = { now: () => new Date(), newId: randomUUID };
 
-// Composition root: wires domain, application and infrastructure.
+/**
+ * Composition root: wires domain, application and infrastructure, then starts the HTTP server,
+ * the outbox relay and the consumer. `stop` closes the server first, then the relay, consumer and connections.
+ */
 export const startService = async (config: Config, logger: Logger) => {
   const database = await connectDatabase(config.databaseUrl);
   const connection = connectRabbitmq(config.rabbitmqUrl, logger);

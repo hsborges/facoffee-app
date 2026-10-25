@@ -6,10 +6,11 @@ import { outbox } from './db/schema.js';
 import type { Logger } from './logger.js';
 import { routingKey } from './rabbitmq.js';
 
+/** Publishes an event to the broker; resolves once the broker acknowledges it. */
 export type Publish = (routingKey: string, event: unknown) => Promise<void>;
 type Pending = { readonly id: string; readonly routingKey: string; readonly event: unknown };
 
-// Called inside the transaction that writes the aggregate.
+/** Writes events to the outbox. Call it inside the transaction that writes the aggregate. */
 export const enqueue = async (tx: Executor, events: readonly Event[]): Promise<void> => {
   if (events.length === 0) return;
   await tx
@@ -17,7 +18,10 @@ export const enqueue = async (tx: Executor, events: readonly Event[]): Promise<v
     .values(events.map((event) => ({ id: event.id, routingKey: routingKey(event), event })));
 };
 
-// Stops at the first error: publishing the next one first would break event order.
+/**
+ * Publishes events in order and returns the ids published.
+ * Stops at the first error: publishing the next one first would break event order.
+ */
 export const publishInOrder = async (
   pending: readonly Pending[],
   publish: Publish,
@@ -33,7 +37,10 @@ export const publishInOrder = async (
   return { ...next, published: [first.id, ...next.published] };
 };
 
-// `for update` without skip locked: two instances take turns instead of publishing out of order.
+/**
+ * Publishes one batch of unpublished outbox events in `seq` order and marks them published.
+ * `for update` without skip locked: two instances take turns instead of publishing out of order.
+ */
 export const publishPending = (db: Executor, publish: Publish, batchSize = 100) =>
   db.transaction(async (tx) => {
     const pending = await tx
@@ -53,7 +60,11 @@ export const publishPending = (db: Executor, publish: Publish, batchSize = 100) 
     return result;
   });
 
-// shortcut: published rows stay in the table forever; purge by age once volume matters.
+/**
+ * Runs {@link publishPending} every `intervalMs` until the returned function is called.
+ *
+ * shortcut: published rows stay in the table forever; purge by age once volume matters.
+ */
 export const startRelay = (db: Executor, publish: Publish, logger: Logger, intervalMs = 500) => {
   const controller = new AbortController();
   const loop = async (): Promise<void> => {

@@ -3,6 +3,7 @@ import type { Result } from '../domain/result.js';
 import { type DesativarErro, perfisDos, type Usuario } from '../domain/usuario.js';
 import type { Logger } from '../infra/logger.js';
 
+/** Use cases and infrastructure the HTTP API calls; injected so tests can replace them. */
 export type ApiDependencies = {
   readonly desativar: (
     solicitante: Pick<Usuario, 'id' | 'perfis'>,
@@ -27,6 +28,11 @@ const usuarioLogado = (c: Context): Usuario | undefined => {
   };
 };
 
+/**
+ * HTTP API of the Usuário context: `GET /eu` (ADR 0008), `POST /:id/desativacao` and
+ * `GET /acesso`, the gateway access check (ADR 0011). Without `X-User-Id`, 401.
+ * Logs every request except health probes and access checks; unhandled errors become 500.
+ */
 export const createApp = ({ desativar, estaDesativado, health, logger }: ApiDependencies) =>
   new Hono()
     .use(async (c, next) => {
@@ -54,7 +60,7 @@ export const createApp = ({ desativar, estaDesativado, health, logger }: ApiDepe
       const usuario = usuarioLogado(c);
       return usuario ? c.json(usuario) : c.json({ error: 'unauthorized' }, 401);
     })
-    // Traefik ForwardAuth target (ADR 0009): any non-2xx response stops the request.
+    // Traefik ForwardAuth target (ADR 0011): any non-2xx response stops the request.
     .all('/acesso', async (c) => {
       const id = c.req.header('x-user-id');
       if (!id) return c.json({ error: 'unauthorized' }, 401);

@@ -1,4 +1,4 @@
-# 0009. Acesso desativado
+# 0011. Acesso desativado
 
 - Status: Proposto
 - Data: 2026-10-25

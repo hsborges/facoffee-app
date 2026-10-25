@@ -8,13 +8,17 @@ import { processedEvents } from './db/schema.js';
 import type { Logger } from './logger.js';
 import { EXCHANGE } from './rabbitmq.js';
 
-// Throw to fail: the transaction is rolled back and the event is retried.
+/**
+ * Handles one event inside a transaction.
+ * Throw to fail: the transaction is rolled back and the event is retried.
+ */
 export type Handler = (event: Event, tx: Executor) => Promise<void>;
+/** Handlers by routing key (`<type>.v<version>`); each key becomes a queue binding. */
 export type Handlers = Readonly<Record<string, Handler>>;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// Checks only the envelope; the payload is validated by the handler.
+/** Parses a message body as an event. Checks only the envelope; the handler checks the payload. */
 export const parseEvent = (content: Buffer): Result<Event, string> => {
   try {
     const e = JSON.parse(content.toString('utf8'));
@@ -34,6 +38,10 @@ export const parseEvent = (content: Buffer): Result<Event, string> => {
   }
 };
 
+/**
+ * Runs `action` up to `attempts` times, waiting `delayMs(attempt)` between tries and reporting
+ * each failure to `onFailure`. Fails with the last error.
+ */
 export const retry = async <T>(
   action: () => Promise<T>,
   attempts: number,
@@ -64,12 +72,13 @@ const handleOnce = (db: Executor, event: Event, handler: Handler) =>
     return 'processed' as const;
   });
 
-// Queue names follow ADR 0006 (`<context>.events`).
+/** Queue names of a service, following ADR 0006 (`<context>.events`). */
 export const queues = (service: string) => ({
   events: `${service}.events`,
   deadLetter: `${service}.events.dead-letter`,
 });
 
+/** Options of {@link startConsumer}; defaults: 5 attempts, exponential delay from 1 s. */
 export type ConsumerOptions = {
   readonly connection: AmqpConnectionManager;
   readonly db: Executor;
@@ -80,7 +89,11 @@ export type ConsumerOptions = {
   readonly delayMs?: (attempt: number) => number;
 };
 
-// Prefetch 1 keeps events in order.
+/**
+ * Consumes the service queue: each event runs its handler once (redeliveries are skipped), with
+ * retries; invalid or exhausted events go to the dead-letter queue, events without a handler are
+ * acked. Prefetch 1 keeps events in order.
+ */
 export const startConsumer = ({
   connection,
   db,

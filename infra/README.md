@@ -11,6 +11,7 @@ docker compose up -d --wait
 | Serviço | Endereço |
 |---|---|
 | [API Gateway](../gateway/) (única porta aberta fora do host) | https://localhost |
+| Documentação da API (Swagger UI, pelo gateway) | https://localhost/docs |
 | RabbitMQ (AMQP / painel) | `localhost:5672` / http://localhost:15672 |
 | PostgreSQL (bancos `usuario`, `participacao`, `financeiro`, `example`) | `localhost:5432` |
 | Serviço de exemplo (perfil `example`) | http://localhost:3000 |
@@ -25,7 +26,7 @@ Credenciais em `.env`.
 O realm `facoffee` é importado de [`keycloak/facoffee-realm.json`](keycloak/facoffee-realm.json) quando o Keycloak sobe (realm já existente não é sobrescrito; para reimportar, `docker compose down -v`).
 
 - Emissor OIDC: `http://localhost:8080/realms/facoffee`
-- Client do web: `facoffee-web` (público, Authorization Code + PKCE S256, redirect `http://localhost:5173/*`)
+- Client do web: `facoffee-web` (público, Authorization Code + PKCE S256, redirect `http://localhost:5173/*`; também usado pelo login do Swagger UI em https://localhost/docs)
 - Papéis do realm: `gestor` e `participante`
 
 | Usuário de teste | Senha | Papéis |

@@ -13,6 +13,8 @@ Alcançada só pelo [gateway](../../gateway/), que valida o token e envia a iden
 |---|---|
 | `GET /api/usuario/eu` | Usuário logado: `{ id, nome, email, perfis }` |
 
+Especificação completa em [`gateway/openapi.yaml`](../../gateway/openapi.yaml).
+
 Perfis de acesso: `gestor` e `participante`, papéis do realm no Keycloak. Os demais papéis do token são ignorados.
 
 Ainda sem banco nem mensageria; quando o serviço publicar *Usuário desativado*, o que falta vem do [template de serviço](../../templates/service/).

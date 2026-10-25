@@ -1,8 +1,10 @@
 import type { Event } from './event.js';
 import { fail, ok, type Result } from './result.js';
 
+/** Access profile in the FACOFFEE, from a Keycloak realm role. */
 export type Perfil = 'gestor' | 'participante';
 
+/** The logged-in user, as known from the token. */
 export type Usuario = {
   readonly id: string;
   readonly nome: string;
@@ -12,17 +14,26 @@ export type Usuario = {
 
 const PERFIS: readonly Perfil[] = ['gestor', 'participante'];
 
-// The Passaporte UFMS also carries Keycloak defaults and roles of other systems.
+/**
+ * FACOFFEE profiles among the token roles.
+ * The Passaporte UFMS also carries Keycloak defaults and roles of other systems, which are dropped.
+ */
 export const perfisDos = (papeis: readonly string[]): readonly Perfil[] =>
   PERFIS.filter((perfil) => papeis.includes(perfil));
 
+/** A deactivated access: who and when. */
 export type Desativacao = { readonly id: string; readonly desativadoEm: Date };
 
+/** *Usuário desativado*, per `contracts/events/user.user-deactivated.v1.json`. */
 export type UsuarioDesativado = Event<'user.user-deactivated', { readonly userId: string }>;
 
+/** Why a desativação was refused. */
 export type DesativarErro = 'sem-permissao';
 
-// Only the gestor deactivates someone else; anyone may deactivate their own access.
+/**
+ * Deactivates the access of `usuarioId` and produces *Usuário desativado*.
+ * Only the gestor deactivates someone else; anyone may deactivate their own access.
+ */
 export const desativar = (
   solicitante: Pick<Usuario, 'id' | 'perfis'>,
   usuarioId: string,

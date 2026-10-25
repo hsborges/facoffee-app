@@ -6,9 +6,10 @@ import type { PgDatabase } from 'drizzle-orm/pg-core';
 import pg from 'pg';
 import * as schema from './schema.js';
 
-// Database or transaction: repositories accept both.
+/** Database or transaction: repositories accept both. */
 export type Executor = PgDatabase<NodePgQueryResultHKT, typeof schema>;
 
+/** Connects to PostgreSQL and applies pending migrations from `drizzle/`. */
 export const connectDatabase = async (url: string) => {
   const pool = new pg.Pool({ connectionString: url });
   const db = drizzle(pool, { schema });

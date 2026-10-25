@@ -1,4 +1,6 @@
+/** Log level. */
 export type Level = 'debug' | 'info' | 'warn' | 'error';
+/** Structured logger: one function per level, taking a message and optional fields. */
 export type Logger = Readonly<
   Record<Level, (message: string, fields?: Record<string, unknown>) => void>
 >;
@@ -6,7 +8,7 @@ export type Logger = Readonly<
 const serialize = (_key: string, value: unknown) =>
   value instanceof Error ? { name: value.name, message: value.message, stack: value.stack } : value;
 
-// One JSON line per entry, on stdout.
+/** Logger writing one JSON line per entry (stdout by default); errors keep name, message, stack. */
 export const createLogger = (
   service: string,
   write: (line: string) => void = (line) => process.stdout.write(`${line}\n`),

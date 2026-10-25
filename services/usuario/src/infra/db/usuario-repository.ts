@@ -4,6 +4,7 @@ import { enqueue } from '../outbox.js';
 import type { Executor } from './database.js';
 import { usuariosDesativados } from './schema.js';
 
+/** {@link Repository} on PostgreSQL; `salvar` inserts the desativação and enqueues its events at once. */
 export const usuarioRepository = (db: Executor): Repository => ({
   estaDesativado: async (id) => {
     const [row] = await db

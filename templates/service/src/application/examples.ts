@@ -2,14 +2,17 @@ import type { Event } from '../domain/event.js';
 import { confirm, type Example, register } from '../domain/example.js';
 import { fail, ok, type Result } from '../domain/result.js';
 
+/** Persistence of the Example aggregate. */
 export type Repository = {
   readonly find: (id: string) => Promise<Example | undefined>;
-  // Persists the aggregate and its events (outbox) in the same transaction.
+  /** Persists the aggregate and its events (outbox) in the same transaction. */
   readonly save: (example: Example, events: readonly Event[]) => Promise<void>;
 };
 
+/** Source of time and ids, kept out of the domain so tests are deterministic. */
 export type Clock = { readonly now: () => Date; readonly newId: () => string };
 
+/** Use case: registers an Example and stores *Example registered* in the outbox. */
 export const registerExample =
   (repository: Repository, clock: Clock) => async (command: { readonly name: string }) => {
     const result = register(command, {
@@ -22,7 +25,10 @@ export const registerExample =
     return ok(result.value.example);
   };
 
-// Handler for Example registered. The payload comes from the broker, so it is validated here.
+/**
+ * Handler for *Example registered*: confirms the Example (idempotent).
+ * The payload comes from the broker, so it is validated here.
+ */
 export const confirmExample =
   (repository: Repository, clock: Clock) =>
   async (event: Event): Promise<Result<Example, 'invalid-payload' | 'example-not-found'>> => {

@@ -1,0 +1,100 @@
+openapi: 3.1.0
+info:
+  title: FACOFFEE API
+  version: 0.1.0
+  description: |
+    API do FACOFFEE.
+
+    Todas as rotas exigem autenticação. Para testar aqui, clique em **Authorize** e entre com
+    usuário e senha (`login`) ou informe um access token (`bearer`).
+servers:
+  - url: /
+security:
+  - login: [openid]
+  - bearer: []
+tags:
+  - name: usuario
+    description: Usuários
+paths:
+  /api/usuario/eu:
+    get:
+      tags: [usuario]
+      operationId: obterUsuarioLogado
+      summary: Usuário logado
+      description: Dados e perfis de acesso do usuário autenticado.
+      responses:
+        '200':
+          description: Usuário logado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '500':
+          $ref: '#/components/responses/ErroInterno'
+components:
+  securitySchemes:
+    login:
+      type: oauth2
+      description: Entrar com usuário e senha.
+      flows:
+        authorizationCode:
+          authorizationUrl: http://localhost:8080/realms/facoffee/protocol/openid-connect/auth
+          tokenUrl: http://localhost:8080/realms/facoffee/protocol/openid-connect/token
+          scopes:
+            openid: Identificação do usuário
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access token obtido ao entrar no FACOFFEE.
+  responses:
+    NaoAutorizado:
+      description: Token ausente, inválido ou expirado.
+      headers:
+        WWW-Authenticate:
+          schema:
+            type: string
+            const: Bearer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          example:
+            error: unauthorized
+    ErroInterno:
+      description: Erro interno.
+  schemas:
+    Erro:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+    Perfil:
+      type: string
+      enum: [gestor, participante]
+      description: Perfil de acesso ao FACOFFEE.
+    Usuario:
+      type: object
+      required: [id, nome, email, perfis]
+      properties:
+        id:
+          type: string
+          description: Identificador do usuário.
+        nome:
+          type: string
+          description: Nome; vazio se não informado.
+        email:
+          type: string
+          description: E-mail; vazio se não informado.
+        perfis:
+          type: array
+          items:
+            $ref: '#/components/schemas/Perfil'
+      example:
+        id: 4f1c2a9e-8b7d-4c3a-9e2f-1a2b3c4d5e6f
+        nome: João Silva
+        email: joao.silva@ufms.br
+        perfis: [participante]
