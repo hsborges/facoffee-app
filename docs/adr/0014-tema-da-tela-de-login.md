@@ -1,6 +1,6 @@
 # 0014. Tema da tela de login
 
-- Status: Proposto
+- Status: Aceito
 - Data: 2026-10-25
 
 ## Contexto
