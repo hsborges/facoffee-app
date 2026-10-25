@@ -16,6 +16,8 @@ security:
 tags:
   - name: usuario
     description: Usuários
+  - name: participacao
+    description: Participação
 paths:
   /api/usuario:
     get:
@@ -137,6 +139,49 @@ paths:
                 error: not-found
         '500':
           $ref: '#/components/responses/ErroInterno'
+  /api/participacao/entrada:
+    post:
+      tags: [participacao]
+      operationId: pedirEntrada
+      summary: Pedir entrada e escolher tipo de cota
+      description: |
+        O usuário logado passa a participar da divisão dos custos da copa com o tipo de cota
+        escolhido. Quem já saiu retorna pedindo a entrada de novo, com qualquer tipo de cota.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tipoDeCota]
+              properties:
+                tipoDeCota:
+                  $ref: '#/components/schemas/TipoDeCota'
+      responses:
+        '204':
+          description: Entrada feita.
+        '400':
+          description: Tipo de cota ausente ou inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              example:
+                error: tipo-de-cota-invalido
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/AcessoDesativado'
+        '409':
+          description: O usuário já está participando.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              example:
+                error: ja-participando
+        '500':
+          $ref: '#/components/responses/ErroInterno'
 components:
   securitySchemes:
     login:
@@ -197,6 +242,12 @@ components:
       properties:
         error:
           type: string
+    TipoDeCota:
+      type: string
+      enum: [so-cafe, completa]
+      description: |
+        Tipo de cota: `so-cafe` dá direito ao café; `completa`, ao café, às bolachas, aos chás e
+        aos demais itens da copa.
     Perfil:
       type: string
       enum: [gestor, participante]
