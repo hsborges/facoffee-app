@@ -1,6 +1,6 @@
 # 0003. Ambiente local com docker compose
 
-- Status: Proposto
+- Status: Aceito
 - Data: 2026-10-25
 
 ## Contexto
