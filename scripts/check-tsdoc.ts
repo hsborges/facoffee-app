@@ -20,10 +20,10 @@ export const undocumentedExports = (source: string): readonly number[] => {
 };
 
 if (import.meta.main) {
-  const files = globSync('**/src/**/*.ts', {
+  const files = globSync('**/src/**/*.{ts,tsx}', {
     exclude: ['**/node_modules/**', '**/dist/**', '**/*.test.ts'],
   });
-  if (files.length === 0) throw new Error('no files found in **/src/**/*.ts');
+  if (files.length === 0) throw new Error('no files found in **/src/**/*.{ts,tsx}');
   const problems = files.flatMap((file) =>
     undocumentedExports(readFileSync(file, 'utf8')).map((line) => `${file}:${line}`),
   );
