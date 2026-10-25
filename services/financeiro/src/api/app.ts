@@ -1,7 +1,9 @@
 import { type Context, Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import type { Arquivo, GuardarComprovanteErro, NaoEncontrado } from '../application/arquivos.js';
+import type { ReceberPagamentoErro } from '../application/pagamentos.js';
 import { type ArquivoInvalido, type Solicitante, TAMANHO_MAXIMO } from '../domain/arquivo.js';
+import { FORMAS, type Forma, type PedidoDePagamento } from '../domain/pagamento.js';
 import type { Result } from '../domain/result.js';
 import type { Logger } from '../infra/logger.js';
 
@@ -18,6 +20,10 @@ export type ApiDependencies = {
     id: string,
   ) => Promise<Result<Arquivo, NaoEncontrado>>;
   readonly baixarNota: (id: string) => Promise<Result<Arquivo, NaoEncontrado>>;
+  readonly receberPagamento: (
+    solicitante: Pick<Solicitante, 'perfis'>,
+    pedido: PedidoDePagamento,
+  ) => Promise<Result<string, ReceberPagamentoErro>>;
   readonly health: () => Promise<Readonly<Record<string, boolean>>>;
   readonly logger: Logger;
 };
@@ -36,12 +42,46 @@ const STATUS_DO_ERRO = {
   'arquivo-vazio': 400,
   'tipo-nao-aceito': 400,
   'arquivo-grande-demais': 413,
+  'pix-sem-comprovante': 400,
+  'comprovante-so-no-pix': 400,
+  'comprovante-nao-encontrado': 404,
+  'participante-nao-encontrado': 404,
+  'comprovante-ja-usado': 409,
 } as const;
+
+// Bounded by the postgres integer column.
+const inteiroPositivo = (valor: unknown): valor is number =>
+  Number.isInteger(valor) && (valor as number) > 0 && (valor as number) <= 2_147_483_647;
+
+const pedidoDePagamento = async (c: Context): Promise<PedidoDePagamento | undefined> => {
+  const corpo = (await c.req.json().catch(() => undefined)) as Record<string, unknown> | undefined;
+  const { participanteId, valorEmCentavos, forma, comprovanteId = null } = corpo ?? {};
+  const valido =
+    typeof participanteId === 'string' &&
+    UUID.test(participanteId) &&
+    inteiroPositivo(valorEmCentavos) &&
+    FORMAS.includes(forma as Forma) &&
+    (comprovanteId === null || (typeof comprovanteId === 'string' && UUID.test(comprovanteId)));
+  return valido
+    ? {
+        participanteId: participanteId.toLowerCase(),
+        valorEmCentavos,
+        forma: forma as Forma,
+        comprovanteId: comprovanteId?.toLowerCase() ?? null,
+      }
+    : undefined;
+};
 
 // Room for the multipart boundaries and fields; the arquivo itself is checked in the domain.
 const limite = bodyLimit({
   maxSize: TAMANHO_MAXIMO + 64 * 1024,
   onError: (c) => c.json({ error: 'arquivo-grande-demais' }, 413),
+});
+
+// A pedido de pagamento is a few fields; anything bigger is refused before being read.
+const limiteDoPedido = bodyLimit({
+  maxSize: 4 * 1024,
+  onError: (c) => c.json({ error: 'pedido-invalido' }, 400),
 });
 
 const formulario = async (c: Context) => {
@@ -53,7 +93,7 @@ const formulario = async (c: Context) => {
   };
 };
 
-const guardado = (c: Context, result: Result<string, GuardarComprovanteErro>) =>
+const criado = (c: Context, result: Result<string, keyof typeof STATUS_DO_ERRO>) =>
   result.ok
     ? c.json({ id: result.value }, 201)
     : c.json({ error: result.error }, STATUS_DO_ERRO[result.error]);
@@ -70,7 +110,9 @@ const baixado = (c: Context, result: Result<Arquivo, NaoEncontrado>) =>
  * HTTP API of the Financeiro context. The gestor guarda comprovantes with
  * `POST /guardar-comprovante` and any participante guarda notas with `POST /guardar-nota`
  * (multipart, up to 5 MB, PDF, JPEG or PNG); `GET /comprovante/:id` serves only the participante
- * and the gestor, and `GET /nota/:id` any participante. Without `X-User-Id`, 401.
+ * and the gestor, and `GET /nota/:id` any participante. The gestor receives pagamentos with
+ * `POST /receber-pagamento` (JSON; a pagamento por PIX references its comprovante).
+ * Without `X-User-Id`, 401.
  * Logs every request except health probes; unhandled errors become 500.
  */
 export const createApp = ({
@@ -78,6 +120,7 @@ export const createApp = ({
   guardarNota,
   baixarComprovante,
   baixarNota,
+  receberPagamento,
   health,
   logger,
 }: ApiDependencies) =>
@@ -109,13 +152,13 @@ export const createApp = ({
       const { conteudo, participanteId } = await formulario(c);
       const valido = conteudo && typeof participanteId === 'string' && UUID.test(participanteId);
       if (!valido) return c.json({ error: 'pedido-invalido' }, 400);
-      return guardado(c, await guardarComprovante(quem, participanteId, conteudo));
+      return criado(c, await guardarComprovante(quem, participanteId.toLowerCase(), conteudo));
     })
     .post('/guardar-nota', limite, async (c) => {
       if (!solicitante(c)) return c.json({ error: 'unauthorized' }, 401);
       const { conteudo } = await formulario(c);
       if (!conteudo) return c.json({ error: 'pedido-invalido' }, 400);
-      return guardado(c, await guardarNota(conteudo));
+      return criado(c, await guardarNota(conteudo));
     })
     .get('/comprovante/:id', async (c) => {
       const quem = solicitante(c);
@@ -129,4 +172,11 @@ export const createApp = ({
       const id = c.req.param('id');
       if (!UUID.test(id)) return c.json({ error: 'not-found' }, 404);
       return baixado(c, await baixarNota(id));
+    })
+    .post('/receber-pagamento', limiteDoPedido, async (c) => {
+      const quem = solicitante(c);
+      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      const pedido = await pedidoDePagamento(c);
+      if (!pedido) return c.json({ error: 'pedido-invalido' }, 400);
+      return criado(c, await receberPagamento(quem, pedido));
     });

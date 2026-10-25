@@ -5,9 +5,11 @@ import { createApp } from './api/app.js';
 import {
   baixarComprovante,
   baixarNota,
+  comprovanteDoParticipante,
   guardarComprovante,
   guardarNota,
 } from './application/arquivos.js';
+import { receberPagamento } from './application/pagamentos.js';
 import {
   type PayloadInvalido,
   type Repository,
@@ -21,6 +23,7 @@ import { connectArmazem } from './infra/armazem-s3.js';
 import type { Config } from './infra/config.js';
 import { type Handler, startConsumer } from './infra/consumer.js';
 import { connectDatabase } from './infra/db/database.js';
+import { pagamentoRepository } from './infra/db/pagamento-repository.js';
 import { participanteRepository } from './infra/db/participante-repository.js';
 import type { Logger } from './infra/logger.js';
 import { startRelay } from './infra/outbox.js';
@@ -65,6 +68,11 @@ export const startService = async (config: Config, logger: Logger) => {
     guardarNota: guardarNota(armazem, randomUUID),
     baixarComprovante: baixarComprovante(armazem),
     baixarNota: baixarNota(armazem),
+    receberPagamento: receberPagamento(
+      pagamentoRepository(database.db),
+      comprovanteDoParticipante(armazem),
+      { now: () => new Date(), newId: randomUUID },
+    ),
     health: async () => ({
       database: await database.isHealthy(),
       rabbitmq: connection.isConnected(),

@@ -76,6 +76,12 @@ export const baixarComprovante =
       : fail('nao-encontrado');
   };
 
+/** Whether the comprovante was guardado for the participante. */
+export const comprovanteDoParticipante =
+  (armazem: Armazem) =>
+  async (participanteId: string, id: string): Promise<boolean> =>
+    (await armazem.obter(`comprovante/${id}`))?.participanteId === participanteId;
+
 /** The nota of a gasto; every participante sees the notas of the caixinha. */
 export const baixarNota =
   (armazem: Armazem) =>
