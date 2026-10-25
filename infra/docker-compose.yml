@@ -24,6 +24,7 @@ services:
       USUARIO_DB_PASSWORD: ${USUARIO_DB_PASSWORD}
       PARTICIPACAO_DB_PASSWORD: ${PARTICIPACAO_DB_PASSWORD}
       FINANCEIRO_DB_PASSWORD: ${FINANCEIRO_DB_PASSWORD}
+      NOTIFICACAO_DB_PASSWORD: ${NOTIFICACAO_DB_PASSWORD}
       EXAMPLE_DB_PASSWORD: ${EXAMPLE_DB_PASSWORD}
     ports:
       - "127.0.0.1:5432:5432"
@@ -180,6 +181,28 @@ services:
       rabbitmq:
         condition: service_healthy
       seaweedfs:
+        condition: service_healthy
+
+  # E-mails no Mailpit (http://localhost:8025); em produção, SMTP do Gmail (ADR 0019).
+  notificacao:
+    build:
+      context: ..
+      dockerfile: templates/service/Dockerfile
+      args:
+        PACKAGE: "@facoffee/notificacao"
+    environment:
+      SERVICE: notification
+      DATABASE_URL: postgres://notificacao:${NOTIFICACAO_DB_PASSWORD}@postgres:5432/notificacao
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      USUARIO_URL: http://usuario:3000
+      SMTP_URL: smtp://mailpit:1025
+      SMTP_FROM: FACOFFEE <facoffee@localhost>
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      mailpit:
         condition: service_healthy
 
   # Dispara os gatilhos de tempo de Participação a cada hora (ADR 0017). Sem servidor HTTP.
