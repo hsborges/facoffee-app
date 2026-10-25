@@ -5,7 +5,7 @@ const EXPORT = /^export (?!(type )?[{*])/;
 
 const hasTsdocAbove = (lines: readonly string[], index: number): boolean => {
   if (!lines[index - 1]?.trimEnd().endsWith('*/')) return false;
-  const start = lines.findLastIndex((line, i) => i < index && line.includes('/*'));
+  const start = lines.findLastIndex((line, i) => i < index && line.trimStart().startsWith('/*'));
   return lines[start]?.trimStart().startsWith('/**') ?? false;
 };
 
@@ -23,6 +23,7 @@ if (import.meta.main) {
   const files = globSync('**/src/**/*.ts', {
     exclude: ['**/node_modules/**', '**/dist/**', '**/*.test.ts'],
   });
+  if (files.length === 0) throw new Error('no files found in **/src/**/*.ts');
   const problems = files.flatMap((file) =>
     undocumentedExports(readFileSync(file, 'utf8')).map((line) => `${file}:${line}`),
   );

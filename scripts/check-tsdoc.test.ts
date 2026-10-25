@@ -16,6 +16,11 @@ describe('undocumentedExports', () => {
     expect(undocumentedExports(source)).toEqual([]);
   });
 
+  it('accepts a TSDoc whose body mentions a glob like src/**/*.ts', () => {
+    const source = lines('/**', ' * Reads `src/**/*.ts`.', ' */', 'export const a = 1;');
+    expect(undocumentedExports(source)).toEqual([]);
+  });
+
   it('reports the line of exports without a comment', () => {
     const source = lines('/** Documented. */', 'export const a = 1;', 'export function b() {}');
     expect(undocumentedExports(source)).toEqual([3]);
