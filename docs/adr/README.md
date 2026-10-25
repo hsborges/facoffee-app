@@ -12,3 +12,4 @@ Registros de decisões de arquitetura. Um arquivo por decisão: `NNNN-titulo.md`
 | [0006](0006-contratos-dos-eventos-em-ingles.md) | Contratos dos eventos em inglês | Aceito |
 | [0007](0007-api-gateway.md) | API Gateway | Aceito |
 | [0008](0008-dados-do-usuario-logado.md) | Dados do usuário logado | Aceito |
+| [0009](0009-acesso-desativado.md) | Acesso desativado | Proposto |
