@@ -26,6 +26,7 @@ const pares = [
   ['muted-mocha', 'pure-white', 4.5],
   ['pure-white', 'espresso-dark', 4.5],
   ['pure-white', 'espresso-hover', 4.5],
+  ['espresso-dark', 'light-sand', 4.5],
   ['espresso-dark', 'warm-latte', 4.5],
   ['espresso-dark', 'warm-latte-hover', 4.5],
   ['sucesso', 'pure-white', 4.5],
