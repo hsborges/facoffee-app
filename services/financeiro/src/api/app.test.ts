@@ -7,8 +7,10 @@ import {
   comprovanteDoParticipante,
   guardarComprovante,
   guardarNota,
+  notaGuardada,
 } from '../application/arquivos.js';
 import { consultarCreditoEPendente, listarCreditoEPendentes } from '../application/credito.js';
+import { registrarGasto } from '../application/gastos.js';
 import { receberPagamento } from '../application/pagamentos.js';
 import { TAMANHO_MAXIMO } from '../domain/arquivo.js';
 import { ok } from '../domain/result.js';
@@ -46,6 +48,10 @@ const app = (deps: Partial<ApiDependencies> = {}) => {
       comprovanteDoParticipante(armazem),
       { now: () => new Date(), newId },
     ),
+    registrarGasto: registrarGasto({ salvar: async () => ok(undefined) }, notaGuardada(armazem), {
+      now: () => new Date(),
+      newId,
+    }),
     listarCreditoEPendentes: listarCreditoEPendentes(buscarTotais),
     consultarCreditoEPendente: consultarCreditoEPendente(buscarTotais),
     health: async () => ({ database: true, rabbitmq: true, armazenamento: true }),
@@ -265,6 +271,60 @@ describe('POST /receber-pagamento', () => {
   it('403 when not the gestor and 401 without the logged-in person', async () => {
     expect((await receber(app(), doParticipante, emDinheiro)).status).toBe(403);
     expect((await receber(app(), {}, emDinheiro)).status).toBe(401);
+  });
+});
+
+describe('POST /registrar-gasto', () => {
+  const registrar = (api: ReturnType<typeof app>, headers: Record<string, string>, body: unknown) =>
+    enviar(
+      api,
+      '/registrar-gasto',
+      { ...headers, 'content-type': 'application/json' },
+      JSON.stringify(body),
+    );
+  const comNota = async (api: ReturnType<typeof app>) => {
+    const nota = await enviar(api, '/guardar-nota', doParticipante, formulario({ arquivo: PNG }));
+    return ((await nota.json()) as { id: string }).id;
+  };
+
+  it.each(['caixinha', 'proprio-bolso'])(
+    '201 with the id of a gasto pago pela %s, by any participante',
+    async (origem) => {
+      const api = app();
+      const notaId = await comNota(api);
+      const response = await registrar(api, doParticipante, {
+        valorEmCentavos: 4590,
+        origem,
+        notaId: notaId.toUpperCase(),
+      });
+      expect(response.status).toBe(201);
+      expect(await response.json()).toEqual({ id: expect.any(String) });
+    },
+  );
+
+  it('404 for a nota that was not guardada', async () => {
+    const body = { valorEmCentavos: 4590, origem: 'caixinha', notaId: outro };
+    const response = await registrar(app(), doParticipante, body);
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: 'nota-nao-encontrada' });
+  });
+
+  it('400 for an invalid pedido and 401 without the logged-in person', async () => {
+    const valido = { valorEmCentavos: 4590, origem: 'caixinha', notaId: outro };
+    for (const body of [
+      { ...valido, valorEmCentavos: 0 },
+      { ...valido, valorEmCentavos: 10.5 },
+      { ...valido, origem: 'cartao' },
+      { ...valido, notaId: 'abc' },
+      { valorEmCentavos: 4590, origem: 'caixinha' },
+      'nao-e-objeto',
+      { ...valido, observacao: 'x'.repeat(5000) },
+    ]) {
+      const response = await registrar(app(), doParticipante, body);
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ error: 'pedido-invalido' });
+    }
+    expect((await registrar(app(), {}, valido)).status).toBe(401);
   });
 });
 

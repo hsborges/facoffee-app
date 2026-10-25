@@ -82,6 +82,12 @@ export const comprovanteDoParticipante =
   async (participanteId: string, id: string): Promise<boolean> =>
     (await armazem.obter(`comprovante/${id}`))?.participanteId === participanteId;
 
+/** Whether the nota was guardada. */
+export const notaGuardada =
+  (armazem: Armazem) =>
+  async (id: string): Promise<boolean> =>
+    (await armazem.obter(`nota/${id}`)) !== undefined;
+
 /** The nota of a gasto; every participante sees the notas of the caixinha. */
 export const baixarNota =
   (armazem: Armazem) =>

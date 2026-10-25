@@ -33,6 +33,16 @@ Guardados num bucket S3 ([ADR 0018](../../docs/adr/0018-armazenamento-de-comprov
 | participante que Financeiro não conhece (`participante-nao-encontrado`) | 404 |
 | comprovante já usado em outro pagamento (`comprovante-ja-usado`) | 409 |
 
+## Registrar gasto
+
+`POST /registrar-gasto` (qualquer participante), em JSON: `valorEmCentavos` (o valor total), `origem` (`caixinha` ou `proprio-bolso`) e `notaId` (o `id` de `/guardar-nota`). Quem registra é quem pagou, e é quem recebe o reembolso no gasto do próprio bolso. Responde `201 { id }`. *Gasto feito* é interno: fica só na tabela `gastos`, sem publicar nada. O gasto do próprio bolso não sai da caixinha; só o reembolso sai (`saidaDaCaixinha` em `src/domain/gasto.ts`).
+
+| Recusa | Status |
+|---|---|
+| nota não guardada (`nota-nao-encontrada`) | 404 |
+| quem registra não é um participante que Financeiro conhece (`participante-nao-encontrado`) | 404 |
+| nota já usada em outro gasto (`nota-ja-usada`) | 409 |
+
 ## Crédito e pendentes
 
 Pagamentos recebidos − cotas devidas: positivo é crédito, negativo é pendente, sem multa nem juros. Como tudo entra na mesma soma, o crédito abate as próximas cotas sozinho, e crédito e pendência continuam valendo depois da saída e no retorno. As partes de complementos entram na soma quando existirem ([#25](https://github.com/hsborges/facoffee-app/issues/25)).
