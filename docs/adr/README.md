@@ -9,3 +9,4 @@ Registros de decisões de arquitetura. Um arquivo por decisão: `NNNN-titulo.md`
 | [0003](0003-ambiente-local-docker-compose.md) | Ambiente local com docker compose | Aceito |
 | [0004](0004-contratos-dos-eventos-de-dominio.md) | Contratos dos eventos de domínio | Aceito |
 | [0005](0005-template-de-servico.md) | Template de serviço | Aceito |
+| [0006](0006-contratos-dos-eventos-em-ingles.md) | Contratos dos eventos em inglês | Proposto |
