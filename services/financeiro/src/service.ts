@@ -32,7 +32,7 @@ import { caixinhaRepository } from './infra/db/caixinha-repository.js';
 import { complementoRepository } from './infra/db/complemento-repository.js';
 import { buscarDevido, buscarTotais } from './infra/db/credito-repository.js';
 import { connectDatabase } from './infra/db/database.js';
-import { gastoRepository } from './infra/db/gasto-repository.js';
+import { gastoRepository, listarGastos } from './infra/db/gasto-repository.js';
 import { pagamentoRepository } from './infra/db/pagamento-repository.js';
 import { participanteRepository } from './infra/db/participante-repository.js';
 import { reembolsoRepository } from './infra/db/reembolso-repository.js';
@@ -99,6 +99,7 @@ export const startService = async (config: Config, logger: Logger) => {
     consultarCaixinha: consultarCaixinha(caixinhaRepository(database.db), {
       now: () => new Date(),
     }),
+    listarGastos: listarGastos(database.db),
     listarCreditoEPendentes: listarCreditoEPendentes(buscarTotais(database.db)),
     consultarCreditoEPendente: consultarCreditoEPendente(
       buscarTotais(database.db),

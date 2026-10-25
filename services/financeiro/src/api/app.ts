@@ -1,7 +1,7 @@
 import { type Context, Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import type { Arquivo, GuardarComprovanteErro, NaoEncontrado } from '../application/arquivos.js';
-import type { RegistrarGastoErro } from '../application/gastos.js';
+import type { ListarGastos, RegistrarGastoErro } from '../application/gastos.js';
 import type { ReceberPagamentoErro } from '../application/pagamentos.js';
 import type { ReembolsarGastoErro } from '../application/reembolsos.js';
 import { type ArquivoInvalido, type Solicitante, TAMANHO_MAXIMO } from '../domain/arquivo.js';
@@ -46,6 +46,7 @@ export type ApiDependencies = {
     valorTotalEmCentavos: number,
   ) => Promise<Result<string, SolicitarErro>>;
   readonly consultarCaixinha: () => Promise<Caixinha>;
+  readonly listarGastos: ListarGastos;
   readonly listarCreditoEPendentes: (
     solicitante: Pick<Solicitante, 'perfis'>,
   ) => Promise<Result<readonly Situacao[], 'sem-permissao'>>;
@@ -164,6 +165,7 @@ const baixado = (c: Context, result: Result<Arquivo, NaoEncontrado>) =>
  * The gestor reembolsa a gasto pago do próprio bolso with `POST /gasto/:id/reembolsar` and
  * solicita a complemento with `POST /solicitar-complemento` (JSON, the valor total).
  * Leituras *Saldo da caixinha* and *Gastos do ano anterior*: `GET /caixinha`, for any participante.
+ * Leitura *Gastos*: `GET /gasto`, every gasto with whether it was reembolsado, for any participante.
  * Leitura *Crédito e pendentes*: `GET /participante` lists every participante, only for the
  * gestor; `GET /participante/eu` gives the logged-in participante their own, with their cotas and
  * partes de complementos.
@@ -180,6 +182,7 @@ export const createApp = ({
   reembolsarGasto,
   solicitarComplemento,
   consultarCaixinha,
+  listarGastos,
   listarCreditoEPendentes,
   consultarCreditoEPendente,
   health,
@@ -267,6 +270,10 @@ export const createApp = ({
     .get('/caixinha', async (c) => {
       if (!solicitante(c)) return c.json({ error: 'unauthorized' }, 401);
       return c.json(await consultarCaixinha());
+    })
+    .get('/gasto', async (c) => {
+      if (!solicitante(c)) return c.json({ error: 'unauthorized' }, 401);
+      return c.json(await listarGastos());
     })
     .get('/participante', async (c) => {
       const quem = solicitante(c);

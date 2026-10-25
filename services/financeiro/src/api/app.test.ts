@@ -99,6 +99,7 @@ const app = (deps: Partial<ApiDependencies> = {}) => {
       saldoEmCentavos: -1500,
       gastosDoAnoAnteriorEmCentavos: 90000,
     }),
+    listarGastos: async () => [],
     listarCreditoEPendentes: listarCreditoEPendentes(buscarTotais),
     consultarCreditoEPendente: consultarCreditoEPendente(buscarTotais, async () => devido),
     health: async () => ({ database: true, rabbitmq: true, armazenamento: true }),
@@ -411,6 +412,20 @@ describe('POST /gasto/:id/reembolsar', () => {
   it('403 when not the gestor and 401 without the logged-in person', async () => {
     expect((await reembolsar(app(), doParticipante, gastoDoBolso.id)).status).toBe(403);
     expect((await reembolsar(app(), {}, gastoDoBolso.id)).status).toBe(401);
+  });
+});
+
+describe('GET /gasto', () => {
+  it('gives any participante the gastos, with whether each was reembolsado', async () => {
+    const gastos = [{ ...gastoDoBolso, reembolsado: false }];
+    const response = await app({ listarGastos: async () => gastos }).request('/gasto', {
+      headers: doParticipante,
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual([
+      { ...gastoDoBolso, feitoEm: gastoDoBolso.feitoEm.toISOString(), reembolsado: false },
+    ]);
+    expect((await app().request('/gasto')).status).toBe(401);
   });
 });
 

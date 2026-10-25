@@ -12,6 +12,12 @@ export type Gastos = {
   readonly salvar: (gasto: Gasto) => Promise<Result<void, SalvarGastoErro>>;
 };
 
+/** A gasto as listed, with whether it was reembolsado (always `false` if pago pela caixinha). */
+export type GastoListado = Gasto & { readonly reembolsado: boolean };
+
+/** Leitura *Gastos*: every gasto, newest first; any participante sees them, like the notas. */
+export type ListarGastos = () => Promise<readonly GastoListado[]>;
+
 /** Why a participante could not register a gasto. */
 export type RegistrarGastoErro = 'nota-nao-encontrada' | SalvarGastoErro;
 

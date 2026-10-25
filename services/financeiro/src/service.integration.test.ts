@@ -423,6 +423,14 @@ it('reembolsa a gasto do próprio bolso once and publishes Reembolso feito', asy
   expect((await reembolsar(doBolso)).status).toBe(409);
   expect((await reembolsar(await registrar('caixinha'))).status).toBe(409);
   expect((await reembolsar(randomUUID())).status).toBe(404);
+  const lista = await fetch(`${url}/gasto`, { headers: { 'x-user-id': participante } });
+  const doParticipante = ((await lista.json()) as { participanteId: string }[]).filter(
+    (gasto) => gasto.participanteId === participante,
+  );
+  expect(doParticipante).toMatchObject([
+    { origem: 'caixinha', reembolsado: false },
+    { id: doBolso, origem: 'proprio-bolso', valorEmCentavos: 4590, reembolsado: true },
+  ]);
 
   expect(await eventually(async () => publicados.length > 0)).toBe(true);
   await sleep(1000);
