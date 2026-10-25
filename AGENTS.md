@@ -75,3 +75,8 @@ Ganhos, custos e riscos.
 - Componha funções pequenas; isole efeitos colaterais (I/O, tempo, aleatoriedade) nas bordas.
 - Trate erros esperados como valores de retorno (ex.: `Result`), não com exceções.
 - Use classes só quando uma biblioteca ou framework exigir.
+
+## Documentação
+
+- Todo export em `src/` tem comentário TSDoc (`/** ... */`) logo acima, verificado por `pnpm lint` ([ADR 0010](docs/adr/0010-tsdoc-obrigatorio-nos-exports.md)).
+- Rota pública nova ou alterada atualiza `gateway/openapi.yaml` no mesmo PR ([ADR 0009](docs/adr/0009-openapi-da-api-publica.md)).
