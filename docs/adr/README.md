@@ -17,3 +17,4 @@ Registros de decisões de arquitetura. Um arquivo por decisão: `NNNN-titulo.md`
 | [0011](0011-acesso-desativado.md) | Acesso desativado | Aceito |
 | [0012](0012-registro-do-usuario-no-primeiro-acesso.md) | Registro do usuário no primeiro acesso | Aceito |
 | [0013](0013-reativacao-do-acesso.md) | Reativação do acesso | Aceito |
+| [0014](0014-tema-da-tela-de-login.md) | Tema da tela de login | Proposto |
