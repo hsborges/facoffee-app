@@ -1,0 +1,35 @@
+http:
+  routers:
+    usuario:
+      rule: Path(`/api/usuario`) || PathPrefix(`/api/usuario/`)
+      middlewares: [auth, strip-api-prefix]
+      service: usuario
+    participacao:
+      rule: Path(`/api/participacao`) || PathPrefix(`/api/participacao/`)
+      middlewares: [auth, strip-api-prefix]
+      service: participacao
+    financeiro:
+      rule: Path(`/api/financeiro`) || PathPrefix(`/api/financeiro/`)
+      middlewares: [auth, strip-api-prefix]
+      service: financeiro
+
+  middlewares:
+    auth:
+      forwardAuth:
+        address: http://gateway-auth:3000/verify
+        # Replaces any value sent by the client.
+        authResponseHeaders: [X-User-Id, X-User-Roles]
+    strip-api-prefix:
+      stripPrefixRegex:
+        regex: ["^/api/[a-z]+"]
+
+  services:
+    usuario:
+      loadBalancer:
+        servers: [{ url: http://usuario:3000 }]
+    participacao:
+      loadBalancer:
+        servers: [{ url: http://participacao:3000 }]
+    financeiro:
+      loadBalancer:
+        servers: [{ url: http://financeiro:3000 }]
