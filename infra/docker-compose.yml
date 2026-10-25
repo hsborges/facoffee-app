@@ -82,6 +82,35 @@ services:
       timeout: 5s
       retries: 10
 
+  # Única porta aberta para fora do host (ADR 0007).
+  gateway:
+    image: traefik:v3.7
+    ports:
+      - "443:443"
+    volumes:
+      - ../gateway/traefik:/etc/traefik:ro
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    depends_on:
+      gateway-auth:
+        condition: service_healthy
+
+  # Verificador de token chamado pelo ForwardAuth do gateway.
+  gateway-auth:
+    build:
+      context: ..
+      dockerfile: templates/service/Dockerfile
+      args:
+        PACKAGE: "@facoffee/gateway"
+    environment:
+      # iss dos tokens emitidos ao navegador; o JWKS é buscado pela rede interna
+      OIDC_ISSUER: http://localhost:8080/realms/facoffee
+      OIDC_JWKS_URL: http://keycloak:8080/realms/facoffee/protocol/openid-connect/certs
+      OIDC_CLIENT_ID: facoffee-web
+
   # Template de serviço (templates/service); sobe só com --profile example.
   example:
     profiles: [example]
