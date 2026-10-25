@@ -182,6 +182,121 @@ paths:
                 error: ja-participando
         '500':
           $ref: '#/components/responses/ErroInterno'
+  /api/participacao/troca-cota:
+    post:
+      tags: [participacao]
+      operationId: trocarTipoDeCota
+      summary: Trocar tipo de cota
+      description: |
+        Troca o tipo de cota do usuário logado. A troca só vale a partir do mês seguinte (horário
+        de Campo Grande): a cota do mês atual não muda. Uma nova troca no mesmo mês substitui a
+        anterior, e pedir o tipo de cota atual cancela a troca.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tipoDeCota]
+              properties:
+                tipoDeCota:
+                  $ref: '#/components/schemas/TipoDeCota'
+      responses:
+        '204':
+          description: Troca registrada.
+        '400':
+          description: Tipo de cota ausente ou inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              example:
+                error: tipo-de-cota-invalido
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/AcessoDesativado'
+        '409':
+          $ref: '#/components/responses/NaoParticipando'
+        '500':
+          $ref: '#/components/responses/ErroInterno'
+  /api/participacao/saida:
+    post:
+      tags: [participacao]
+      operationId: pedirSaida
+      summary: Pedir saída
+      description: |
+        O usuário logado deixa de participar da divisão dos custos da copa. Para voltar, pede a
+        entrada de novo.
+      responses:
+        '204':
+          description: Saída feita.
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/AcessoDesativado'
+        '409':
+          $ref: '#/components/responses/NaoParticipando'
+        '500':
+          $ref: '#/components/responses/ErroInterno'
+  /api/participacao/valor-da-cota:
+    post:
+      tags: [participacao]
+      operationId: definirValorDaCota
+      summary: Definir valor da cota
+      description: |
+        Define o valor mensal de um tipo de cota para um ano, o atual ou um seguinte. Só o gestor
+        define, uma vez por tipo de cota e ano: o valor não muda durante o ano.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tipoDeCota, ano, valorEmCentavos]
+              properties:
+                tipoDeCota:
+                  $ref: '#/components/schemas/TipoDeCota'
+                ano:
+                  type: integer
+                  description: Ano em que o valor vale.
+                  example: 2027
+                valorEmCentavos:
+                  type: integer
+                  minimum: 1
+                  maximum: 2147483647
+                  description: Valor mensal em centavos de real.
+                  example: 2500
+      responses:
+        '204':
+          description: Valor definido.
+        '400':
+          description: Pedido inválido, ou ano que já passou.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              examples:
+                pedidoInvalido:
+                  value:
+                    error: pedido-invalido
+                anoPassado:
+                  value:
+                    error: ano-passado
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/SomenteGestor'
+        '409':
+          description: O valor desse tipo de cota já foi definido para o ano.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              example:
+                error: valor-ja-definido
+        '500':
+          $ref: '#/components/responses/ErroInterno'
 components:
   securitySchemes:
     login:
@@ -233,6 +348,14 @@ components:
             acessoDesativado:
               value:
                 error: acesso-desativado
+    NaoParticipando:
+      description: O usuário não está participando.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          example:
+            error: nao-participando
     ErroInterno:
       description: Erro interno.
   schemas:
