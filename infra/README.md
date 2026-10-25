@@ -10,9 +10,9 @@ docker compose up -d --wait
 
 | Serviço | Endereço |
 |---|---|
-| [API Gateway](../gateway/) (única porta aberta fora do host) | https://localhost |
-| FACOFFEE web (pelo gateway) | https://localhost |
-| Documentação da API (Swagger UI, pelo gateway) | https://localhost/docs |
+| [API Gateway](../gateway/) (único ponto aberto fora do host) | https://localhost ou http://localhost |
+| FACOFFEE web (pelo gateway) | https://localhost ou http://localhost |
+| Documentação da API (Swagger UI, pelo gateway) | https://localhost/docs ou http://localhost/docs |
 | RabbitMQ (AMQP / painel) | `localhost:5672` / http://localhost:15672 |
 | PostgreSQL (bancos `usuario`, `participacao`, `financeiro`, `notificacao`, `example`) | `localhost:5432` |
 | Serviço de exemplo (perfil `example`) | http://localhost:3000 |
@@ -27,7 +27,7 @@ Credenciais em `.env`.
 O realm `facoffee` é importado de [`keycloak/facoffee-realm.json`](keycloak/facoffee-realm.json) quando o Keycloak sobe (realm já existente não é sobrescrito; para reimportar, `docker compose down -v`).
 
 - Emissor OIDC: `http://localhost:8080/realms/facoffee`
-- Client do web: `facoffee-web` (público, Authorization Code + PKCE S256, redirect `http://localhost:5173/*` e `https://localhost/*`; também usado pelo login do Swagger UI em https://localhost/docs)
+- Client do web: `facoffee-web` (público, Authorization Code + PKCE S256, redirect `http://localhost:5173/*`, `https://localhost/*` e `http://localhost/*`; também usado pelo login do Swagger UI em https://localhost/docs)
 - Papéis do realm: `gestor` e `participante`
 - Tela de login: tema `facoffee` em [`keycloak/themes/facoffee/`](keycloak/themes/facoffee/), segue o [Design System](../docs/SYSTEM_DESIGN.md) (estende o `keycloak.v2`; no `start-dev`, mudanças no CSS aparecem ao recarregar a página). Num ambiente que já existia, `docker compose up -d --force-recreate keycloak` reimporta o realm com o tema ([ADR 0014](../docs/adr/0014-tema-da-tela-de-login.md))
 

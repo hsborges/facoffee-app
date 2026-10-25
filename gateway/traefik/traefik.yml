@@ -1,5 +1,8 @@
 # Static configuration. Routes and middlewares live in dynamic.yml.
 entryPoints:
+  # Plain HTTP for the local environment (ADR 0022): routers without entryPoints answer on both.
+  http:
+    address: ":80"
   websecure:
     address: ":443"
     http:

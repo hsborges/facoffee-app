@@ -84,10 +84,11 @@ services:
       timeout: 5s
       retries: 10
 
-  # Única porta aberta para fora do host (ADR 0007).
+  # Único ponto aberto para fora do host (ADR 0007), em HTTPS e HTTP (ADR 0022).
   gateway:
     image: traefik:v3.7
     ports:
+      - "80:80"
       - "443:443"
     volumes:
       - ../gateway/traefik:/etc/traefik:ro
