@@ -202,7 +202,33 @@ importers:
 
   services/agendador: {}
 
-  services/financeiro: {}
+  services/financeiro:
+    dependencies:
+      '@hono/node-server':
+        specifier: ^2.1.5
+        version: 2.1.5(hono@4.13.13)
+      amqp-connection-manager:
+        specifier: ^5.0.1
+        version: 5.0.1(amqplib@2.2.0)
+      amqplib:
+        specifier: ^2.2.0
+        version: 2.2.0
+      drizzle-orm:
+        specifier: ^0.45.4
+        version: 0.45.4(@types/pg@8.23.1)(pg@8.23.1)
+      hono:
+        specifier: ^4.13.13
+        version: 4.13.13
+      pg:
+        specifier: ^8.23.1
+        version: 8.23.1
+    devDependencies:
+      '@types/pg':
+        specifier: ^8.23.1
+        version: 8.23.1
+      drizzle-kit:
+        specifier: ^0.31.11
+        version: 0.31.11
 
   services/notificacao: {}
 
