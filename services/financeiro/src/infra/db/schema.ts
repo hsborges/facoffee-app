@@ -9,6 +9,7 @@ import {
   timestamp,
   uuid,
 } from 'drizzle-orm/pg-core';
+import type { Forma } from '../../domain/pagamento.js';
 import type { TipoDeCota } from '../../domain/participante.js';
 
 const instant = (name: string) => timestamp(name, { withTimezone: true });
@@ -32,6 +33,18 @@ export const cotas = pgTable(
   },
   (t) => [primaryKey({ columns: [t.participanteId, t.mes] })],
 );
+
+/** Pagamentos recebidos; a comprovante belongs to one pagamento only. */
+export const pagamentos = pgTable('pagamentos', {
+  id: uuid('id').primaryKey(),
+  participanteId: uuid('participante_id')
+    .notNull()
+    .references(() => participantes.id),
+  valorEmCentavos: integer('valor_em_centavos').notNull(),
+  forma: text('forma').$type<Forma>().notNull(),
+  comprovanteId: uuid('comprovante_id').unique(),
+  recebidoEm: instant('recebido_em').notNull(),
+});
 
 /** Events written in the aggregate's transaction; the relay publishes them in `seq` order. */
 export const outbox = pgTable('outbox', {

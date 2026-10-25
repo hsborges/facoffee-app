@@ -182,3 +182,59 @@ it('guarda a comprovante in S3 and serves it only to its participante and the ge
   expect((await baixar({ 'x-user-id': randomUUID() })).status).toBe(404);
   expect((await fetch(`${url}/nota/${id}`, { headers: gestor })).status).toBe(404);
 });
+
+it('receives a pagamento por PIX and publishes Pagamento recebido, once per comprovante', async () => {
+  const { queue } = await channel.assertQueue('', { exclusive: true });
+  await channel.bindQueue(queue, EXCHANGE, 'finance.payment-received.v1');
+  const publicados: Event[] = [];
+  await channel.consume(
+    queue,
+    (msg) => msg && publicados.push(JSON.parse(msg.content.toString())),
+    {
+      noAck: true,
+    },
+  );
+
+  const participante = randomUUID();
+  publicar(entrou(participante));
+  expect(await eventually(async () => (await repository.buscar(participante)) !== undefined)).toBe(
+    true,
+  );
+
+  const gestor = { 'x-user-id': randomUUID(), 'x-user-roles': 'gestor' };
+  const url = `http://localhost:${running.port}`;
+  const form = new FormData();
+  form.append('participanteId', participante);
+  form.append('arquivo', new Blob([new TextEncoder().encode('%PDF-1.7 pix')]), 'pix.pdf');
+  const guardado = await fetch(`${url}/guardar-comprovante`, {
+    method: 'POST',
+    headers: gestor,
+    body: form,
+  });
+  const { id: comprovanteId } = (await guardado.json()) as { id: string };
+
+  const receber = () =>
+    fetch(`${url}/receber-pagamento`, {
+      method: 'POST',
+      headers: { ...gestor, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        participanteId: participante,
+        valorEmCentavos: 3000,
+        forma: 'pix',
+        comprovanteId,
+      }),
+    });
+  const recebido = await receber();
+  expect(recebido.status).toBe(201);
+  const { id } = (await recebido.json()) as { id: string };
+  expect((await receber()).status).toBe(409);
+
+  expect(await eventually(async () => publicados.length > 0)).toBe(true);
+  await sleep(1000);
+  expect(publicados).toMatchObject([
+    {
+      type: 'finance.payment-received',
+      payload: { paymentId: id, participantId: participante, amountInCents: 3000, method: 'pix' },
+    },
+  ]);
+});

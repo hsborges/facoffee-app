@@ -21,6 +21,18 @@ Guardados num bucket S3 ([ADR 0018](../../docs/adr/0018-armazenamento-de-comprov
 | `GET /comprovante/:id` | o participante do comprovante e o gestor; outros recebem 404 |
 | `GET /nota/:id` | qualquer participante |
 
+## Receber pagamento
+
+`POST /receber-pagamento` (só o gestor), em JSON: `participanteId`, `valorEmCentavos`, `forma` (`pix` ou `dinheiro`) e, no PIX, `comprovanteId` (o `id` de `/guardar-comprovante`). Responde `201 { id }` e publica *Pagamento recebido* pela outbox. Todo pagamento entra na caixinha: as leituras somam a tabela `pagamentos`.
+
+| Recusa | Status |
+|---|---|
+| não é o gestor (`sem-permissao`) | 403 |
+| PIX sem comprovante (`pix-sem-comprovante`) ou dinheiro com comprovante (`comprovante-so-no-pix`) | 400 |
+| comprovante não guardado para esse participante (`comprovante-nao-encontrado`) | 404 |
+| participante que Financeiro não conhece (`participante-nao-encontrado`) | 404 |
+| comprovante já usado em outro pagamento (`comprovante-ja-usado`) | 409 |
+
 ## Eventos consumidos
 
 Fila `finance.events`. Cada evento é tratado uma vez só (o id vai para `processed_events`), e os tratadores também são idempotentes: um evento repetido com outro id não duplica cota nem participante.

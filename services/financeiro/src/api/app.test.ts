@@ -4,10 +4,13 @@ import {
   type Arquivo,
   baixarComprovante,
   baixarNota,
+  comprovanteDoParticipante,
   guardarComprovante,
   guardarNota,
 } from '../application/arquivos.js';
+import { receberPagamento } from '../application/pagamentos.js';
 import { TAMANHO_MAXIMO } from '../domain/arquivo.js';
+import { ok } from '../domain/result.js';
 import { createLogger } from '../infra/logger.js';
 import { type ApiDependencies, createApp } from './app.js';
 
@@ -34,6 +37,11 @@ const app = (deps: Partial<ApiDependencies> = {}) => {
     guardarNota: guardarNota(armazem, newId),
     baixarComprovante: baixarComprovante(armazem),
     baixarNota: baixarNota(armazem),
+    receberPagamento: receberPagamento(
+      { salvar: async () => ok(undefined) },
+      comprovanteDoParticipante(armazem),
+      { now: () => new Date(), newId },
+    ),
     health: async () => ({ database: true, rabbitmq: true, armazenamento: true }),
     logger: createLogger('test', () => {}),
     ...deps,
@@ -170,5 +178,64 @@ describe('nota', () => {
     const api = app();
     expect((await api.request(`/nota/${outro}`, { headers: doOutro })).status).toBe(404);
     expect((await api.request(`/nota/${outro}`)).status).toBe(401);
+  });
+});
+
+describe('POST /receber-pagamento', () => {
+  const receber = (api: ReturnType<typeof app>, headers: Record<string, string>, body: unknown) =>
+    enviar(
+      api,
+      '/receber-pagamento',
+      { ...headers, 'content-type': 'application/json' },
+      JSON.stringify(body),
+    );
+  const emDinheiro = { participanteId: participante, valorEmCentavos: 3000, forma: 'dinheiro' };
+
+  it('201 with the id of the pagamento por PIX, referencing its comprovante', async () => {
+    const api = app();
+    const form = formulario({ arquivo: PNG, participanteId: participante });
+    const comprovante = await enviar(api, '/guardar-comprovante', gestor, form);
+    const { id: comprovanteId } = (await comprovante.json()) as { id: string };
+
+    const response = await receber(api, gestor, { ...emDinheiro, forma: 'pix', comprovanteId });
+    expect(response.status).toBe(201);
+    expect(await response.json()).toEqual({ id: expect.any(String) });
+  });
+
+  it('201 for a pagamento em dinheiro', async () => {
+    expect((await receber(app(), gestor, emDinheiro)).status).toBe(201);
+  });
+
+  it('400 for a pagamento por PIX without comprovante', async () => {
+    const response = await receber(app(), gestor, { ...emDinheiro, forma: 'pix' });
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: 'pix-sem-comprovante' });
+  });
+
+  it('404 for a comprovante that was not guardado for the participante', async () => {
+    const comprovanteId = outro;
+    const response = await receber(app(), gestor, { ...emDinheiro, forma: 'pix', comprovanteId });
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: 'comprovante-nao-encontrado' });
+  });
+
+  it('400 for an invalid pedido', async () => {
+    for (const body of [
+      { ...emDinheiro, participanteId: 'abc' },
+      { ...emDinheiro, valorEmCentavos: 0 },
+      { ...emDinheiro, valorEmCentavos: 10.5 },
+      { ...emDinheiro, forma: 'cheque' },
+      { ...emDinheiro, comprovanteId: 'abc' },
+      'nao-e-objeto',
+    ]) {
+      const response = await receber(app(), gestor, body);
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ error: 'pedido-invalido' });
+    }
+  });
+
+  it('403 when not the gestor and 401 without the logged-in person', async () => {
+    expect((await receber(app(), doParticipante, emDinheiro)).status).toBe(403);
+    expect((await receber(app(), {}, emDinheiro)).status).toBe(401);
   });
 });
