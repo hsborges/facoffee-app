@@ -5,7 +5,7 @@
 | **Escopo** | Divisão de custos da copa da FACOM |
 | **Sistema** | FACOFFEE |
 | **Disciplina** | Técnicas Avançadas de Desenvolvimento de Software (2026/2) |
-| **Versão** | 2.2 |
+| **Versão** | 2.3 |
 | **Data** | 2026-10-25 |
 | **Status** | Aprovado |
 
@@ -124,6 +124,7 @@ Dois termos aparecem em mais de um contexto:
 
 **Regras:**
 - É devida todo mês, no início do mês, enquanto a pessoa participa.
+- Quem entra durante o mês também deve a cota daquele mês.
 - O valor é o do [tipo de cota](#tipo-de-cota) do participante naquele mês, conforme o [valor da cota](#valor-da-cota) do ano.
 - Depois de devida, o valor não muda, mesmo que o participante troque de tipo ou saia.
 - O gestor também chama de "cota" o tipo escolhido. Neste glossário, **Cota** é sempre o valor do mês e **[Tipo de cota](#tipo-de-cota)** é a modalidade.
@@ -264,6 +265,7 @@ Dois termos aparecem em mais de um contexto:
 
 **Regras:**
 - Não muda durante o ano.
+- Se o gestor não define o valor de um tipo de cota até o início do ano, repete-se o valor do ano anterior.
 - Os participantes são avisados quando o valor é definido.
 
 **Relacionados:** [Tipo de cota](#tipo-de-cota), [Cota](#cota), [Gasto](#gasto), [Gestor](#gestor).
@@ -347,3 +349,4 @@ Nenhuma questão em aberto nesta versão.
 | 2.0 | 2026-10-24 | Revisão a partir da arquitetura do FACOFFEE. A [Visão por área](#visão-por-área) indica o contexto de cada termo. [Participante](#participante) também sai quando o acesso é desativado. [Complemento](#complemento) é dividido entre os participantes do momento da solicitação. [Gestor](#gestor) passa a ser descrito como papel de um participante, com as ações que só ele faz. [Cota](#cota) ganha regras sobre o valor do mês. "Usuário", "administrador" e "pagamento realizado" entram nos termos a evitar. Abertas as questões 1 e 2. |
 | 2.1 | 2026-10-24 | Decisões: o [crédito](#crédito) é abatido automaticamente; o [complemento](#complemento) é dividido entre todos os participantes ativos; o acesso é desativado pelo [gestor](#gestor) ou a pedido do [participante](#participante), e isso encerra a participação. Questões 1 e 2 fechadas. |
 | 2.2 | 2026-10-25 | Nova seção [Nomes nos contratos de eventos](#nomes-nos-contratos-de-eventos), com o nome em inglês de cada termo e evento usado nos contratos de eventos. |
+| 2.3 | 2026-10-25 | [Cota](#cota): quem entra durante o mês também deve a cota daquele mês. [Valor da cota](#valor-da-cota): sem definição do gestor até o início do ano, repete-se o valor do ano anterior. |
