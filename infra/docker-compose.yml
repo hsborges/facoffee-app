@@ -144,6 +144,22 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  participacao:
+    build:
+      context: ..
+      dockerfile: templates/service/Dockerfile
+      args:
+        PACKAGE: "@facoffee/participacao"
+    environment:
+      SERVICE: participation
+      DATABASE_URL: postgres://participacao:${PARTICIPACAO_DB_PASSWORD}@postgres:5432/participacao
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
   # Template de serviço (templates/service); sobe só com --profile example.
   example:
     profiles: [example]
