@@ -1,6 +1,6 @@
 # 0001. Arquitetura baseada em serviços
 
-- Status: Proposto
+- Status: Aceito
 - Data: 2026-10-24
 
 ## Contexto
