@@ -538,6 +538,63 @@ paths:
                 error: nota-ja-usada
         '500':
           $ref: '#/components/responses/ErroInterno'
+  /api/financeiro/gasto/{id}/reembolsar:
+    post:
+      tags: [financeiro]
+      operationId: reembolsarGasto
+      summary: Reembolsar
+      description: |
+        Devolve o valor total de um gasto pago do próprio bolso a quem o registrou. Só o gestor
+        reembolsa, e cada gasto é reembolsado uma vez só. O dinheiro desse gasto sai da caixinha
+        no reembolso.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identificador do gasto.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: Reembolso feito.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id]
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    description: Identificador do reembolso.
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/SomenteGestor'
+        '404':
+          description: Gasto não encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              example:
+                error: gasto-nao-encontrado
+        '409':
+          description: O gasto já foi reembolsado, ou foi pago pela caixinha e não tem reembolso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              examples:
+                gastoJaReembolsado:
+                  value:
+                    error: gasto-ja-reembolsado
+                gastoPagoPelaCaixinha:
+                  value:
+                    error: gasto-pago-pela-caixinha
+        '500':
+          $ref: '#/components/responses/ErroInterno'
   /api/financeiro/participante:
     get:
       tags: [financeiro]
