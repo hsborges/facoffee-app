@@ -97,6 +97,9 @@ services:
     depends_on:
       gateway-auth:
         condition: service_healthy
+      # Confere o acesso desativado em toda requisição (ADR 0011).
+      usuario:
+        condition: service_healthy
 
   # Verificador de token chamado pelo ForwardAuth do gateway.
   gateway-auth:
@@ -130,6 +133,15 @@ services:
       dockerfile: templates/service/Dockerfile
       args:
         PACKAGE: "@facoffee/usuario"
+    environment:
+      SERVICE: user
+      DATABASE_URL: postgres://usuario:${USUARIO_DB_PASSWORD}@postgres:5432/usuario
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   # Template de serviço (templates/service); sobe só com --profile example.
   example:
