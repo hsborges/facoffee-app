@@ -21,6 +21,7 @@ Divisão de custos da copa da FACOM.
 | `services/financeiro/` | Contexto Financeiro — Pagamento, Gasto, Caixinha, Complemento |
 | `services/notificacao/` | Avisos por e-mail e WhatsApp |
 | `services/agendador/` | Gatilhos de início do mês e do ano |
+| `templates/service/` | Template de serviço (camadas, outbox, consumidor idempotente) |
 | `gateway/` | API Gateway |
 | `web/` | FACOFFEE web |
 | `infra/` | Ambiente local (docker compose, Keycloak, RabbitMQ, bancos, arquivos) |
