@@ -48,6 +48,7 @@ services:
       - "127.0.0.1:8080:8080"
     volumes:
       - ./keycloak:/opt/keycloak/data/import:ro
+      - ./keycloak/themes:/opt/keycloak/themes:ro
     healthcheck:
       # a imagem não tem curl/wget; usa /dev/tcp do bash na porta de gestão
       test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '\"UP\"' <&3"]

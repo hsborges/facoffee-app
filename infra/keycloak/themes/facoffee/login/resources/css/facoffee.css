@@ -1,0 +1,81 @@
+/* Tokens de docs/SYSTEM_DESIGN.md aplicados sobre o tema keycloak.v2 (PatternFly 5). */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@700;900&display=swap");
+
+:root {
+    --keycloak-logo-url: url("../img/facoffee-logo.svg");
+    --keycloak-logo-width: 240px;
+    --keycloak-logo-height: 120px;
+    --keycloak-card-top-color: #D5B290;
+
+    --pf-v5-global--FontFamily--text: "Inter", "DM Sans", system-ui, sans-serif;
+    --pf-v5-global--FontFamily--heading: "Montserrat", "Plus Jakarta Sans", "Poppins", sans-serif;
+
+    --pf-v5-global--primary-color--100: #413C31;
+    --pf-v5-global--primary-color--200: #2E2A22;
+    --pf-v5-global--link--Color: #413C31;
+    --pf-v5-global--link--Color--hover: #2E2A22;
+    --pf-v5-global--active-color--100: #413C31;
+    --pf-v5-global--Color--100: #413C31;
+    --pf-v5-global--Color--200: #7A7267;
+
+    --pf-v5-global--BorderColor--100: #E8E0D5;
+    --pf-v5-global--success-color--100: #3B7A57;
+    --pf-v5-global--warning-color--100: #D9822B;
+    --pf-v5-global--danger-color--100: #C93B2B;
+    --pf-v5-global--danger-color--200: #C93B2B;
+
+    --pf-v5-global--BorderRadius--sm: 8px;
+}
+
+.login-pf body {
+    background: #F9F6F2;
+}
+
+.pf-v5-c-login__main {
+    color: #413C31;
+    background: #FFFFFF;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px -4px rgba(65, 60, 49, 0.08);
+    overflow: hidden;
+}
+
+.pf-v5-c-login__main-header .pf-v5-c-title {
+    font-weight: 700;
+}
+
+.pf-v5-c-form-control::before,
+.pf-v5-c-button.pf-m-control::before {
+    border: 1px solid #E8E0D5;
+    border-radius: 8px;
+}
+
+.pf-v5-c-form-control::after,
+.pf-v5-c-button.pf-m-control::after {
+    border: none;
+}
+
+/* O foco fica na borda do contorno (abaixo), não no input. */
+.pf-v5-c-form-control > :focus {
+    outline: none;
+}
+
+.pf-v5-c-form-control:hover::before {
+    border-color: #D5B290;
+}
+
+.pf-v5-c-form-control:focus-within::before {
+    border: 1.5px solid #413C31;
+    box-shadow: 0 0 0 3px rgba(213, 178, 144, 0.5);
+}
+
+.pf-v5-c-form-control.pf-m-error::before {
+    border-color: #C93B2B;
+}
+
+.pf-v5-c-button.pf-m-primary {
+    font-weight: 600;
+}
+
+.pf-v5-c-button.pf-m-secondary {
+    --pf-v5-c-button--after--BorderWidth: 1.5px;
+}

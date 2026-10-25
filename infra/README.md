@@ -28,6 +28,7 @@ O realm `facoffee` é importado de [`keycloak/facoffee-realm.json`](keycloak/fac
 - Emissor OIDC: `http://localhost:8080/realms/facoffee`
 - Client do web: `facoffee-web` (público, Authorization Code + PKCE S256, redirect `http://localhost:5173/*`; também usado pelo login do Swagger UI em https://localhost/docs)
 - Papéis do realm: `gestor` e `participante`
+- Tela de login: tema `facoffee` em [`keycloak/themes/facoffee/`](keycloak/themes/facoffee/), segue o [Design System](../docs/SYSTEM_DESIGN.md) (estende o `keycloak.v2`; no `start-dev`, mudanças no CSS aparecem ao recarregar a página)
 
 | Usuário de teste | Senha | Papéis |
 |---|---|---|
