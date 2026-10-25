@@ -13,8 +13,8 @@ Alcançada só pelo [gateway](../../gateway/), que valida o token e envia a iden
 |---|---|
 | `GET /api/usuario` | Usuários registrados, com quem está desativado: `[{ id, nome, email, desativado }]`, ou 403 se não é gestor |
 | `GET /api/usuario/eu` | Usuário logado: `{ id, nome, email, perfis }` |
-| `POST /api/usuario/<id>/desativacao` | Desativa o acesso e publica *Usuário desativado*: 204, ou 403 se não é gestor nem o próprio usuário |
-| `POST /api/usuario/<id>/reativacao` | Reativa o acesso, sem publicar evento: 204, ou 403 se não é gestor ([ADR 0013](../../docs/adr/0013-reativacao-do-acesso.md)) |
+| `POST /api/usuario/<id>/desativar` | Desativa o acesso e publica *Usuário desativado*: 204, ou 403 se não é gestor nem o próprio usuário |
+| `POST /api/usuario/<id>/reativar` | Reativa o acesso, sem publicar evento: 204, ou 403 se não é gestor ([ADR 0013](../../docs/adr/0013-reativacao-do-acesso.md)) |
 
 O gateway chama `GET /acesso` antes de toda requisição, de qualquer contexto: registra o usuário (ou atualiza nome e e-mail) e responde 204 se o acesso está ativo, 403 se foi desativado ([ADR 0011](../../docs/adr/0011-acesso-desativado.md), [ADR 0012](../../docs/adr/0012-registro-do-usuario-no-primeiro-acesso.md)).
 

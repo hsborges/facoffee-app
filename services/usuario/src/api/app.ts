@@ -44,9 +44,9 @@ const usuarioLogado = (c: Context): Usuario | undefined => {
 };
 
 /**
- * HTTP API of the Usuário context: `GET /eu` (ADR 0008), `POST /:id/desativacao`,
+ * HTTP API of the Usuário context: `GET /eu` (ADR 0008), `POST /:id/desativar`,
  * `GET /acesso`, the gateway access check that also registers the usuário (ADR 0011, 0012),
- * `GET /` and `POST /:id/reativacao` (ADR 0013). Without `X-User-Id`, 401.
+ * `GET /` and `POST /:id/reativar` (ADR 0013). Without `X-User-Id`, 401.
  * Logs every request except health probes and access checks; unhandled errors become 500.
  */
 export const createApp = ({
@@ -98,7 +98,7 @@ export const createApp = ({
       const result = await listar(solicitante);
       return result.ok ? c.json(result.value) : c.json({ error: result.error }, 403);
     })
-    .post('/:id/desativacao', async (c) => {
+    .post('/:id/desativar', async (c) => {
       const solicitante = usuarioLogado(c);
       if (!solicitante) return c.json({ error: 'unauthorized' }, 401);
       const id = c.req.param('id');
@@ -106,7 +106,7 @@ export const createApp = ({
       const result = await desativar(solicitante, id);
       return result.ok ? c.body(null, 204) : c.json({ error: result.error }, 403);
     })
-    .post('/:id/reativacao', async (c) => {
+    .post('/:id/reativar', async (c) => {
       const solicitante = usuarioLogado(c);
       if (!solicitante) return c.json({ error: 'unauthorized' }, 401);
       const id = c.req.param('id');

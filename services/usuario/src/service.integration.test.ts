@@ -45,7 +45,7 @@ const eventually = async (check: () => boolean, timeoutMs = 10_000) => {
 it('publishes Usuário desativado once and blocks the access', async () => {
   const id = randomUUID();
   const desativar = () =>
-    fetch(`${url}/${id}/desativacao`, {
+    fetch(`${url}/${id}/desativar`, {
       method: 'POST',
       headers: { 'x-user-id': id, 'x-user-roles': 'participante' },
     });
@@ -82,14 +82,14 @@ it('registers the usuário on the first access and the gestor reactivates them',
   expect((await acesso('João Café')).status).toBe(204);
   expect(await listar()).toEqual({ id, nome: 'João Café', email: '', desativado: false });
 
-  expect((await post('desativacao', gestor)).status).toBe(204);
+  expect((await post('desativar', gestor)).status).toBe(204);
   expect((await acesso('João Café')).status).toBe(403);
   expect(await listar()).toMatchObject({ desativado: true });
 
-  expect(
-    (await post('reativacao', { 'x-user-id': id, 'x-user-roles': 'participante' })).status,
-  ).toBe(403);
-  expect((await post('reativacao', gestor)).status).toBe(204);
+  expect((await post('reativar', { 'x-user-id': id, 'x-user-roles': 'participante' })).status).toBe(
+    403,
+  );
+  expect((await post('reativar', gestor)).status).toBe(204);
   expect((await acesso('João Café')).status).toBe(204);
   expect(await listar()).toMatchObject({ desativado: false });
 });

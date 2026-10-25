@@ -12,10 +12,10 @@ Alcançada só pelo [gateway](../../gateway/), que valida o token e envia a iden
 
 | Rota pública | Resposta |
 |---|---|
-| `POST /api/participacao/entrada` | Com `{ tipoDeCota: "so-cafe" \| "completa" }`, o usuário logado entra e publica *Participante entrou*: 204, 400 se o tipo é inválido, ou 409 se já está participando. Retornar é entrar de novo. |
-| `POST /api/participacao/troca-cota` | Com `{ tipoDeCota }`, troca o tipo de cota a partir do mês seguinte, sem publicar evento (*Tipo de cota trocado* é interno): 204, 400 ou 409 se não está participando. |
-| `POST /api/participacao/saida` | O usuário logado sai e publica *Participante saiu*: 204 ou 409 se não está participando. |
-| `POST /api/participacao/valor-da-cota` | Com `{ tipoDeCota, ano, valorEmCentavos }`, o gestor (`X-User-Roles` com `gestor`) define o valor e publica *Valor da cota definido*: 204, 400 (pedido inválido ou ano passado), 403 se não é gestor, ou 409 se já foi definido para o tipo e o ano. |
+| `POST /api/participacao/entrar` | Com `{ tipoDeCota: "so-cafe" \| "completa" }`, o usuário logado entra e publica *Participante entrou*: 204, 400 se o tipo é inválido, ou 409 se já está participando. Retornar é entrar de novo. |
+| `POST /api/participacao/trocar-tipo-de-cota` | Com `{ tipoDeCota }`, troca o tipo de cota a partir do mês seguinte, sem publicar evento (*Tipo de cota trocado* é interno): 204, 400 ou 409 se não está participando. |
+| `POST /api/participacao/sair` | O usuário logado sai e publica *Participante saiu*: 204 ou 409 se não está participando. |
+| `POST /api/participacao/definir-valor-da-cota` | Com `{ tipoDeCota, ano, valorEmCentavos }`, o gestor (`X-User-Roles` com `gestor`) define o valor e publica *Valor da cota definido*: 204, 400 (pedido inválido ou ano passado), 403 se não é gestor, ou 409 se já foi definido para o tipo e o ano. |
 
 Especificação completa em [`gateway/openapi.yaml`](../../gateway/openapi.yaml).
 
@@ -41,6 +41,6 @@ pnpm --filter @facoffee/participacao test               # unidade
 pnpm --filter @facoffee/participacao test:integration   # precisa de postgres e rabbitmq do compose
 pnpm --filter @facoffee/participacao db:generate        # gera migration após mudar src/infra/db/schema.ts
 cd infra && docker compose up -d --wait --build participacao gateway
-curl -k -X POST https://localhost/api/participacao/entrada -H "Authorization: Bearer $TOKEN" \
+curl -k -X POST https://localhost/api/participacao/entrar -H "Authorization: Bearer $TOKEN" \
   -H 'content-type: application/json' -d '{"tipoDeCota":"completa"}'
 ```

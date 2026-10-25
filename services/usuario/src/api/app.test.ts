@@ -60,9 +60,9 @@ describe('GET /eu', () => {
   });
 });
 
-describe('POST /:id/desativacao', () => {
+describe('POST /:id/desativar', () => {
   const post = (id: string, headers: Record<string, string>) =>
-    app().request(`/${id}/desativacao`, { method: 'POST', headers });
+    app().request(`/${id}/desativar`, { method: 'POST', headers });
 
   it('204 when the gestor deactivates someone else', async () => {
     expect((await post(ativo, { 'x-user-id': 'gestor-1', 'x-user-roles': 'gestor' })).status).toBe(
@@ -141,9 +141,9 @@ describe('GET /', () => {
   });
 });
 
-describe('POST /:id/reativacao', () => {
+describe('POST /:id/reativar', () => {
   const post = (id: string, headers: Record<string, string>) =>
-    app().request(`/${id}/reativacao`, { method: 'POST', headers });
+    app().request(`/${id}/reativar`, { method: 'POST', headers });
 
   it('204 when the gestor reactivates an access', async () => {
     const gestor = { 'x-user-id': 'gestor-1', 'x-user-roles': 'gestor' };
@@ -165,6 +165,11 @@ describe('POST /:id/reativacao', () => {
     );
     expect((await post(desativado, {})).status).toBe(401);
   });
+});
+
+it.each(['desativacao', 'reativacao'])('404 on the old path POST /:id/%s', async (path) => {
+  const headers = { 'x-user-id': 'gestor-1', 'x-user-roles': 'gestor' };
+  expect((await app().request(`/${ativo}/${path}`, { method: 'POST', headers })).status).toBe(404);
 });
 
 describe('GET /health', () => {

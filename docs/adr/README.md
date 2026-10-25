@@ -19,3 +19,4 @@ Registros de decisões de arquitetura. Um arquivo por decisão: `NNNN-titulo.md`
 | [0013](0013-reativacao-do-acesso.md) | Reativação do acesso | Aceito |
 | [0014](0014-tema-da-tela-de-login.md) | Tema da tela de login | Aceito |
 | [0015](0015-fuso-horario-do-dominio.md) | Fuso horário do domínio | Aceito |
+| [0016](0016-nomenclatura-das-rotas-http.md) | Nomenclatura das rotas HTTP | Aceito |

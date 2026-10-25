@@ -50,8 +50,8 @@ const STATUS_DO_ERRO = {
 } as const;
 
 /**
- * HTTP API of the Participação context, for the logged-in person: `POST /entrada`,
- * `POST /troca-cota`, `POST /saida` and, for the gestor, `POST /valor-da-cota`.
+ * HTTP API of the Participação context, for the logged-in person: `POST /entrar`,
+ * `POST /trocar-tipo-de-cota`, `POST /sair` and, for the gestor, `POST /definir-valor-da-cota`.
  * Identity comes from the gateway in `X-User-Id` and `X-User-Roles` (ADR 0007); without it, 401.
  * Logs every request except health probes; unhandled errors become 500.
  */
@@ -84,7 +84,7 @@ export const createApp = ({
       const healthy = Object.values(dependencies).every(Boolean);
       return c.json({ status: healthy ? 'ok' : 'unhealthy', dependencies }, healthy ? 200 : 503);
     })
-    .post('/entrada', async (c) => {
+    .post('/entrar', async (c) => {
       const id = idLogado(c);
       if (!id) return c.json({ error: 'unauthorized' }, 401);
       const { tipoDeCota } = await corpo(c);
@@ -92,7 +92,7 @@ export const createApp = ({
       const result = await pedirEntrada(id, tipoDeCota);
       return result.ok ? c.body(null, 204) : c.json({ error: result.error }, 409);
     })
-    .post('/troca-cota', async (c) => {
+    .post('/trocar-tipo-de-cota', async (c) => {
       const id = idLogado(c);
       if (!id) return c.json({ error: 'unauthorized' }, 401);
       const { tipoDeCota } = await corpo(c);
@@ -100,13 +100,13 @@ export const createApp = ({
       const result = await trocarTipo(id, tipoDeCota);
       return result.ok ? c.body(null, 204) : c.json({ error: result.error }, 409);
     })
-    .post('/saida', async (c) => {
+    .post('/sair', async (c) => {
       const id = idLogado(c);
       if (!id) return c.json({ error: 'unauthorized' }, 401);
       const result = await pedirSaida(id);
       return result.ok ? c.body(null, 204) : c.json({ error: result.error }, 409);
     })
-    .post('/valor-da-cota', async (c) => {
+    .post('/definir-valor-da-cota', async (c) => {
       if (!idLogado(c)) return c.json({ error: 'unauthorized' }, 401);
       const { tipoDeCota, ano, valorEmCentavos } = await corpo(c);
       const valido =

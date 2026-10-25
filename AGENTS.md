@@ -76,6 +76,16 @@ Ganhos, custos e riscos.
 - Trate erros esperados como valores de retorno (ex.: `Result`), não com exceções.
 - Use classes só quando uma biblioteca ou framework exigir.
 
+## Rotas HTTP
+
+Regras de nomenclatura das rotas públicas ([ADR 0016](docs/adr/0016-nomenclatura-das-rotas-http.md)):
+
+- Em português, minúsculas, kebab-case, sem acento.
+- Recursos (leituras) são substantivos no singular: `GET /api/usuario`, `GET /api/usuario/eu`.
+- Comandos são `POST` com verbo no infinitivo, em voz ativa, como sub-recurso: `POST /api/<contexto>/{id}/<verbo>` (ex.: `desativar`, `reativar`) ou, sobre o usuário logado, `POST /api/<contexto>/<verbo>` (ex.: `entrar`, `sair`).
+- O verbo, e o complemento quando houver, vem da linguagem ubíqua ([docs/GLOSSARIO.md](docs/GLOSSARIO.md)): `trocar-tipo-de-cota`, `definir-valor-da-cota`.
+- Eventos continuam no passado e em inglês ([ADR 0006](docs/adr/0006-contratos-dos-eventos-em-ingles.md)); a regra vale só para rotas HTTP.
+
 ## Documentação
 
 - Todo export em `src/` tem comentário TSDoc (`/** ... */`) logo acima, verificado por `pnpm lint` ([ADR 0010](docs/adr/0010-tsdoc-obrigatorio-nos-exports.md)).
