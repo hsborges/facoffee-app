@@ -39,16 +39,16 @@ const publishRaw = (rk: string, content: unknown) =>
     rk,
     Buffer.from(typeof content === 'string' ? content : JSON.stringify(content)),
   );
-const envelope = (tipo: string) => ({
+const envelope = (type: string) => ({
   id: randomUUID(),
-  tipo,
-  versao: 1,
-  ocorridoEm: new Date().toISOString(),
+  type,
+  version: 1,
+  occurredAt: new Date().toISOString(),
   payload: {},
 });
 
 afterAll(async () => {
-  for (const queue of [`${service}.eventos`, `${service}.eventos.mortas`])
+  for (const queue of [`${service}.events`, `${service}.events.dead-letter`])
     await channel.deleteQueue(queue);
   await amqp.close();
 });
@@ -102,7 +102,7 @@ describe('consumer', () => {
     publishRaw('test.ok.v1', '{not json');
 
     const dead = await eventually(async () => {
-      const { messageCount } = await channel.checkQueue(`${service}.eventos.mortas`);
+      const { messageCount } = await channel.checkQueue(`${service}.events.dead-letter`);
       return messageCount >= 2 ? messageCount : undefined;
     });
     expect(dead).toBe(2);
@@ -127,7 +127,7 @@ describe('service', () => {
       expect(confirmed.name).toBe('Coffee');
     } finally {
       await running.stop();
-      for (const queue of [`${service}-svc.eventos`, `${service}-svc.eventos.mortas`])
+      for (const queue of [`${service}-svc.events`, `${service}-svc.events.dead-letter`])
         await channel.deleteQueue(queue);
     }
   });

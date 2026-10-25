@@ -3,7 +3,7 @@
   "info": {
     "title": "Eventos de domínio do FACOFFEE",
     "version": "1.0.0",
-    "description": "Eventos trocados entre os contextos via RabbitMQ. Convenções e versionamento em README.md e no ADR 0004."
+    "description": "Eventos trocados entre os contextos via RabbitMQ. Convenções e versionamento em README.md e no ADR 0006."
   },
   "defaultContentType": "application/json",
   "servers": {
@@ -14,19 +14,19 @@
     }
   },
   "channels": {
-    "usuario.usuario-desativado.v1": {
-      "address": "usuario.usuario-desativado.v1",
+    "user.user-deactivated.v1": {
+      "address": "user.user-deactivated.v1",
       "title": "Usuário desativado",
       "messages": {
-        "usuario.usuario-desativado.v1": {
-          "$ref": "#/components/messages/usuario.usuario-desativado.v1"
+        "user.user-deactivated.v1": {
+          "$ref": "#/components/messages/user.user-deactivated.v1"
         }
       },
       "bindings": {
         "amqp": {
           "is": "routingKey",
           "exchange": {
-            "name": "facoffee.eventos",
+            "name": "facoffee.events",
             "type": "topic",
             "durable": true,
             "autoDelete": false,
@@ -36,19 +36,19 @@
         }
       }
     },
-    "participacao.participante-entrou.v1": {
-      "address": "participacao.participante-entrou.v1",
+    "participation.participant-joined.v1": {
+      "address": "participation.participant-joined.v1",
       "title": "Participante entrou",
       "messages": {
-        "participacao.participante-entrou.v1": {
-          "$ref": "#/components/messages/participacao.participante-entrou.v1"
+        "participation.participant-joined.v1": {
+          "$ref": "#/components/messages/participation.participant-joined.v1"
         }
       },
       "bindings": {
         "amqp": {
           "is": "routingKey",
           "exchange": {
-            "name": "facoffee.eventos",
+            "name": "facoffee.events",
             "type": "topic",
             "durable": true,
             "autoDelete": false,
@@ -58,19 +58,19 @@
         }
       }
     },
-    "participacao.participante-saiu.v1": {
-      "address": "participacao.participante-saiu.v1",
+    "participation.participant-left.v1": {
+      "address": "participation.participant-left.v1",
       "title": "Participante saiu",
       "messages": {
-        "participacao.participante-saiu.v1": {
-          "$ref": "#/components/messages/participacao.participante-saiu.v1"
+        "participation.participant-left.v1": {
+          "$ref": "#/components/messages/participation.participant-left.v1"
         }
       },
       "bindings": {
         "amqp": {
           "is": "routingKey",
           "exchange": {
-            "name": "facoffee.eventos",
+            "name": "facoffee.events",
             "type": "topic",
             "durable": true,
             "autoDelete": false,
@@ -80,19 +80,19 @@
         }
       }
     },
-    "participacao.cota-devida.v1": {
-      "address": "participacao.cota-devida.v1",
+    "participation.contribution-due.v1": {
+      "address": "participation.contribution-due.v1",
       "title": "Cota devida",
       "messages": {
-        "participacao.cota-devida.v1": {
-          "$ref": "#/components/messages/participacao.cota-devida.v1"
+        "participation.contribution-due.v1": {
+          "$ref": "#/components/messages/participation.contribution-due.v1"
         }
       },
       "bindings": {
         "amqp": {
           "is": "routingKey",
           "exchange": {
-            "name": "facoffee.eventos",
+            "name": "facoffee.events",
             "type": "topic",
             "durable": true,
             "autoDelete": false,
@@ -102,19 +102,19 @@
         }
       }
     },
-    "participacao.valor-da-cota-definido.v1": {
-      "address": "participacao.valor-da-cota-definido.v1",
+    "participation.contribution-amount-set.v1": {
+      "address": "participation.contribution-amount-set.v1",
       "title": "Valor da cota definido",
       "messages": {
-        "participacao.valor-da-cota-definido.v1": {
-          "$ref": "#/components/messages/participacao.valor-da-cota-definido.v1"
+        "participation.contribution-amount-set.v1": {
+          "$ref": "#/components/messages/participation.contribution-amount-set.v1"
         }
       },
       "bindings": {
         "amqp": {
           "is": "routingKey",
           "exchange": {
-            "name": "facoffee.eventos",
+            "name": "facoffee.events",
             "type": "topic",
             "durable": true,
             "autoDelete": false,
@@ -124,19 +124,19 @@
         }
       }
     },
-    "financeiro.pagamento-recebido.v1": {
-      "address": "financeiro.pagamento-recebido.v1",
+    "finance.payment-received.v1": {
+      "address": "finance.payment-received.v1",
       "title": "Pagamento recebido",
       "messages": {
-        "financeiro.pagamento-recebido.v1": {
-          "$ref": "#/components/messages/financeiro.pagamento-recebido.v1"
+        "finance.payment-received.v1": {
+          "$ref": "#/components/messages/finance.payment-received.v1"
         }
       },
       "bindings": {
         "amqp": {
           "is": "routingKey",
           "exchange": {
-            "name": "facoffee.eventos",
+            "name": "facoffee.events",
             "type": "topic",
             "durable": true,
             "autoDelete": false,
@@ -146,19 +146,19 @@
         }
       }
     },
-    "financeiro.complemento-solicitado.v1": {
-      "address": "financeiro.complemento-solicitado.v1",
+    "finance.top-up-requested.v1": {
+      "address": "finance.top-up-requested.v1",
       "title": "Complemento solicitado",
       "messages": {
-        "financeiro.complemento-solicitado.v1": {
-          "$ref": "#/components/messages/financeiro.complemento-solicitado.v1"
+        "finance.top-up-requested.v1": {
+          "$ref": "#/components/messages/finance.top-up-requested.v1"
         }
       },
       "bindings": {
         "amqp": {
           "is": "routingKey",
           "exchange": {
-            "name": "facoffee.eventos",
+            "name": "facoffee.events",
             "type": "topic",
             "durable": true,
             "autoDelete": false,
@@ -168,19 +168,19 @@
         }
       }
     },
-    "financeiro.reembolso-feito.v1": {
-      "address": "financeiro.reembolso-feito.v1",
+    "finance.reimbursement-made.v1": {
+      "address": "finance.reimbursement-made.v1",
       "title": "Reembolso feito",
       "messages": {
-        "financeiro.reembolso-feito.v1": {
-          "$ref": "#/components/messages/financeiro.reembolso-feito.v1"
+        "finance.reimbursement-made.v1": {
+          "$ref": "#/components/messages/finance.reimbursement-made.v1"
         }
       },
       "bindings": {
         "amqp": {
           "is": "routingKey",
           "exchange": {
-            "name": "facoffee.eventos",
+            "name": "facoffee.events",
             "type": "topic",
             "durable": true,
             "autoDelete": false,
@@ -190,19 +190,19 @@
         }
       }
     },
-    "participacao.eventos": {
-      "address": "participacao.eventos",
-      "description": "Fila de Participação, ligada ao exchange facoffee.eventos pelas routing keys: usuario.usuario-desativado.v1.",
+    "participation.events": {
+      "address": "participation.events",
+      "description": "Fila de Participação, ligada ao exchange facoffee.events pelas routing keys: user.user-deactivated.v1.",
       "messages": {
-        "usuario.usuario-desativado.v1": {
-          "$ref": "#/components/messages/usuario.usuario-desativado.v1"
+        "user.user-deactivated.v1": {
+          "$ref": "#/components/messages/user.user-deactivated.v1"
         }
       },
       "bindings": {
         "amqp": {
           "is": "queue",
           "queue": {
-            "name": "participacao.eventos",
+            "name": "participation.events",
             "durable": true,
             "exclusive": false,
             "autoDelete": false,
@@ -212,25 +212,25 @@
         }
       }
     },
-    "financeiro.eventos": {
-      "address": "financeiro.eventos",
-      "description": "Fila de Financeiro, ligada ao exchange facoffee.eventos pelas routing keys: participacao.participante-entrou.v1, participacao.participante-saiu.v1, participacao.cota-devida.v1.",
+    "finance.events": {
+      "address": "finance.events",
+      "description": "Fila de Financeiro, ligada ao exchange facoffee.events pelas routing keys: participation.participant-joined.v1, participation.participant-left.v1, participation.contribution-due.v1.",
       "messages": {
-        "participacao.participante-entrou.v1": {
-          "$ref": "#/components/messages/participacao.participante-entrou.v1"
+        "participation.participant-joined.v1": {
+          "$ref": "#/components/messages/participation.participant-joined.v1"
         },
-        "participacao.participante-saiu.v1": {
-          "$ref": "#/components/messages/participacao.participante-saiu.v1"
+        "participation.participant-left.v1": {
+          "$ref": "#/components/messages/participation.participant-left.v1"
         },
-        "participacao.cota-devida.v1": {
-          "$ref": "#/components/messages/participacao.cota-devida.v1"
+        "participation.contribution-due.v1": {
+          "$ref": "#/components/messages/participation.contribution-due.v1"
         }
       },
       "bindings": {
         "amqp": {
           "is": "queue",
           "queue": {
-            "name": "financeiro.eventos",
+            "name": "finance.events",
             "durable": true,
             "exclusive": false,
             "autoDelete": false,
@@ -240,28 +240,28 @@
         }
       }
     },
-    "notificacao.eventos": {
-      "address": "notificacao.eventos",
-      "description": "Fila de Notificação, ligada ao exchange facoffee.eventos pelas routing keys: participacao.valor-da-cota-definido.v1, financeiro.pagamento-recebido.v1, financeiro.complemento-solicitado.v1, financeiro.reembolso-feito.v1.",
+    "notification.events": {
+      "address": "notification.events",
+      "description": "Fila de Notificação, ligada ao exchange facoffee.events pelas routing keys: participation.contribution-amount-set.v1, finance.payment-received.v1, finance.top-up-requested.v1, finance.reimbursement-made.v1.",
       "messages": {
-        "participacao.valor-da-cota-definido.v1": {
-          "$ref": "#/components/messages/participacao.valor-da-cota-definido.v1"
+        "participation.contribution-amount-set.v1": {
+          "$ref": "#/components/messages/participation.contribution-amount-set.v1"
         },
-        "financeiro.pagamento-recebido.v1": {
-          "$ref": "#/components/messages/financeiro.pagamento-recebido.v1"
+        "finance.payment-received.v1": {
+          "$ref": "#/components/messages/finance.payment-received.v1"
         },
-        "financeiro.complemento-solicitado.v1": {
-          "$ref": "#/components/messages/financeiro.complemento-solicitado.v1"
+        "finance.top-up-requested.v1": {
+          "$ref": "#/components/messages/finance.top-up-requested.v1"
         },
-        "financeiro.reembolso-feito.v1": {
-          "$ref": "#/components/messages/financeiro.reembolso-feito.v1"
+        "finance.reimbursement-made.v1": {
+          "$ref": "#/components/messages/finance.reimbursement-made.v1"
         }
       },
       "bindings": {
         "amqp": {
           "is": "queue",
           "queue": {
-            "name": "notificacao.eventos",
+            "name": "notification.events",
             "durable": true,
             "exclusive": false,
             "autoDelete": false,
@@ -273,184 +273,184 @@
     }
   },
   "operations": {
-    "publicar.usuario.usuario-desativado.v1": {
+    "publish.user.user-deactivated.v1": {
       "action": "send",
       "title": "Usuário publica Usuário desativado",
       "tags": [{ "name": "Usuário" }],
-      "channel": { "$ref": "#/channels/usuario.usuario-desativado.v1" },
+      "channel": { "$ref": "#/channels/user.user-deactivated.v1" },
       "messages": [
         {
-          "$ref": "#/channels/usuario.usuario-desativado.v1/messages/usuario.usuario-desativado.v1"
+          "$ref": "#/channels/user.user-deactivated.v1/messages/user.user-deactivated.v1"
         }
       ]
     },
-    "publicar.participacao.participante-entrou.v1": {
+    "publish.participation.participant-joined.v1": {
       "action": "send",
       "title": "Participação publica Participante entrou",
       "tags": [{ "name": "Participação" }],
-      "channel": { "$ref": "#/channels/participacao.participante-entrou.v1" },
+      "channel": { "$ref": "#/channels/participation.participant-joined.v1" },
       "messages": [
         {
-          "$ref": "#/channels/participacao.participante-entrou.v1/messages/participacao.participante-entrou.v1"
+          "$ref": "#/channels/participation.participant-joined.v1/messages/participation.participant-joined.v1"
         }
       ]
     },
-    "publicar.participacao.participante-saiu.v1": {
+    "publish.participation.participant-left.v1": {
       "action": "send",
       "title": "Participação publica Participante saiu",
       "tags": [{ "name": "Participação" }],
-      "channel": { "$ref": "#/channels/participacao.participante-saiu.v1" },
+      "channel": { "$ref": "#/channels/participation.participant-left.v1" },
       "messages": [
         {
-          "$ref": "#/channels/participacao.participante-saiu.v1/messages/participacao.participante-saiu.v1"
+          "$ref": "#/channels/participation.participant-left.v1/messages/participation.participant-left.v1"
         }
       ]
     },
-    "publicar.participacao.cota-devida.v1": {
+    "publish.participation.contribution-due.v1": {
       "action": "send",
       "title": "Participação publica Cota devida",
       "tags": [{ "name": "Participação" }],
-      "channel": { "$ref": "#/channels/participacao.cota-devida.v1" },
+      "channel": { "$ref": "#/channels/participation.contribution-due.v1" },
       "messages": [
-        { "$ref": "#/channels/participacao.cota-devida.v1/messages/participacao.cota-devida.v1" }
+        {
+          "$ref": "#/channels/participation.contribution-due.v1/messages/participation.contribution-due.v1"
+        }
       ]
     },
-    "publicar.participacao.valor-da-cota-definido.v1": {
+    "publish.participation.contribution-amount-set.v1": {
       "action": "send",
       "title": "Participação publica Valor da cota definido",
       "tags": [{ "name": "Participação" }],
-      "channel": { "$ref": "#/channels/participacao.valor-da-cota-definido.v1" },
+      "channel": { "$ref": "#/channels/participation.contribution-amount-set.v1" },
       "messages": [
         {
-          "$ref": "#/channels/participacao.valor-da-cota-definido.v1/messages/participacao.valor-da-cota-definido.v1"
+          "$ref": "#/channels/participation.contribution-amount-set.v1/messages/participation.contribution-amount-set.v1"
         }
       ]
     },
-    "publicar.financeiro.pagamento-recebido.v1": {
+    "publish.finance.payment-received.v1": {
       "action": "send",
       "title": "Financeiro publica Pagamento recebido",
       "tags": [{ "name": "Financeiro" }],
-      "channel": { "$ref": "#/channels/financeiro.pagamento-recebido.v1" },
+      "channel": { "$ref": "#/channels/finance.payment-received.v1" },
       "messages": [
         {
-          "$ref": "#/channels/financeiro.pagamento-recebido.v1/messages/financeiro.pagamento-recebido.v1"
+          "$ref": "#/channels/finance.payment-received.v1/messages/finance.payment-received.v1"
         }
       ]
     },
-    "publicar.financeiro.complemento-solicitado.v1": {
+    "publish.finance.top-up-requested.v1": {
       "action": "send",
       "title": "Financeiro publica Complemento solicitado",
       "tags": [{ "name": "Financeiro" }],
-      "channel": { "$ref": "#/channels/financeiro.complemento-solicitado.v1" },
+      "channel": { "$ref": "#/channels/finance.top-up-requested.v1" },
       "messages": [
         {
-          "$ref": "#/channels/financeiro.complemento-solicitado.v1/messages/financeiro.complemento-solicitado.v1"
+          "$ref": "#/channels/finance.top-up-requested.v1/messages/finance.top-up-requested.v1"
         }
       ]
     },
-    "publicar.financeiro.reembolso-feito.v1": {
+    "publish.finance.reimbursement-made.v1": {
       "action": "send",
       "title": "Financeiro publica Reembolso feito",
       "tags": [{ "name": "Financeiro" }],
-      "channel": { "$ref": "#/channels/financeiro.reembolso-feito.v1" },
+      "channel": { "$ref": "#/channels/finance.reimbursement-made.v1" },
       "messages": [
         {
-          "$ref": "#/channels/financeiro.reembolso-feito.v1/messages/financeiro.reembolso-feito.v1"
+          "$ref": "#/channels/finance.reimbursement-made.v1/messages/finance.reimbursement-made.v1"
         }
       ]
     },
-    "consumir.participacao": {
+    "consume.participation": {
       "action": "receive",
       "title": "Participação consome",
       "tags": [{ "name": "Participação" }],
-      "channel": { "$ref": "#/channels/participacao.eventos" },
-      "messages": [
-        { "$ref": "#/channels/participacao.eventos/messages/usuario.usuario-desativado.v1" }
-      ]
+      "channel": { "$ref": "#/channels/participation.events" },
+      "messages": [{ "$ref": "#/channels/participation.events/messages/user.user-deactivated.v1" }]
     },
-    "consumir.financeiro": {
+    "consume.finance": {
       "action": "receive",
       "title": "Financeiro consome",
       "tags": [{ "name": "Financeiro" }],
-      "channel": { "$ref": "#/channels/financeiro.eventos" },
+      "channel": { "$ref": "#/channels/finance.events" },
       "messages": [
-        { "$ref": "#/channels/financeiro.eventos/messages/participacao.participante-entrou.v1" },
-        { "$ref": "#/channels/financeiro.eventos/messages/participacao.participante-saiu.v1" },
-        { "$ref": "#/channels/financeiro.eventos/messages/participacao.cota-devida.v1" }
+        { "$ref": "#/channels/finance.events/messages/participation.participant-joined.v1" },
+        { "$ref": "#/channels/finance.events/messages/participation.participant-left.v1" },
+        { "$ref": "#/channels/finance.events/messages/participation.contribution-due.v1" }
       ]
     },
-    "consumir.notificacao": {
+    "consume.notification": {
       "action": "receive",
       "title": "Notificação consome",
       "tags": [{ "name": "Notificação" }],
-      "channel": { "$ref": "#/channels/notificacao.eventos" },
+      "channel": { "$ref": "#/channels/notification.events" },
       "messages": [
         {
-          "$ref": "#/channels/notificacao.eventos/messages/participacao.valor-da-cota-definido.v1"
+          "$ref": "#/channels/notification.events/messages/participation.contribution-amount-set.v1"
         },
-        { "$ref": "#/channels/notificacao.eventos/messages/financeiro.pagamento-recebido.v1" },
-        { "$ref": "#/channels/notificacao.eventos/messages/financeiro.complemento-solicitado.v1" },
-        { "$ref": "#/channels/notificacao.eventos/messages/financeiro.reembolso-feito.v1" }
+        { "$ref": "#/channels/notification.events/messages/finance.payment-received.v1" },
+        { "$ref": "#/channels/notification.events/messages/finance.top-up-requested.v1" },
+        { "$ref": "#/channels/notification.events/messages/finance.reimbursement-made.v1" }
       ]
     }
   },
   "components": {
     "messages": {
-      "usuario.usuario-desativado.v1": {
-        "name": "usuario.usuario-desativado",
+      "user.user-deactivated.v1": {
+        "name": "user.user-deactivated",
         "title": "Usuário desativado",
         "summary": "O acesso de uma pessoa ao FACOFFEE foi desativado, pelo gestor ou a pedido da própria pessoa.",
         "contentType": "application/json",
-        "payload": { "$ref": "./usuario.usuario-desativado.v1.json" }
+        "payload": { "$ref": "./user.user-deactivated.v1.json" }
       },
-      "participacao.participante-entrou.v1": {
-        "name": "participacao.participante-entrou",
+      "participation.participant-joined.v1": {
+        "name": "participation.participant-joined",
         "title": "Participante entrou",
         "summary": "Uma pessoa passou a participar, pela primeira vez ou retornando, com um tipo de cota.",
         "contentType": "application/json",
-        "payload": { "$ref": "./participacao.participante-entrou.v1.json" }
+        "payload": { "$ref": "./participation.participant-joined.v1.json" }
       },
-      "participacao.participante-saiu.v1": {
-        "name": "participacao.participante-saiu",
+      "participation.participant-left.v1": {
+        "name": "participation.participant-left",
         "title": "Participante saiu",
         "summary": "O participante pediu a saída ou teve o acesso desativado.",
         "contentType": "application/json",
-        "payload": { "$ref": "./participacao.participante-saiu.v1.json" }
+        "payload": { "$ref": "./participation.participant-left.v1.json" }
       },
-      "participacao.cota-devida.v1": {
-        "name": "participacao.cota-devida",
+      "participation.contribution-due.v1": {
+        "name": "participation.contribution-due",
         "title": "Cota devida",
         "summary": "O participante passou a dever a cota do mês, com o valor do seu tipo de cota.",
         "contentType": "application/json",
-        "payload": { "$ref": "./participacao.cota-devida.v1.json" }
+        "payload": { "$ref": "./participation.contribution-due.v1.json" }
       },
-      "participacao.valor-da-cota-definido.v1": {
-        "name": "participacao.valor-da-cota-definido",
+      "participation.contribution-amount-set.v1": {
+        "name": "participation.contribution-amount-set",
         "title": "Valor da cota definido",
         "summary": "O gestor definiu o valor de um tipo de cota para o ano.",
         "contentType": "application/json",
-        "payload": { "$ref": "./participacao.valor-da-cota-definido.v1.json" }
+        "payload": { "$ref": "./participation.contribution-amount-set.v1.json" }
       },
-      "financeiro.pagamento-recebido.v1": {
-        "name": "financeiro.pagamento-recebido",
+      "finance.payment-received.v1": {
+        "name": "finance.payment-received",
         "title": "Pagamento recebido",
         "summary": "O gestor recebeu dinheiro de um participante, por PIX com comprovante ou em mãos.",
         "contentType": "application/json",
-        "payload": { "$ref": "./financeiro.pagamento-recebido.v1.json" }
+        "payload": { "$ref": "./finance.payment-received.v1.json" }
       },
-      "financeiro.complemento-solicitado.v1": {
-        "name": "financeiro.complemento-solicitado",
+      "finance.top-up-requested.v1": {
+        "name": "finance.top-up-requested",
         "title": "Complemento solicitado",
         "summary": "O gestor pediu um complemento; cada participante ativo passou a dever uma parte igual.",
         "contentType": "application/json",
-        "payload": { "$ref": "./financeiro.complemento-solicitado.v1.json" }
+        "payload": { "$ref": "./finance.top-up-requested.v1.json" }
       },
-      "financeiro.reembolso-feito.v1": {
-        "name": "financeiro.reembolso-feito",
+      "finance.reimbursement-made.v1": {
+        "name": "finance.reimbursement-made",
         "title": "Reembolso feito",
         "summary": "O gestor devolveu o valor a quem pagou um gasto do próprio bolso.",
         "contentType": "application/json",
-        "payload": { "$ref": "./financeiro.reembolso-feito.v1.json" }
+        "payload": { "$ref": "./finance.reimbursement-made.v1.json" }
       }
     }
   }

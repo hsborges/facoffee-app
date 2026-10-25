@@ -28,7 +28,7 @@ describe('registerExample', () => {
 
     expect(result.ok).toBe(true);
     expect(examples.get('id-1')?.name).toBe('Coffee');
-    expect(events).toMatchObject([{ id: 'id-2', tipo: 'example.example-registered' }]);
+    expect(events).toMatchObject([{ id: 'id-2', type: 'example.example-registered' }]);
   });
 
   it('saves nothing when the domain rejects the command', async () => {
@@ -57,7 +57,7 @@ describe('confirmExample', () => {
   it('rejects an invalid payload and an unknown example', async () => {
     const { repository, clock } = inMemory();
     const confirmFrom = confirmExample(repository, clock);
-    const event = { id: 'e', tipo: 'example.example-registered', versao: 1, ocorridoEm: '' };
+    const event = { id: 'e', type: 'example.example-registered', version: 1, occurredAt: '' };
 
     expect(await confirmFrom({ ...event, payload: null })).toEqual({
       ok: false,

@@ -2,26 +2,26 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/hsborges/facoffee-app/blob/main/contracts/events/envelope.v1.json",
   "title": "Envelope dos eventos de domínio",
-  "description": "Campos comuns a todo evento publicado no exchange facoffee.eventos.",
+  "description": "Campos comuns a todo evento publicado no exchange facoffee.events.",
   "type": "object",
-  "required": ["id", "tipo", "versao", "ocorridoEm", "payload"],
+  "required": ["id", "type", "version", "occurredAt", "payload"],
   "properties": {
     "id": {
       "type": "string",
       "format": "uuid",
       "description": "Identificador único do evento. Consumidores o usam para descartar entregas repetidas."
     },
-    "tipo": {
+    "type": {
       "type": "string",
       "pattern": "^[a-z]+(-[a-z]+)*\\.[a-z]+(-[a-z]+)*$",
       "description": "<contexto>.<evento>, em kebab-case e sem acentos."
     },
-    "versao": {
+    "version": {
       "type": "integer",
       "minimum": 1,
       "description": "Versão major do contrato do evento."
     },
-    "ocorridoEm": {
+    "occurredAt": {
       "type": "string",
       "format": "date-time",
       "description": "Quando o fato aconteceu no domínio (ISO 8601 com fuso)."

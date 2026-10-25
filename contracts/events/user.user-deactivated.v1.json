@@ -1,18 +1,18 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/hsborges/facoffee-app/blob/main/contracts/events/usuario.usuario-desativado.v1.json",
+  "$id": "https://github.com/hsborges/facoffee-app/blob/main/contracts/events/user.user-deactivated.v1.json",
   "title": "Usuário desativado",
   "description": "O acesso de uma pessoa ao FACOFFEE foi desativado, pelo gestor ou a pedido da própria pessoa.",
   "type": "object",
   "allOf": [{ "$ref": "envelope.v1.json" }],
   "properties": {
-    "tipo": { "const": "usuario.usuario-desativado" },
-    "versao": { "const": 1 },
+    "type": { "const": "user.user-deactivated" },
+    "version": { "const": 1 },
     "payload": {
       "type": "object",
-      "required": ["usuarioId"],
+      "required": ["userId"],
       "properties": {
-        "usuarioId": {
+        "userId": {
           "type": "string",
           "format": "uuid",
           "description": "Identificador da pessoa no contexto Usuário (sub do Passaporte UFMS)."
@@ -23,10 +23,10 @@
   "examples": [
     {
       "id": "0b6f2f0e-6a1c-4c55-9a43-6f1f1b0c9e10",
-      "tipo": "usuario.usuario-desativado",
-      "versao": 1,
-      "ocorridoEm": "2026-11-01T03:00:00Z",
-      "payload": { "usuarioId": "7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d" }
+      "type": "user.user-deactivated",
+      "version": 1,
+      "occurredAt": "2026-11-01T03:00:00Z",
+      "payload": { "userId": "7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d" }
     }
   ]
 }

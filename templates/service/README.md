@@ -1,6 +1,6 @@
 # Template de serviço
 
-Esqueleto copiável dos serviços do FACOFFEE. Decisão em [ADR 0005](../../docs/adr/0005-template-de-servico.md); stack no [ADR 0002](../../docs/adr/0002-stack.md); eventos no [ADR 0004](../../docs/adr/0004-contratos-dos-eventos-de-dominio.md). O código do template é em inglês; o código de cada serviço usa a linguagem ubíqua do [glossário](../../docs/GLOSSARIO.md).
+Esqueleto copiável dos serviços do FACOFFEE. Decisão em [ADR 0005](../../docs/adr/0005-template-de-servico.md); stack no [ADR 0002](../../docs/adr/0002-stack.md); eventos no [ADR 0006](../../docs/adr/0006-contratos-dos-eventos-em-ingles.md). O código do template é em inglês; o código de cada serviço usa a linguagem ubíqua do [glossário](../../docs/GLOSSARIO.md).
 
 O exemplo registra um *Example* (`POST /examples`), publica `example.example-registered.v1` pelo outbox e consome o próprio evento para confirmar o *Example*.
 
@@ -18,13 +18,13 @@ O exemplo registra um *Example* (`POST /examples`), publica `example.example-reg
 ## Mensageria
 
 - **Publicação (outbox)**: o caso de uso grava o agregado e os eventos na tabela `outbox` na mesma transação. Um relay publica os pendentes em ordem, com *publisher confirms*, e só então os marca como publicados. Se o broker cair, os eventos esperam no banco.
-- **Consumo**: fila `<SERVICE>.eventos` (quorum, prefetch 1), ligada às routing keys de `handlers`. O id do evento é gravado em `processed_events` na mesma transação do tratador: uma entrega repetida é descartada. Falha → até 5 tentativas com espera exponencial → fila `<SERVICE>.eventos.mortas`. Envelope inválido vai direto para ela.
+- **Consumo**: fila `<SERVICE>.events` (quorum, prefetch 1), ligada às routing keys de `handlers`. O id do evento é gravado em `processed_events` na mesma transação do tratador: uma entrega repetida é descartada. Falha → até 5 tentativas com espera exponencial → fila `<SERVICE>.events.dead-letter`. Envelope inválido vai direto para ela.
 
 ## Configuração
 
 | Variável | Exemplo |
 |---|---|
-| `SERVICE` | `example` (nome do contexto; define as filas) |
+| `SERVICE` | `example` (nome do contexto nos contratos, ex.: `finance`; define as filas) |
 | `PORT` | `3000` (padrão) |
 | `DATABASE_URL` | `postgres://example:example@localhost:5432/example` |
 | `RABBITMQ_URL` | `amqp://facoffee:facoffee@localhost:5672` |

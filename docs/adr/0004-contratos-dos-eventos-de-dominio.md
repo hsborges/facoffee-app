@@ -1,6 +1,6 @@
 # 0004. Contratos dos eventos de domínio
 
-- Status: Aceito
+- Status: Substituído por 0006
 - Data: 2026-10-25
 
 ## Contexto

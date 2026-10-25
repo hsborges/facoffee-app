@@ -23,9 +23,9 @@ export const parseEvent = (content: Buffer): Result<Event, string> => {
       e !== null &&
       typeof e.id === 'string' &&
       UUID.test(e.id) &&
-      typeof e.tipo === 'string' &&
-      Number.isInteger(e.versao) &&
-      typeof e.ocorridoEm === 'string' &&
+      typeof e.type === 'string' &&
+      Number.isInteger(e.version) &&
+      typeof e.occurredAt === 'string' &&
       typeof e.payload === 'object' &&
       e.payload !== null;
     return valid ? ok(e) : fail('invalid envelope');
@@ -64,10 +64,10 @@ const handleOnce = (db: Executor, event: Event, handler: Handler) =>
     return 'processed' as const;
   });
 
-// Queue names follow ADR 0004 (`<context>.eventos`).
+// Queue names follow ADR 0006 (`<context>.events`).
 export const queues = (service: string) => ({
-  events: `${service}.eventos`,
-  deadLetter: `${service}.eventos.mortas`,
+  events: `${service}.events`,
+  deadLetter: `${service}.events.dead-letter`,
 });
 
 export type ConsumerOptions = {
