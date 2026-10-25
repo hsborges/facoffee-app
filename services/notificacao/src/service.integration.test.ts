@@ -54,7 +54,6 @@ const contato = (nome: string): Contato => ({
   id: randomUUID(),
   nome,
   email: `${nome.toLowerCase()}-${randomUUID().slice(0, 8)}@ufms.br`,
-  desativado: false,
 });
 
 describe('envio', () => {
@@ -117,7 +116,10 @@ describe('service', () => {
   const ana = contato('Ana');
   const bia = contato('Bia');
   const usuario = serve({
-    fetch: new Hono().get('/contato', (c) => c.json([ana, bia])).fetch,
+    fetch: new Hono().get('/contato/:id', (c) => {
+      const encontrado = [ana, bia].find((x) => x.id === c.req.param('id'));
+      return encontrado ? c.json(encontrado) : c.json({ error: 'not-found' }, 404);
+    }).fetch,
     port: 0,
   });
   const amqp = amqplib.connect(config.rabbitmqUrl);

@@ -7,7 +7,6 @@ const ana: Contato = {
   id: '7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d',
   nome: 'Ana',
   email: 'ana@ufms.br',
-  desativado: false,
 };
 const semContato = '2b3c4d5e-6f70-4a81-9b2c-3d4e5f6a7b8c';
 
@@ -26,6 +25,17 @@ const complemento: Event = {
   },
 };
 
+const usuario = () => {
+  const buscados: string[] = [];
+  return {
+    buscados,
+    buscar: async (id: string) => {
+      buscados.push(id);
+      return id === ana.id ? ana : undefined;
+    },
+  };
+};
+
 const fila = () => {
   const guardados: { eventoId: string; emails: readonly Email[] }[] = [];
   return {
@@ -37,10 +47,12 @@ const fila = () => {
 };
 
 describe('avisar', () => {
-  it('guarda os e-mails do evento e devolve quem ficou sem contato', async () => {
+  it('busca o contato de cada participante, guarda os e-mails e devolve quem ficou sem contato', async () => {
     const { guardados, guardar } = fila();
-    const result = await avisar(async () => [ana], guardar)(complemento);
+    const { buscados, buscar } = usuario();
+    const result = await avisar(buscar, guardar)(complemento);
     expect(result).toEqual({ ok: true, value: [semContato] });
+    expect(buscados).toEqual([ana.id, semContato]);
     expect(guardados).toEqual([
       { eventoId: complemento.id, emails: [expect.objectContaining({ para: 'ana@ufms.br' })] },
     ]);
@@ -48,18 +60,25 @@ describe('avisar', () => {
 
   it('não guarda nada nem busca contatos com payload inválido', async () => {
     const { guardados, guardar } = fila();
-    let buscas = 0;
-    const buscar = async () => {
-      buscas += 1;
-      return [ana];
-    };
+    const { buscados, buscar } = usuario();
     const result = await avisar(buscar, guardar)({ ...complemento, payload: {} });
     expect(result).toEqual({ ok: false, error: 'payload-invalido' });
     expect(guardados).toEqual([]);
-    expect(buscas).toBe(0);
+    expect(buscados).toEqual([]);
   });
 
-  it('falha quando os contatos não estão disponíveis, para o evento ser tentado de novo', async () => {
+  it('não busca contatos quando o evento não tem aviso', async () => {
+    const { buscados, buscar } = usuario();
+    const valorDaCota = {
+      ...complemento,
+      type: 'participation.contribution-amount-set',
+      payload: { contributionType: 'full', year: 2027, amountInCents: 3000 },
+    };
+    expect(await avisar(buscar, fila().guardar)(valorDaCota)).toEqual({ ok: true, value: [] });
+    expect(buscados).toEqual([]);
+  });
+
+  it('falha quando Usuário não responde, para o evento ser tentado de novo', async () => {
     const { guardar } = fila();
     const indisponivel = async () => {
       throw new Error('usuario fora do ar');

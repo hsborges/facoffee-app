@@ -8,11 +8,11 @@ Banco e consumidor vêm do [template de serviço](../../templates/service/); sem
 
 ## Avisos por e-mail
 
-Fila `notification.events`. Para cada evento com payload válido, Notificação busca os contatos em Usuário (`GET /contato`, rota interna) e grava os e-mails na tabela `emails`, na mesma transação que registra o evento em `processed_events`: um evento repetido não gera e-mail de novo. Os textos estão em `src/domain/aviso.ts`.
+Fila `notification.events`. Para cada evento com payload válido, Notificação busca o contato de cada participante em Usuário (`GET /contato/<id>`, rota interna) e grava os e-mails na tabela `emails`, na mesma transação que registra o evento em `processed_events`: um evento repetido não gera e-mail de novo. Os textos estão em `src/domain/aviso.ts`.
 
 | Evento | Quem recebe |
 |---|---|
-| *Valor da cota definido* (`participation.contribution-amount-set.v1`) | Todo usuário com acesso ativo |
+| *Valor da cota definido* (`participation.contribution-amount-set.v1`) | Ninguém, por ora: o evento não cita participante e Notificação não sabe quem participa |
 | *Pagamento recebido* (`finance.payment-received.v1`) | O participante que pagou |
 | *Complemento solicitado* (`finance.top-up-requested.v1`) | Cada participante da divisão, com a sua parte |
 | *Reembolso feito* (`finance.reimbursement-made.v1`) | Quem pagou o gasto do próprio bolso |

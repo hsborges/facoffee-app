@@ -7,21 +7,13 @@ const ana: Contato = {
   id: '7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d',
   nome: 'Ana',
   email: 'ana@ufms.br',
-  desativado: false,
 };
 const bia: Contato = {
   id: '2b3c4d5e-6f70-4a81-9b2c-3d4e5f6a7b8c',
   nome: 'Bia',
   email: 'bia@ufms.br',
-  desativado: false,
 };
-const caio: Contato = {
-  id: '3c4d5e6f-7081-4b92-8c3d-4e5f6a7b8c9d',
-  nome: 'Caio',
-  email: 'caio@ufms.br',
-  desativado: true,
-};
-const contatos = [ana, bia, caio];
+const contatos = [ana, bia];
 
 const evento = (type: string, payload: unknown): Event => ({
   id: '0b6f2f0e-6a1c-4c55-9a43-6f1f1b0c9e14',
@@ -40,25 +32,25 @@ const avisos = (event: Event, lista: readonly Contato[]) => {
 const reais = (texto: string) => texto.replaceAll('\u00a0', ' ');
 
 describe('avisos', () => {
-  it('Valor da cota definido avisa todos os contatos com acesso ativo', () => {
+  it('Valor da cota definido ainda não avisa ninguém', () => {
+    const event = evento('participation.contribution-amount-set', {
+      contributionType: 'coffee-only',
+      year: 2027,
+      amountInCents: 2500,
+    });
+    expect(avisos(event, contatos)).toEqual({ ok: true, value: { emails: [], semContato: [] } });
+  });
+
+  it('cumprimenta o participante pelo nome', () => {
     const result = avisos(
-      evento('participation.contribution-amount-set', {
-        contributionType: 'coffee-only',
-        year: 2027,
-        amountInCents: 2500,
+      evento('finance.payment-received', {
+        participantId: ana.id,
+        amountInCents: 1,
+        method: 'pix',
       }),
       contatos,
     );
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.value.semContato).toEqual([]);
-    expect(result.value.emails.map((e) => e.para)).toEqual(['ana@ufms.br', 'bia@ufms.br']);
-    const [email] = result.value.emails;
-    expect(email?.assunto).toBe('Valor da cota de 2027: Só café');
-    expect(reais(email?.texto ?? '')).toContain(
-      'O gestor definiu o valor da cota de 2027 para o tipo de cota Só café: R$ 25,00 por mês.',
-    );
-    expect(email?.texto).toMatch(/^Olá, Ana\./);
+    expect(result.ok && result.value.emails[0]?.texto).toMatch(/^Olá, Ana\./);
   });
 
   it('Pagamento recebido avisa o participante, com a forma do pagamento', () => {
@@ -120,19 +112,6 @@ describe('avisos', () => {
     );
   });
 
-  it('avisa o participante mesmo com o acesso desativado', () => {
-    const result = avisos(
-      evento('finance.payment-received', {
-        paymentId: ana.id,
-        participantId: caio.id,
-        amountInCents: 100,
-        method: 'cash',
-      }),
-      contatos,
-    );
-    expect(result.ok && result.value.emails.map((e) => e.para)).toEqual(['caio@ufms.br']);
-  });
-
   it('separa quem não tem contato, sem e-mail', () => {
     const semCadastro = '4d5e6f70-8192-4a3b-9d4e-5f6a7b8c9d0e';
     const result = avisos(
@@ -161,21 +140,6 @@ describe('avisos', () => {
   });
 
   it.each([
-    [
-      'tipo de cota desconhecido',
-      'participation.contribution-amount-set',
-      { contributionType: 'x', year: 2027, amountInCents: 1 },
-    ],
-    [
-      'ano antes de 2000',
-      'participation.contribution-amount-set',
-      { contributionType: 'full', year: 1999, amountInCents: 1 },
-    ],
-    [
-      'ano não inteiro',
-      'participation.contribution-amount-set',
-      { contributionType: 'full', year: '2027', amountInCents: 1 },
-    ],
     [
       'valor zero',
       'finance.payment-received',
