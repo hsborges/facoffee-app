@@ -1,3 +1,8 @@
 # ADRs
 
 Registros de decisões de arquitetura. Um arquivo por decisão: `NNNN-titulo.md`.
+
+| ADR | Título | Status |
+|---|---|---|
+| [0001](0001-arquitetura-servicos.md) | Arquitetura baseada em serviços | Aceito |
+| [0002](0002-stack.md) | Stack TypeScript/Node.js | Aceito |

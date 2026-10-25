@@ -47,6 +47,7 @@ Contratos de eventos em `contracts/events/` também seguem SemVer: mudança inco
 - Na dúvida se é importante: se for cara de reverter ou afetar mais de um contexto, escreva o ADR.
 - Um arquivo por decisão: `NNNN-titulo-em-kebab-case.md`, numeração sequencial (`0001`, `0002`, ...).
 - ADR aceito não é editado; para mudar a decisão, crie um novo ADR e marque o antigo como `Substituído por NNNN`.
+- Mantenha o índice em `docs/adr/README.md` (número, título e status) atualizado no mesmo PR.
 - Commit com tipo `docs(adr)`.
 
 Formato:
