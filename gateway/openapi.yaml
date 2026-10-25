@@ -366,6 +366,100 @@ paths:
           $ref: '#/components/responses/ArquivoGrandeDemais'
         '500':
           $ref: '#/components/responses/ErroInterno'
+  /api/financeiro/receber-pagamento:
+    post:
+      tags: [financeiro]
+      operationId: receberPagamento
+      summary: Receber pagamento
+      description: |
+        Registra o dinheiro que o gestor recebeu de um participante, por PIX ou em mãos. Só o
+        gestor recebe pagamentos. O pagamento por PIX exige o comprovante, guardado antes em
+        `guardar-comprovante` para o mesmo participante; cada comprovante vale para um pagamento
+        só. Todo pagamento entra na caixinha.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [participanteId, valorEmCentavos, forma]
+              properties:
+                participanteId:
+                  type: string
+                  format: uuid
+                  description: Participante que pagou.
+                valorEmCentavos:
+                  type: integer
+                  minimum: 1
+                  maximum: 2147483647
+                  description: Valor recebido em centavos de real.
+                  example: 3000
+                forma:
+                  type: string
+                  enum: [pix, dinheiro]
+                  description: Forma do pagamento; `dinheiro` é o pagamento em mãos.
+                comprovanteId:
+                  type: string
+                  format: uuid
+                  description: Comprovante do PIX; obrigatório no PIX e ausente no dinheiro.
+      responses:
+        '201':
+          description: Pagamento recebido.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id]
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    description: Identificador do pagamento.
+        '400':
+          description: |
+            Pedido inválido, pagamento por PIX sem comprovante ou pagamento em dinheiro com
+            comprovante.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              examples:
+                pedidoInvalido:
+                  value:
+                    error: pedido-invalido
+                pixSemComprovante:
+                  value:
+                    error: pix-sem-comprovante
+                comprovanteSoNoPix:
+                  value:
+                    error: comprovante-so-no-pix
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/SomenteGestor'
+        '404':
+          description: Comprovante não guardado para esse participante, ou participante desconhecido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              examples:
+                comprovanteNaoEncontrado:
+                  value:
+                    error: comprovante-nao-encontrado
+                participanteNaoEncontrado:
+                  value:
+                    error: participante-nao-encontrado
+        '409':
+          description: O comprovante já foi usado em outro pagamento.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              example:
+                error: comprovante-ja-usado
+        '500':
+          $ref: '#/components/responses/ErroInterno'
   /api/financeiro/comprovante/{id}:
     get:
       tags: [financeiro]
