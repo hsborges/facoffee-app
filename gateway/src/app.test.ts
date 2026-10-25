@@ -1,4 +1,11 @@
-import { createLocalJWKSet, exportJWK, generateKeyPair, type JWTPayload, SignJWT } from 'jose';
+import {
+  createLocalJWKSet,
+  errors,
+  exportJWK,
+  generateKeyPair,
+  type JWTPayload,
+  SignJWT,
+} from 'jose';
 import { describe, expect, it } from 'vitest';
 import { createApp } from './app.js';
 
@@ -6,11 +13,17 @@ const issuer = 'http://localhost:8080/realms/facoffee';
 const clientId = 'facoffee-web';
 const { privateKey, publicKey } = await generateKeyPair('RS256');
 const other = await generateKeyPair('RS256');
-const keys = createLocalJWKSet({ keys: [{ ...(await exportJWK(publicKey)), alg: 'RS256' }] });
+const pss = await generateKeyPair('PS256');
+const keys = createLocalJWKSet({
+  keys: [
+    { ...(await exportJWK(publicKey)), alg: 'RS256' },
+    { ...(await exportJWK(pss.publicKey)), alg: 'PS256' },
+  ],
+});
 
 const app = createApp({ issuer, clientId, keys });
 
-const sign = (claims: JWTPayload = {}, key = privateKey) =>
+const sign = (claims: JWTPayload = {}, key = privateKey, alg = 'RS256') =>
   new SignJWT({
     iss: issuer,
     sub: 'user-1',
@@ -19,7 +32,7 @@ const sign = (claims: JWTPayload = {}, key = privateKey) =>
     realm_access: { roles: ['gestor', 'participante'] },
     ...claims,
   })
-    .setProtectedHeader({ alg: 'RS256' })
+    .setProtectedHeader({ alg })
     .sign(key);
 
 const verify = (authorization?: string) =>
@@ -54,9 +67,20 @@ describe('GET /verify', () => {
       await sign({ iss: 'https://other.example' }),
       await sign({ azp: 'other-client' }),
       await sign({ azp: undefined }),
+      await sign({}, pss.privateKey, 'PS256'),
       'not-a-jwt',
     ];
     for (const token of tokens) expect((await verify(`Bearer ${token}`)).status).toBe(401);
+  });
+});
+
+describe('GET /verify with the JWKS unreachable', () => {
+  it('500, not 401, so an outage is not mistaken for a bad token', async () => {
+    const unreachable = () => Promise.reject(new errors.JWKSTimeout());
+    const response = await createApp({ issuer, clientId, keys: unreachable }).request('/verify', {
+      headers: { authorization: `Bearer ${await sign()}` },
+    });
+    expect(response.status).toBe(500);
   });
 });
 

@@ -21,15 +21,17 @@ export const createApp = ({ issuer, clientId, keys }: VerifierConfig) =>
     .all('/verify', async (c) => {
       const token = BEARER.exec(c.req.header('authorization') ?? '')?.[1];
       const verified = token
-        ? await jwtVerify(token, keys, { issuer, requiredClaims: ['exp', 'sub'] }).catch(
-            (error) => {
-              // An unreachable JWKS is an outage, not a bad token.
-              if (error instanceof errors.JOSEError && !(error instanceof errors.JWKSTimeout)) {
-                return undefined;
-              }
-              throw error;
-            },
-          )
+        ? await jwtVerify(token, keys, {
+            issuer,
+            algorithms: ['RS256'],
+            requiredClaims: ['exp', 'sub'],
+          }).catch((error) => {
+            // An unreachable JWKS is an outage, not a bad token.
+            if (error instanceof errors.JOSEError && !(error instanceof errors.JWKSTimeout)) {
+              return undefined;
+            }
+            throw error;
+          })
         : undefined;
       // azp: the Passaporte UFMS issues tokens to other systems too.
       if (!verified?.payload.sub || verified.payload.azp !== clientId) {
