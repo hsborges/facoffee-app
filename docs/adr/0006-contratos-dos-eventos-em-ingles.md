@@ -1,6 +1,6 @@
 # 0006. Contratos dos eventos em inglês
 
-- Status: Proposto
+- Status: Aceito
 - Data: 2026-10-25
 
 ## Contexto
