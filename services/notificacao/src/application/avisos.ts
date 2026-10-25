@@ -1,4 +1,10 @@
-import { avisos, type Contato, type Email, type PayloadInvalido } from '../domain/aviso.js';
+import {
+  avisosDoEvento,
+  type Contato,
+  type Email,
+  enderecar,
+  type PayloadInvalido,
+} from '../domain/aviso.js';
 import type { Event } from '../domain/event.js';
 import { ok, type Result } from '../domain/result.js';
 
@@ -10,13 +16,15 @@ export type Guardar = (eventoId: string, emails: readonly Email[]) => Promise<vo
 
 /**
  * Handler of the events Notificação consumes: stores their avisos by e-mail, to be sent apart.
- * Resolves with the participantes left without e-mail for having no contato.
+ * Validates the payload before asking Usuário for the contatos. Resolves with the participantes
+ * left without e-mail for having no contato.
  */
 export const avisar =
   (buscarContatos: BuscarContatos, guardar: Guardar) =>
   async (event: Event): Promise<Result<readonly string[], PayloadInvalido>> => {
-    const result = avisos(event, await buscarContatos());
-    if (!result.ok) return result;
-    await guardar(event.id, result.value.emails);
-    return ok(result.value.semContato);
+    const avisos = avisosDoEvento(event);
+    if (!avisos.ok) return avisos;
+    const { emails, semContato } = enderecar(avisos.value, await buscarContatos());
+    await guardar(event.id, emails);
+    return ok(semContato);
   };

@@ -4,12 +4,12 @@ import type { AddressInfo } from 'node:net';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { serve } from '@hono/node-server';
 import amqplib from 'amqplib';
-import { eq } from 'drizzle-orm';
+import { eq, TransactionRollbackError } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Contato } from './domain/aviso.js';
 import { queues } from './infra/consumer.js';
-import { connectDatabase } from './infra/db/database.js';
+import { connectDatabase, type Executor } from './infra/db/database.js';
 import { emails } from './infra/db/schema.js';
 import { enviarProximo, guardar } from './infra/envio.js';
 import { createLogger } from './infra/logger.js';
@@ -61,36 +61,56 @@ describe('envio', () => {
   const database = connectDatabase(config.databaseUrl);
   afterAll(async () => (await database).close());
 
-  it('tenta de novo o e-mail que falhou, sem perdê-lo', async () => {
+  const t0 = new Date('1971-01-01T00:00:00Z');
+  const depois = (segundos: number) => new Date(t0.getTime() + segundos * 1000);
+  const falhaCom = (campos: Record<string, unknown>) => async () => {
+    throw Object.assign(new Error('smtp'), campos);
+  };
+
+  // Runs in a transaction rolled back at the end: no relay running elsewhere sees the e-mail,
+  // and in 1971 no committed e-mail is due yet.
+  const isolado = async (teste: (tx: Executor, eventoId: string) => Promise<void>) => {
     const { db } = await database;
     const eventoId = randomUUID();
-    await guardar(db, eventoId, [{ para: 'x@ufms.br', assunto: 'a', texto: 't' }]);
-    // In 1971, only this e-mail is due: rows of other runs are not touched.
     await db
-      .update(emails)
-      .set({ proximaTentativaEm: new Date('1970-01-01T00:00:00Z') })
-      .where(eq(emails.eventoId, eventoId));
-    const t0 = new Date('1971-01-01T00:00:00Z');
-    const depois = (segundos: number) => new Date(t0.getTime() + segundos * 1000);
-    const enviados: string[] = [];
-    const ok = async ({ para }: { para: string }) => {
-      enviados.push(para);
-    };
+      .transaction(async (tx) => {
+        await guardar(tx, eventoId, [{ para: 'x@ufms.br', assunto: 'a', texto: 't' }]);
+        await tx
+          .update(emails)
+          .set({ proximaTentativaEm: t0 })
+          .where(eq(emails.eventoId, eventoId));
+        await teste(tx, eventoId);
+        tx.rollback();
+      })
+      .catch((error) => {
+        if (!(error instanceof TransactionRollbackError)) throw error;
+      });
+  };
 
-    const falha = await enviarProximo(
-      db,
-      async () => {
-        throw new Error('smtp fora do ar');
-      },
-      t0,
-    );
-    expect(falha).toMatchObject({ eventoId, tentativas: 1 });
-    expect(await enviarProximo(db, ok, depois(30))).toBeUndefined();
-    expect(await enviarProximo(db, ok, depois(60))).toMatchObject({ eventoId });
-    expect(enviados).toEqual(['x@ufms.br']);
-    const [linha] = await db.select().from(emails).where(eq(emails.eventoId, eventoId));
-    expect(linha?.enviadoEm).toEqual(depois(60));
-  });
+  it('tenta de novo o e-mail que falhou, sem perdê-lo', () =>
+    isolado(async (tx, eventoId) => {
+      const enviados: string[] = [];
+      const ok = async ({ para }: { para: string }) => {
+        enviados.push(para);
+      };
+
+      const falha = await enviarProximo(tx, falhaCom({ code: 'ECONNECTION' }), t0);
+      expect(falha).toMatchObject({ eventoId, tentativas: 1, recusado: false });
+      expect(await enviarProximo(tx, ok, depois(30))).toBeUndefined();
+      expect(await enviarProximo(tx, ok, depois(60))).toMatchObject({ eventoId });
+      expect(enviados).toEqual(['x@ufms.br']);
+      const [linha] = await tx.select().from(emails).where(eq(emails.eventoId, eventoId));
+      expect(linha?.enviadoEm).toEqual(depois(60));
+    }));
+
+  it('guarda sem tentar de novo o e-mail recusado pelo destinatário', () =>
+    isolado(async (tx, eventoId) => {
+      const recusa = falhaCom({ code: 'EENVELOPE', command: 'RCPT TO', responseCode: 550 });
+      expect(await enviarProximo(tx, recusa, t0)).toMatchObject({ eventoId, recusado: true });
+      expect(await enviarProximo(tx, recusa, depois(24 * 3600))).toBeUndefined();
+      const [linha] = await tx.select().from(emails).where(eq(emails.eventoId, eventoId));
+      expect(linha).toMatchObject({ recusadoEm: t0, enviadoEm: null });
+    }));
 });
 
 describe('service', () => {

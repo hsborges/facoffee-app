@@ -1,5 +1,5 @@
 {
-  "id": "9ca195a6-2226-4381-b3d6-6d21b9b37206",
+  "id": "ee92d047-e468-4b13-ae1e-e84d93ba6009",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -55,6 +55,12 @@
         },
         "enviado_em": {
           "name": "enviado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recusado_em": {
+          "name": "recusado_em",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false

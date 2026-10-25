@@ -6,7 +6,8 @@ CREATE TABLE "emails" (
 	"texto" text NOT NULL,
 	"tentativas" integer DEFAULT 0 NOT NULL,
 	"proxima_tentativa_em" timestamp with time zone DEFAULT now() NOT NULL,
-	"enviado_em" timestamp with time zone
+	"enviado_em" timestamp with time zone,
+	"recusado_em" timestamp with time zone
 );
 --> statement-breakpoint
 CREATE TABLE "processed_events" (

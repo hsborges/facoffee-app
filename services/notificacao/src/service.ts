@@ -30,7 +30,13 @@ const buscarContatos =
 export const startService = async (config: Config, logger: Logger) => {
   const database = await connectDatabase(config.databaseUrl);
   const connection = connectRabbitmq(config.rabbitmqUrl, logger);
-  const smtp = nodemailer.createTransport(config.smtpUrl);
+  // Nodemailer waits up to 10 minutes by default, holding the e-mail's row lock meanwhile.
+  const smtp = nodemailer.createTransport({
+    url: config.smtpUrl,
+    connectionTimeout: 15_000,
+    greetingTimeout: 15_000,
+    socketTimeout: 30_000,
+  });
   const enviar: Enviar = async ({ para, assunto, texto }) => {
     await smtp.sendMail({ from: config.smtpFrom, to: para, subject: assunto, text: texto });
   };

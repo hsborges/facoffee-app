@@ -8,7 +8,7 @@ Banco e consumidor vêm do [template de serviço](../../templates/service/); sem
 
 ## Avisos por e-mail
 
-Fila `notification.events`. Para cada evento, Notificação busca os contatos em Usuário (`GET /contato`, rota interna) e grava os e-mails na tabela `emails`, na mesma transação que registra o evento em `processed_events`: um evento repetido não gera e-mail de novo. Os textos estão em `src/domain/aviso.ts`.
+Fila `notification.events`. Para cada evento com payload válido, Notificação busca os contatos em Usuário (`GET /contato`, rota interna) e grava os e-mails na tabela `emails`, na mesma transação que registra o evento em `processed_events`: um evento repetido não gera e-mail de novo. Os textos estão em `src/domain/aviso.ts`.
 
 | Evento | Quem recebe |
 |---|---|
@@ -19,7 +19,7 @@ Fila `notification.events`. Para cada evento, Notificação busca os contatos em
 
 Participante sem contato fica sem e-mail, com um aviso no log. Payload inválido ou Usuário fora do ar: o evento é tentado de novo e vai para a fila de mensagens mortas, como no template.
 
-Um processo à parte envia os e-mails devidos a cada segundo. Falha no envio não perde o e-mail: ele é tentado de novo 1 minuto depois, com espera dobrando até 1 hora, até o servidor SMTP aceitar.
+Um processo à parte envia os e-mails devidos a cada segundo. Falha no envio não perde o e-mail: ele é tentado de novo 1 minuto depois, com espera dobrando até 1 hora, até o servidor SMTP aceitar. Só o destinatário recusado de vez (5xx no `RCPT TO`) para de ser tentado: o e-mail fica na tabela com `recusado_em` e um erro no log.
 
 ## Configuração
 

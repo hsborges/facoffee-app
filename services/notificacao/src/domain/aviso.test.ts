@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { avisos, type Contato, proximaTentativa } from './aviso.js';
+import { avisosDoEvento, type Contato, enderecar, proximaTentativa } from './aviso.js';
 import type { Event } from './event.js';
+import { ok } from './result.js';
 
 const ana: Contato = {
   id: '7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d',
@@ -29,6 +30,11 @@ const evento = (type: string, payload: unknown): Event => ({
   occurredAt: '2026-11-01T03:00:00Z',
   payload,
 });
+
+const avisos = (event: Event, lista: readonly Contato[]) => {
+  const result = avisosDoEvento(event);
+  return result.ok ? ok(enderecar(result.value, lista)) : result;
+};
 
 // Intl puts a non-breaking space after R$.
 const reais = (texto: string) => texto.replaceAll('\u00a0', ' ');
@@ -92,7 +98,7 @@ describe('avisos', () => {
       ['bia@ufms.br', 'Complemento solicitado'],
     ]);
     expect(reais(result.value.emails[1]?.texto ?? '')).toContain(
-      'o gestor solicitou um complemento de R$ 10,01, dividido em partes iguais entre os participantes ativos. A sua parte é de R$ 5,00.',
+      'o gestor solicitou um complemento de R$ 10,01, dividido entre os participantes ativos. A sua parte é de R$ 5,00.',
     );
   });
 
@@ -159,6 +165,11 @@ describe('avisos', () => {
       'tipo de cota desconhecido',
       'participation.contribution-amount-set',
       { contributionType: 'x', year: 2027, amountInCents: 1 },
+    ],
+    [
+      'ano antes de 2000',
+      'participation.contribution-amount-set',
+      { contributionType: 'full', year: 1999, amountInCents: 1 },
     ],
     [
       'ano não inteiro',

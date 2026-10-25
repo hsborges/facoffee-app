@@ -46,11 +46,17 @@ describe('avisar', () => {
     ]);
   });
 
-  it('não guarda nada com payload inválido', async () => {
+  it('não guarda nada nem busca contatos com payload inválido', async () => {
     const { guardados, guardar } = fila();
-    const result = await avisar(async () => [ana], guardar)({ ...complemento, payload: {} });
+    let buscas = 0;
+    const buscar = async () => {
+      buscas += 1;
+      return [ana];
+    };
+    const result = await avisar(buscar, guardar)({ ...complemento, payload: {} });
     expect(result).toEqual({ ok: false, error: 'payload-invalido' });
     expect(guardados).toEqual([]);
+    expect(buscas).toBe(0);
   });
 
   it('falha quando os contatos não estão disponíveis, para o evento ser tentado de novo', async () => {
