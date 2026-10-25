@@ -1,6 +1,6 @@
 # 0004. Contratos dos eventos de domínio
 
-- Status: Proposto
+- Status: Aceito
 - Data: 2026-10-25
 
 ## Contexto
