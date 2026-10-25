@@ -22,6 +22,9 @@ const app = (deps: Partial<ApiDependencies> = {}) =>
       solicitante.perfis.includes('gestor')
         ? ok([{ id: ativo, nome: 'João', email: 'joao@ufms.br', desativado: false }])
         : fail('sem-permissao'),
+    contatos: async () => [
+      { id: desativado, nome: 'Maria', email: 'maria@ufms.br', desativado: true },
+    ],
     reativar: async (solicitante) =>
       solicitante.perfis.includes('gestor') ? ok(undefined) : fail('sem-permissao'),
     health: async () => ({ database: true, rabbitmq: true }),
@@ -138,6 +141,16 @@ describe('GET /', () => {
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({ error: 'sem-permissao' });
     expect((await app().request('/')).status).toBe(401);
+  });
+});
+
+describe('GET /contato', () => {
+  it('every usuário with nome and e-mail, without identity: internal to Notificação', async () => {
+    const response = await app().request('/contato');
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual([
+      { id: desativado, nome: 'Maria', email: 'maria@ufms.br', desativado: true },
+    ]);
   });
 });
 

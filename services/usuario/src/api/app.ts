@@ -21,6 +21,7 @@ export type ApiDependencies = {
   readonly listar: (
     solicitante: Pick<Usuario, 'perfis'>,
   ) => Promise<Result<readonly UsuarioRegistrado[], SemPermissao>>;
+  readonly contatos: () => Promise<readonly UsuarioRegistrado[]>;
   readonly reativar: (
     solicitante: Pick<Usuario, 'perfis'>,
     usuarioId: string,
@@ -47,12 +48,14 @@ const usuarioLogado = (c: Context): Usuario | undefined => {
  * HTTP API of the Usuário context: `GET /eu` (ADR 0008), `POST /:id/desativar`,
  * `GET /acesso`, the gateway access check that also registers the usuário (ADR 0011, 0012),
  * `GET /` and `POST /:id/reativar` (ADR 0013). Without `X-User-Id`, 401.
+ * `GET /contato` is internal, for Notificação, and kept out of the gateway (ADR 0019).
  * Logs every request except health probes and access checks; unhandled errors become 500.
  */
 export const createApp = ({
   desativar,
   registrarAcesso,
   listar,
+  contatos,
   reativar,
   health,
   logger,
@@ -98,6 +101,8 @@ export const createApp = ({
       const result = await listar(solicitante);
       return result.ok ? c.json(result.value) : c.json({ error: result.error }, 403);
     })
+    // No identity: the gateway has no route here, so only the internal network reaches it.
+    .get('/contato', async (c) => c.json(await contatos()))
     .post('/:id/desativar', async (c) => {
       const solicitante = usuarioLogado(c);
       if (!solicitante) return c.json({ error: 'unauthorized' }, 401);
