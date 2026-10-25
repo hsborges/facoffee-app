@@ -98,7 +98,7 @@ export const App = () => {
         {eu.usuario.perfis.includes('gestor') && <SolicitarComplemento token={token} />}
       </>
     ),
-    '/participantes': <Participantes token={token} />,
+    '/participantes': <Participantes token={token} usuarioId={eu.usuario.id} />,
     '/gastos': <Gastos token={token} />,
     '/valor-da-cota': <ValorDaCota token={token} />,
   };

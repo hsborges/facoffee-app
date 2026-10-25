@@ -237,11 +237,6 @@ legend {
   margin-bottom: 1rem;
 }
 
-/* O comprovante só vale no PIX. */
-form:has(input[value="dinheiro"]:checked) .so-no-pix {
-  display: none;
-}
-
 section > button {
   margin-top: 1rem;
 }

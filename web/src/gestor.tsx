@@ -11,19 +11,29 @@ import {
 import { dataEmCampoGrande, emCentavos, emReais, NOME_DO_TIPO_DE_COTA } from './formato';
 import { Carregando, FalhaAoCarregar, useLeitura } from './participante';
 
-const ERROS: Readonly<Record<string, string>> = {
-  'arquivo-vazio': 'O arquivo está vazio.',
-  'tipo-nao-aceito': 'Envie o arquivo em PDF, JPEG ou PNG.',
-  'arquivo-grande-demais': 'O arquivo passa de 5 MB.',
-  'pix-sem-comprovante': 'O pagamento por PIX exige o comprovante.',
-  'participante-nao-encontrado':
+const ERROS: ReadonlyMap<string, string> = new Map([
+  ['arquivo-vazio', 'O arquivo está vazio.'],
+  ['tipo-nao-aceito', 'Envie o arquivo em PDF, JPEG ou PNG.'],
+  ['arquivo-grande-demais', 'O arquivo passa de 5 MB.'],
+  ['pix-sem-comprovante', 'O pagamento por PIX exige o comprovante.'],
+  ['comprovante-so-no-pix', 'Só o pagamento por PIX tem comprovante.'],
+  ['comprovante-ja-usado', 'Esse comprovante já foi usado em outro pagamento.'],
+  ['nota-ja-usada', 'Essa nota já foi usada em outro gasto.'],
+  [
+    'participante-nao-encontrado',
     'Participante não encontrado: só quem já pediu entrada tem pagamentos e gastos.',
-  'gasto-ja-reembolsado': 'Esse gasto já foi reembolsado.',
-  'sem-participantes-ativos': 'Não há participante ativo para dividir o complemento.',
-  'parte-menor-que-um-centavo': 'O valor não dá um centavo para cada participante ativo.',
-  'ano-passado': 'Esse ano já passou.',
-  'valor-ja-definido': 'O valor desse tipo de cota já foi definido para esse ano.',
-};
+  ],
+  ['gasto-nao-encontrado', 'Gasto não encontrado.'],
+  ['gasto-ja-reembolsado', 'Esse gasto já foi reembolsado.'],
+  ['sem-participantes-ativos', 'Não há participante ativo para dividir o complemento.'],
+  ['parte-menor-que-um-centavo', 'O valor não dá um centavo para cada participante ativo.'],
+  ['ano-passado', 'Esse ano já passou.'],
+  ['valor-ja-definido', 'O valor desse tipo de cota já foi definido para esse ano.'],
+]);
+
+/** Explains an error of the API to the gestor; any other gets the comando's own message. */
+export const mensagemDaFalha = (erro: string | undefined, padrao: string) =>
+  ERROS.get(erro ?? '') ?? padrao;
 
 // Runs a comando, announces how it went and then reloads the page's leituras.
 const useComando = (recarregar: () => void) => {
@@ -34,7 +44,7 @@ const useComando = (recarregar: () => void) => {
     setAviso({});
     const resultado = await comando();
     setEnviando(false);
-    setAviso(resultado.feito ? { feito } : { falha: ERROS[resultado.erro ?? ''] ?? falha });
+    setAviso(resultado.feito ? { feito } : { falha: mensagemDaFalha(resultado.erro, falha) });
     recarregar();
     return resultado.feito;
   };
@@ -73,21 +83,61 @@ const CampoValor = ({ rotulo }: { rotulo: string }) => (
 const ARQUIVOS = 'application/pdf,image/jpeg,image/png';
 
 // Guarda the arquivo first; the comando then references it by id.
-const comArquivo = async (
-  guardar: Promise<Comando>,
+// ponytail: an arquivo guardado whose comando fails stays orphaned in the armazenamento; clean up if they pile up
+const guardarAntes = async (
+  token: string,
+  caminho: string,
+  campos: Readonly<Record<string, string | File>>,
   comando: (id?: string) => Promise<Comando>,
 ): Promise<Comando> => {
-  const guardado = await guardar;
+  const form = new FormData();
+  for (const [nome, valor] of Object.entries(campos)) form.append(nome, valor);
+  const guardado = await comandar(token, caminho, form);
   return guardado.feito ? comando(guardado.id) : guardado;
 };
 
-const arquivo = (campos: Readonly<Record<string, string | File>>) => {
-  const form = new FormData();
-  for (const [nome, valor] of Object.entries(campos)) form.append(nome, valor);
-  return form;
+/**
+ * Receber pagamento: por PIX, guarda the comprovante first, and refuses a PIX without it before
+ * calling the API; em dinheiro, a file picked anyway is left out.
+ */
+export const receberPagamento = async (
+  token: string,
+  {
+    comprovante,
+    ...pagamento
+  }: {
+    readonly participanteId: string;
+    readonly valorEmCentavos: number;
+    readonly forma: 'pix' | 'dinheiro';
+    readonly comprovante: File | null;
+  },
+): Promise<Comando> => {
+  const receber = (comprovanteId?: string) =>
+    comandar(token, '/api/financeiro/receber-pagamento', { ...pagamento, comprovanteId });
+  if (pagamento.forma === 'dinheiro') return receber();
+  if (!comprovante?.size) return { feito: false, erro: 'pix-sem-comprovante' };
+  return guardarAntes(
+    token,
+    '/api/financeiro/guardar-comprovante',
+    { participanteId: pagamento.participanteId, arquivo: comprovante },
+    receber,
+  );
 };
 
-const creditoOuPendencia = (situacao: CreditoEPendente) =>
+/** Registrar gasto: guarda the nota first, then registers the gasto with it. */
+export const registrarGasto = (
+  token: string,
+  {
+    nota,
+    ...gasto
+  }: { readonly valorEmCentavos: number; readonly origem: Gasto['origem']; readonly nota: File },
+) =>
+  guardarAntes(token, '/api/financeiro/guardar-nota', { arquivo: nota }, (notaId) =>
+    comandar(token, '/api/financeiro/registrar-gasto', { ...gasto, notaId }),
+  );
+
+/** The crédito or pendência of a participante, in one line. */
+export const creditoOuPendencia = (situacao: CreditoEPendente) =>
   situacao.pendenteEmCentavos > 0
     ? `Pendente: ${emReais(situacao.pendenteEmCentavos)}`
     : situacao.creditoEmCentavos > 0
@@ -98,9 +148,10 @@ const nomeDe = (usuario: UsuarioRegistrado) => usuario.nome || usuario.email;
 
 /**
  * *Participantes* (gestor): each usuário with their participação and crédito or pendência,
- * receber pagamento (PIX with comprovante, or dinheiro) and desativar or reativar access.
+ * receber pagamento (PIX with comprovante, or dinheiro) and desativar or reativar access. The
+ * gestor's own access is left out: once desativado, nobody could reativá-lo.
  */
-export const Participantes = ({ token }: { token: string }) => {
+export const Participantes = ({ token, usuarioId }: { token: string; usuarioId: string }) => {
   const [usuarios, recarregarUsuarios] = useLeitura<readonly UsuarioRegistrado[]>(
     token,
     '/api/usuario',
@@ -114,43 +165,36 @@ export const Participantes = ({ token }: { token: string }) => {
     recarregarSituacoes();
   };
   const { enviando, fazer, avisos } = useComando(recarregar);
+  const [pix, setPix] = useState(true);
 
   if (!usuarios || !situacoes) return <Carregando />;
   if (usuarios.situacao !== 'ok' || situacoes.situacao !== 'ok')
-    return <FalhaAoCarregar tentarDeNovo={recarregar} />;
+    return (
+      <>
+        {avisos}
+        <FalhaAoCarregar tentarDeNovo={recarregar} />
+      </>
+    );
 
   const situacaoDe = new Map(situacoes.valor.map((situacao) => [situacao.id, situacao]));
   const participantes = usuarios.valor.filter((usuario) => situacaoDe.has(usuario.id));
 
-  const receberPagamento = aoEnviar(async (dados, form) => {
-    const participanteId = String(dados.get('participanteId'));
-    const forma = String(dados.get('forma'));
-    const comprovante = dados.get('comprovante') as File | null;
-    const pagamento = {
-      participanteId,
-      valorEmCentavos: emCentavos(String(dados.get('valor'))),
-      forma,
-    };
-    const receber = (comprovanteId?: string) =>
-      comandar(token, '/api/financeiro/receber-pagamento', { ...pagamento, comprovanteId });
+  const receber = aoEnviar(async (dados, form) => {
     const feito = await fazer(
-      async () =>
-        forma === 'dinheiro'
-          ? receber()
-          : comprovante?.size
-            ? comArquivo(
-                comandar(
-                  token,
-                  '/api/financeiro/guardar-comprovante',
-                  arquivo({ participanteId, arquivo: comprovante }),
-                ),
-                receber,
-              )
-            : { feito: false, erro: 'pix-sem-comprovante' },
+      () =>
+        receberPagamento(token, {
+          participanteId: String(dados.get('participanteId')),
+          valorEmCentavos: emCentavos(String(dados.get('valor'))),
+          forma: pix ? 'pix' : 'dinheiro',
+          comprovante: dados.get('comprovante') as File | null,
+        }),
       'Pagamento recebido.',
       'Não foi possível receber o pagamento.',
     );
-    if (feito) form.reset();
+    if (!feito) return;
+    form.reset();
+    // The radios are uncontrolled: reset checks PIX again, and `pix` follows.
+    setPix(true);
   });
 
   const mudarAcesso = (usuario: UsuarioRegistrado) => {
@@ -194,15 +238,17 @@ export const Participantes = ({ token }: { token: string }) => {
                   <td>{situacao ? creditoOuPendencia(situacao) : '—'}</td>
                   <td>
                     {usuario.desativado ? 'Desativado ' : 'Ativo '}
-                    <button
-                      type="button"
-                      className="fantasma"
-                      disabled={enviando}
-                      aria-label={`${acao} de ${nomeDe(usuario)}`}
-                      onClick={() => mudarAcesso(usuario)}
-                    >
-                      {acao}
-                    </button>
+                    {usuario.id !== usuarioId && (
+                      <button
+                        type="button"
+                        className="fantasma"
+                        disabled={enviando}
+                        aria-label={`${acao} de ${nomeDe(usuario)}`}
+                        onClick={() => mudarAcesso(usuario)}
+                      >
+                        {acao}
+                      </button>
+                    )}
                   </td>
                 </tr>
               );
@@ -215,10 +261,13 @@ export const Participantes = ({ token }: { token: string }) => {
         {participantes.length === 0 ? (
           <p>Ninguém pediu entrada ainda.</p>
         ) : (
-          <form onSubmit={receberPagamento}>
+          <form onSubmit={receber}>
             <label className="campo">
               Participante
-              <select name="participanteId" required>
+              <select name="participanteId" required defaultValue="">
+                <option value="" disabled>
+                  Escolha o participante
+                </option>
                 {participantes.map((usuario) => (
                   <option key={usuario.id} value={usuario.id}>
                     {nomeDe(usuario)}
@@ -230,19 +279,27 @@ export const Participantes = ({ token }: { token: string }) => {
             <fieldset>
               <legend>Forma</legend>
               <label className="opcao">
-                <input type="radio" name="forma" value="pix" defaultChecked />
+                <input
+                  type="radio"
+                  name="forma"
+                  value="pix"
+                  defaultChecked
+                  onChange={() => setPix(true)}
+                />
                 <strong>PIX</strong>
               </label>
               <label className="opcao">
-                <input type="radio" name="forma" value="dinheiro" />
+                <input type="radio" name="forma" value="dinheiro" onChange={() => setPix(false)} />
                 <strong>Dinheiro</strong>
                 <span>Em mãos.</span>
               </label>
             </fieldset>
-            <label className="campo so-no-pix">
-              Comprovante do PIX (PDF, JPEG ou PNG, até 5 MB)
-              <input type="file" name="comprovante" accept={ARQUIVOS} />
-            </label>
+            {pix && (
+              <label className="campo">
+                Comprovante do PIX (PDF, JPEG ou PNG, até 5 MB)
+                <input type="file" name="comprovante" accept={ARQUIVOS} required />
+              </label>
+            )}
             <button type="submit" disabled={enviando}>
               Receber pagamento
             </button>
@@ -273,25 +330,23 @@ export const Gastos = ({ token }: { token: string }) => {
 
   if (!gastos || !usuarios) return <Carregando />;
   if (gastos.situacao !== 'ok' || usuarios.situacao !== 'ok')
-    return <FalhaAoCarregar tentarDeNovo={recarregar} />;
+    return (
+      <>
+        {avisos}
+        <FalhaAoCarregar tentarDeNovo={recarregar} />
+      </>
+    );
 
   const nomes = new Map(usuarios.valor.map((usuario) => [usuario.id, nomeDe(usuario)]));
 
-  const registrarGasto = aoEnviar(async (dados, form) => {
-    const gasto = {
-      valorEmCentavos: emCentavos(String(dados.get('valor'))),
-      origem: dados.get('origem'),
-    };
+  const registrar = aoEnviar(async (dados, form) => {
     const feito = await fazer(
       () =>
-        comArquivo(
-          comandar(
-            token,
-            '/api/financeiro/guardar-nota',
-            arquivo({ arquivo: dados.get('nota') as File }),
-          ),
-          (notaId) => comandar(token, '/api/financeiro/registrar-gasto', { ...gasto, notaId }),
-        ),
+        registrarGasto(token, {
+          valorEmCentavos: emCentavos(String(dados.get('valor'))),
+          origem: dados.get('origem') as Gasto['origem'],
+          nota: dados.get('nota') as File,
+        }),
       'Gasto registrado.',
       'Não foi possível registrar o gasto.',
     );
@@ -311,7 +366,7 @@ export const Gastos = ({ token }: { token: string }) => {
       {avisos}
       <section aria-labelledby="registrar-gasto">
         <h2 id="registrar-gasto">Registrar gasto</h2>
-        <form onSubmit={registrarGasto}>
+        <form onSubmit={registrar}>
           <CampoValor rotulo="Valor total (R$)" />
           <fieldset>
             <legend>Pago com</legend>
