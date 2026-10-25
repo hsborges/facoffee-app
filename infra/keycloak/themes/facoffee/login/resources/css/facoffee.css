@@ -31,6 +31,11 @@
     background: #F9F6F2;
 }
 
+.pf-v5-c-login {
+    --pf-v5-c-login--PaddingTop: var(--pf-v5-global--spacer--3xl);
+    align-items: flex-start;
+}
+
 .pf-v5-c-login__main {
     color: #413C31;
     background: #FFFFFF;
