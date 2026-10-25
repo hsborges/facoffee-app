@@ -19,12 +19,12 @@ Forças em jogo:
 
 Complementa o ADR 0001, sem substituí-lo: abre uma exceção à regra de comunicação, como a do agendador.
 
-**Contatos**: Usuário ganha a rota interna `GET /contato`, sem identidade, que lista id, nome, e-mail e se o acesso está desativado. Como os gatilhos do [ADR 0017](0017-gatilhos-de-tempo-do-agendador.md), ela fica fora do gateway (`/api/usuario/contato` e o que vier abaixo respondem 404 de fora). Por garantia, a rota também responde 404 a requisições com `X-User-Id`, que o gateway sempre envia. Notificação valida o payload e só então chama a rota (`USUARIO_URL`), a cada evento.
+**Contatos**: Usuário ganha a rota interna `GET /contato/{id}`, sem identidade, que responde id, nome e e-mail de um usuário, ou 404. A rota não lista todos os usuários, para que quem a alcance só obtenha o contato de um id que já conhece. Como os gatilhos do [ADR 0017](0017-gatilhos-de-tempo-do-agendador.md), ela fica fora do gateway (`/api/usuario/contato` e o que vier abaixo respondem 404 de fora). Por garantia, a rota também responde 404 a requisições com `X-User-Id`, que o gateway sempre envia. Notificação valida o payload e só então chama a rota (`USUARIO_URL`), uma vez por participante do evento.
 
 **Destinatários**:
 
 - *Pagamento recebido* e *Reembolso feito*: o participante do evento; *Complemento solicitado*: cada participante, com a sua parte. Vale mesmo com o acesso desativado, porque o fato é dele.
-- *Valor da cota definido*: todo usuário com acesso ativo, porque Notificação não sabe quem participa.
+- *Valor da cota definido*: por ora, ninguém. O evento não cita participante e Notificação não sabe quem participa; o evento é consumido e confirmado sem e-mail.
 - Participante sem contato (nunca acessou o FACOFFEE): fica sem e-mail, com um aviso no log.
 
 **Envio desacoplado do consumo**: o tratador grava os e-mails na tabela `emails`, na mesma transação que registra o evento em `processed_events`. Assim, um evento repetido não grava e-mail de novo. Um processo à parte envia os e-mails devidos, um por transação (`for update skip locked`). Quando o envio falha, a tentativa é contada e o e-mail volta a ser tentado 1 minuto depois, com espera dobrando até 1 hora, sem limite de tentativas. A exceção é o destinatário recusado de vez pelo servidor (5xx no `RCPT TO`): o e-mail fica na tabela, marcado como recusado, e não é tentado de novo. Senha errada, remetente recusado ou servidor fora do ar continuam sendo tentados, porque passam quando a causa é corrigida. Se Usuário estiver fora, o tratador falha e o evento segue as tentativas e a fila de mensagens mortas do ADR 0005.
@@ -43,7 +43,8 @@ Ganhos:
 Custos:
 
 - Nova dependência síncrona: com Usuário fora, os avisos atrasam e, depois das tentativas, o evento vai para a fila de mensagens mortas, de onde é reprocessado à mão.
-- Cada evento busca a lista inteira de contatos.
+- Uma chamada a Usuário por participante do evento; um complemento com dezenas de participantes faz dezenas de chamadas.
+- Sem aviso de *Valor da cota definido* até Notificação conhecer os participantes ativos (por exemplo, consumindo *Participante entrou* e *Participante saiu*).
 - A tabela `emails` cresce sem limpeza.
 
 Riscos:
@@ -51,5 +52,4 @@ Riscos:
 - `GET /contato` não confere identidade: depende do bloqueio do gateway e da recusa de `X-User-Id`, e Usuário não pode ser alcançável de fora da rede interna.
 - O envio é pelo menos uma vez: se o processo cair entre o servidor SMTP aceitar o e-mail e o commit, ele é enviado de novo.
 - Uma configuração errada do SMTP (senha, remetente) é tentada de hora em hora até ser corrigida; só aparece nos logs. O e-mail recusado pelo destinatário só aparece no log e na tabela, sem reenvio automático.
-- *Valor da cota definido* também chega a quem tem acesso mas não participa.
 - O Gmail limita os envios por dia e exige senha de app na conta.

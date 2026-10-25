@@ -254,7 +254,7 @@ flowchart LR
     N -. "consulta contatos" .-> U
 ```
 
-As setas vão de quem publica para quem consome. A seta tracejada é uma consulta: Notificação busca em Usuário o nome e o e-mail de quem avisar ([ADR 0019](adr/0019-envio-de-e-mails-da-notificacao.md)). A dependência entre os contextos de negócio tem uma só direção: Usuário → Participação → Financeiro. Participação traduz *Usuário desativado* para a linguagem do domínio, encerrando a participação. Assim, o termo "usuário" não entra no modelo de Participação.
+As setas vão de quem publica para quem consome. A seta tracejada é uma consulta: Notificação busca em Usuário o nome e o e-mail de cada participante a avisar ([ADR 0019](adr/0019-envio-de-e-mails-da-notificacao.md)). A dependência entre os contextos de negócio tem uma só direção: Usuário → Participação → Financeiro. Participação traduz *Usuário desativado* para a linguagem do domínio, encerrando a participação. Assim, o termo "usuário" não entra no modelo de Participação.
 
 ### Eventos entre contextos
 
