@@ -731,6 +731,29 @@ paths:
           $ref: '#/components/responses/AcessoDesativado'
         '500':
           $ref: '#/components/responses/ErroInterno'
+  /api/financeiro/gasto:
+    get:
+      tags: [financeiro]
+      operationId: listarGastos
+      summary: Gastos
+      description: |
+        Gastos registrados, do mais recente ao mais antigo, indicando os já reembolsados.
+        Qualquer participante consulta os gastos.
+      responses:
+        '200':
+          description: Gastos.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Gasto'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/AcessoDesativado'
+        '500':
+          $ref: '#/components/responses/ErroInterno'
   /api/financeiro/participante:
     get:
       tags: [financeiro]
@@ -970,6 +993,45 @@ components:
       description: |
         Tipo de cota: `so-cafe` dá direito ao café; `completa`, ao café, às bolachas, aos chás e
         aos demais itens da copa.
+    Gasto:
+      type: object
+      required: [id, participanteId, valorEmCentavos, origem, notaId, feitoEm, reembolsado]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador do gasto.
+        participanteId:
+          type: string
+          format: uuid
+          description: Quem pagou e registrou o gasto.
+        valorEmCentavos:
+          type: integer
+          minimum: 1
+          description: Valor total do gasto em centavos de real.
+        origem:
+          type: string
+          enum: [caixinha, proprio-bolso]
+          description: De onde saiu o dinheiro.
+        notaId:
+          type: string
+          format: uuid
+          description: Nota do gasto, baixada em `nota/{id}`.
+        feitoEm:
+          type: string
+          format: date-time
+          description: Quando o gasto foi registrado.
+        reembolsado:
+          type: boolean
+          description: Se o gasto pago do próprio bolso já foi reembolsado; sempre falso se pago pela caixinha.
+      example:
+        id: 3c2b1a09-8f7e-4d6c-9b5a-4e3d2c1b0a9f
+        participanteId: 4f1c2a9e-8b7d-4c3a-9e2f-1a2b3c4d5e6f
+        valorEmCentavos: 4590
+        origem: proprio-bolso
+        notaId: 9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d
+        feitoEm: '2026-11-20T15:00:00.000Z'
+        reembolsado: false
     CreditoEPendente:
       type: object
       required: [id, ativo, creditoEmCentavos, pendenteEmCentavos]
