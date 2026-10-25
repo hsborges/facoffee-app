@@ -159,17 +159,20 @@ export const MinhaSituacao = ({
   );
   const [enviando, setEnviando] = useState(false);
   const [falha, setFalha] = useState<string>();
+  const [feito, setFeito] = useState<string>();
 
   const recarregar = () => {
     recarregarParticipacao();
     recarregarSituacao();
   };
-  const fazer = async (caminho: string, falhou: string, corpo?: unknown) => {
+  const fazer = async (caminho: string, resultado: readonly [string, string], corpo?: unknown) => {
     setEnviando(true);
     setFalha(undefined);
-    const feito = await comandar(token, caminho, corpo);
+    setFeito(undefined);
+    const comandado = await comandar(token, caminho, corpo);
     setEnviando(false);
-    if (!feito) setFalha(falhou);
+    if (comandado) setFeito(resultado[0]);
+    else setFalha(resultado[1]);
     recarregar();
   };
 
@@ -180,7 +183,7 @@ export const MinhaSituacao = ({
   const atual = participacao.situacao === 'ok' ? participacao.valor : undefined;
   const pedirSaida = () =>
     confirm('Pedir saída? Seu crédito ou pendência continua valendo se você voltar.') &&
-    fazer('/api/participacao/sair', 'Não foi possível pedir a saída.');
+    fazer('/api/participacao/sair', ['Saída pedida.', 'Não foi possível pedir a saída.']);
   // Once desativado, every leitura answers 403: the person leaves instead of reloading.
   const desativarAcesso = async () => {
     if (!confirm('Desativar seu acesso ao FACOFFEE? Só o gestor pode reativá-lo.')) return;
@@ -194,6 +197,7 @@ export const MinhaSituacao = ({
   return (
     <>
       {falha && <p role="alert">{falha}</p>}
+      <p role="status">{feito}</p>
       <section aria-labelledby="participacao">
         <h2 id="participacao">Participação</h2>
         {atual?.participando ? (
@@ -212,10 +216,8 @@ export const MinhaSituacao = ({
               escolher={(tipoDeCota) =>
                 fazer(
                   '/api/participacao/trocar-tipo-de-cota',
-                  'Não foi possível trocar o tipo de cota.',
-                  {
-                    tipoDeCota,
-                  },
+                  ['Tipo de cota trocado.', 'Não foi possível trocar o tipo de cota.'],
+                  { tipoDeCota },
                 )
               }
             />
@@ -232,9 +234,11 @@ export const MinhaSituacao = ({
               inicial={atual?.tipoDeCota ?? 'completa'}
               desabilitado={enviando}
               escolher={(tipoDeCota) =>
-                fazer('/api/participacao/entrar', 'Não foi possível pedir a entrada.', {
-                  tipoDeCota,
-                })
+                fazer(
+                  '/api/participacao/entrar',
+                  ['Entrada pedida.', 'Não foi possível pedir a entrada.'],
+                  { tipoDeCota },
+                )
               }
             />
           </>
