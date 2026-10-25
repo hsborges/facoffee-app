@@ -3,6 +3,7 @@ import { bodyLimit } from 'hono/body-limit';
 import type { Arquivo, GuardarComprovanteErro, NaoEncontrado } from '../application/arquivos.js';
 import type { RegistrarGastoErro } from '../application/gastos.js';
 import type { ReceberPagamentoErro } from '../application/pagamentos.js';
+import type { ReembolsarGastoErro } from '../application/reembolsos.js';
 import { type ArquivoInvalido, type Solicitante, TAMANHO_MAXIMO } from '../domain/arquivo.js';
 import type { Situacao } from '../domain/credito.js';
 import { ORIGENS, type Origem, type PedidoDeGasto } from '../domain/gasto.js';
@@ -34,6 +35,10 @@ export type ApiDependencies = {
     solicitante: Pick<Solicitante, 'id'>,
     pedido: PedidoDeGasto,
   ) => Promise<Result<string, RegistrarGastoErro>>;
+  readonly reembolsarGasto: (
+    solicitante: Pick<Solicitante, 'perfis'>,
+    gastoId: string,
+  ) => Promise<Result<string, ReembolsarGastoErro>>;
   readonly listarCreditoEPendentes: (
     solicitante: Pick<Solicitante, 'perfis'>,
   ) => Promise<Result<readonly Situacao[], 'sem-permissao'>>;
@@ -65,6 +70,9 @@ const STATUS_DO_ERRO = {
   'comprovante-ja-usado': 409,
   'nota-nao-encontrada': 404,
   'nota-ja-usada': 409,
+  'gasto-nao-encontrado': 404,
+  'gasto-pago-pela-caixinha': 409,
+  'gasto-ja-reembolsado': 409,
 } as const;
 
 // Bounded by the postgres integer column.
@@ -144,6 +152,7 @@ const baixado = (c: Context, result: Result<Arquivo, NaoEncontrado>) =>
  * and the gestor, and `GET /nota/:id` any participante. The gestor receives pagamentos with
  * `POST /receber-pagamento` (JSON; a pagamento por PIX references its comprovante). Any
  * participante registers a gasto with `POST /registrar-gasto` (JSON, referencing a nota they guardaram).
+ * The gestor reembolsa a gasto pago do próprio bolso with `POST /gasto/:id/reembolsar`.
  * Leitura *Crédito e pendentes*: `GET /participante` lists every participante, only for the
  * gestor; `GET /participante/eu` gives the logged-in participante their own.
  * Without `X-User-Id`, 401.
@@ -156,6 +165,7 @@ export const createApp = ({
   baixarNota,
   receberPagamento,
   registrarGasto,
+  reembolsarGasto,
   listarCreditoEPendentes,
   consultarCreditoEPendente,
   health,
@@ -224,6 +234,13 @@ export const createApp = ({
       const pedido = await pedidoDeGasto(c);
       if (!pedido) return c.json({ error: 'pedido-invalido' }, 400);
       return criado(c, await registrarGasto(quem, pedido));
+    })
+    .post('/gasto/:id/reembolsar', async (c) => {
+      const quem = solicitante(c);
+      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      const id = c.req.param('id');
+      if (!UUID.test(id)) return c.json({ error: 'gasto-nao-encontrado' }, 404);
+      return criado(c, await reembolsarGasto(quem, id.toLowerCase()));
     })
     .get('/participante', async (c) => {
       const quem = solicitante(c);

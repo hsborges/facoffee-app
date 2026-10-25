@@ -20,6 +20,7 @@ import {
   registrarEntrada,
   registrarSaida,
 } from './application/participantes.js';
+import { reembolsarGasto } from './application/reembolsos.js';
 import type { Event } from './domain/event.js';
 import type { Result } from './domain/result.js';
 import { connectArmazem } from './infra/armazem-s3.js';
@@ -30,6 +31,7 @@ import { connectDatabase } from './infra/db/database.js';
 import { gastoRepository } from './infra/db/gasto-repository.js';
 import { pagamentoRepository } from './infra/db/pagamento-repository.js';
 import { participanteRepository } from './infra/db/participante-repository.js';
+import { reembolsoRepository } from './infra/db/reembolso-repository.js';
 import type { Logger } from './infra/logger.js';
 import { startRelay } from './infra/outbox.js';
 import { connectRabbitmq, createPublisher } from './infra/rabbitmq.js';
@@ -79,6 +81,10 @@ export const startService = async (config: Config, logger: Logger) => {
       { now: () => new Date(), newId: randomUUID },
     ),
     registrarGasto: registrarGasto(gastoRepository(database.db), notaDoParticipante(armazem), {
+      now: () => new Date(),
+      newId: randomUUID,
+    }),
+    reembolsarGasto: reembolsarGasto(reembolsoRepository(database.db), {
       now: () => new Date(),
       newId: randomUUID,
     }),

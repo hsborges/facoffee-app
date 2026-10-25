@@ -43,6 +43,17 @@ Guardados num bucket S3 ([ADR 0018](../../docs/adr/0018-armazenamento-de-comprov
 | quem registra não é um participante que Financeiro conhece (`participante-nao-encontrado`) | 404 |
 | nota já usada em outro gasto (`nota-ja-usada`) | 409 |
 
+## Reembolsar
+
+`POST /gasto/:id/reembolsar` (só o gestor), sem corpo. Devolve o valor total do gasto pago do próprio bolso a quem o registrou: responde `201 { id }` e publica *Reembolso feito* pela outbox. Fica na tabela `reembolsos`, onde o `gasto_id` único impede reembolsar o mesmo gasto duas vezes, mesmo com pedidos simultâneos. É aqui que o dinheiro do gasto do próprio bolso sai da caixinha.
+
+| Recusa | Status |
+|---|---|
+| não é o gestor (`sem-permissao`) | 403 |
+| gasto que não existe (`gasto-nao-encontrado`) | 404 |
+| gasto pago pela caixinha (`gasto-pago-pela-caixinha`) | 409 |
+| gasto já reembolsado (`gasto-ja-reembolsado`) | 409 |
+
 ## Crédito e pendentes
 
 Pagamentos recebidos − cotas devidas: positivo é crédito, negativo é pendente, sem multa nem juros. Como tudo entra na mesma soma, o crédito abate as próximas cotas sozinho, e crédito e pendência continuam valendo depois da saída e no retorno. As partes de complementos entram na soma quando existirem ([#25](https://github.com/hsborges/facoffee-app/issues/25)).

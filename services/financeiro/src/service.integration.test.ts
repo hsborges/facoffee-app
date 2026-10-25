@@ -364,3 +364,68 @@ it('registers a gasto do próprio bolso with its own nota, once per nota, by a k
     },
   ]);
 });
+
+it('reembolsa a gasto do próprio bolso once and publishes Reembolso feito', async () => {
+  const { queue } = await channel.assertQueue('', { exclusive: true });
+  await channel.bindQueue(queue, EXCHANGE, 'finance.reimbursement-made.v1');
+  const publicados: Event[] = [];
+  await channel.consume(
+    queue,
+    (msg) => msg && publicados.push(JSON.parse(msg.content.toString())),
+    {
+      noAck: true,
+    },
+  );
+
+  const participante = randomUUID();
+  publicar(entrou(participante));
+  expect(await eventually(async () => (await repository.buscar(participante)) !== undefined)).toBe(
+    true,
+  );
+  const url = `http://localhost:${running.port}`;
+  const registrar = async (origem: string) => {
+    const form = new FormData();
+    form.append('arquivo', new Blob([new TextEncoder().encode('%PDF-1.7 nota')]), 'nota.pdf');
+    const nota = await fetch(`${url}/guardar-nota`, {
+      method: 'POST',
+      headers: { 'x-user-id': participante },
+      body: form,
+    });
+    const { id: notaId } = (await nota.json()) as { id: string };
+    const gasto = await fetch(`${url}/registrar-gasto`, {
+      method: 'POST',
+      headers: { 'x-user-id': participante, 'content-type': 'application/json' },
+      body: JSON.stringify({ valorEmCentavos: 4590, origem, notaId }),
+    });
+    return ((await gasto.json()) as { id: string }).id;
+  };
+  const doBolso = await registrar('proprio-bolso');
+  const reembolsar = (gastoId: string) =>
+    fetch(`${url}/gasto/${gastoId}/reembolsar`, {
+      method: 'POST',
+      headers: { 'x-user-id': randomUUID(), 'x-user-roles': 'gestor' },
+    });
+
+  const [primeiro, concorrente] = await Promise.all([reembolsar(doBolso), reembolsar(doBolso)]);
+  expect([primeiro.status, concorrente.status].sort()).toEqual([201, 409]);
+  const { id } = (await (primeiro.status === 201 ? primeiro : concorrente).json()) as {
+    id: string;
+  };
+  expect((await reembolsar(doBolso)).status).toBe(409);
+  expect((await reembolsar(await registrar('caixinha'))).status).toBe(409);
+  expect((await reembolsar(randomUUID())).status).toBe(404);
+
+  expect(await eventually(async () => publicados.length > 0)).toBe(true);
+  await sleep(1000);
+  expect(publicados).toMatchObject([
+    {
+      type: 'finance.reimbursement-made',
+      payload: {
+        reimbursementId: id,
+        expenseId: doBolso,
+        participantId: participante,
+        amountInCents: 4590,
+      },
+    },
+  ]);
+});

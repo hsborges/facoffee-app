@@ -12,8 +12,10 @@ import {
 import { consultarCreditoEPendente, listarCreditoEPendentes } from '../application/credito.js';
 import { registrarGasto } from '../application/gastos.js';
 import { receberPagamento } from '../application/pagamentos.js';
+import { reembolsarGasto } from '../application/reembolsos.js';
 import { TAMANHO_MAXIMO } from '../domain/arquivo.js';
-import { ok } from '../domain/result.js';
+import type { Gasto } from '../domain/gasto.js';
+import { fail, ok } from '../domain/result.js';
 import { createLogger } from '../infra/logger.js';
 import { type ApiDependencies, createApp } from './app.js';
 
@@ -25,6 +27,20 @@ const doOutro = { 'x-user-id': outro, 'x-user-roles': 'participante' };
 
 const totais = [{ id: participante, ativo: true, devidoEmCentavos: 3000, pagoEmCentavos: 9000 }];
 const buscarTotais = async (id?: string) => totais.filter((t) => id === undefined || t.id === id);
+
+const gastoDoBolso: Gasto = {
+  id: '33333333-3333-4333-8333-333333333333',
+  participanteId: participante,
+  valorEmCentavos: 4590,
+  origem: 'proprio-bolso',
+  notaId: outro,
+  feitoEm: new Date(),
+};
+const gastoDaCaixinha: Gasto = {
+  ...gastoDoBolso,
+  id: '44444444-4444-4444-8444-444444444444',
+  origem: 'caixinha',
+};
 
 const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]);
 
@@ -38,6 +54,7 @@ const app = (deps: Partial<ApiDependencies> = {}) => {
   };
   let ids = 0;
   const newId = () => `0000000${++ids}-0000-4000-8000-000000000000`;
+  const reembolsados = new Set<string>();
   return createApp({
     guardarComprovante: guardarComprovante(armazem, newId),
     guardarNota: guardarNota(armazem, newId),
@@ -55,6 +72,17 @@ const app = (deps: Partial<ApiDependencies> = {}) => {
         now: () => new Date(),
         newId,
       },
+    ),
+    reembolsarGasto: reembolsarGasto(
+      {
+        buscarGasto: async (id) => [gastoDoBolso, gastoDaCaixinha].find((g) => g.id === id),
+        salvar: async ({ gastoId }) => {
+          if (reembolsados.has(gastoId)) return fail('gasto-ja-reembolsado');
+          reembolsados.add(gastoId);
+          return ok(undefined);
+        },
+      },
+      { now: () => new Date(), newId },
     ),
     listarCreditoEPendentes: listarCreditoEPendentes(buscarTotais),
     consultarCreditoEPendente: consultarCreditoEPendente(buscarTotais),
@@ -333,6 +361,41 @@ describe('POST /registrar-gasto', () => {
       expect(await response.json()).toEqual({ error: 'pedido-invalido' });
     }
     expect((await registrar(app(), {}, valido)).status).toBe(401);
+  });
+});
+
+describe('POST /gasto/:id/reembolsar', () => {
+  const reembolsar = (api: ReturnType<typeof app>, headers: Record<string, string>, id: string) =>
+    api.request(`/gasto/${id}/reembolsar`, { method: 'POST', headers });
+
+  it('201 with the id of the reembolso, then 409 for the same gasto', async () => {
+    const api = app();
+    const response = await reembolsar(api, gestor, gastoDoBolso.id.toUpperCase());
+    expect(response.status).toBe(201);
+    expect(await response.json()).toEqual({ id: expect.any(String) });
+
+    const repetido = await reembolsar(api, gestor, gastoDoBolso.id);
+    expect(repetido.status).toBe(409);
+    expect(await repetido.json()).toEqual({ error: 'gasto-ja-reembolsado' });
+  });
+
+  it('409 for a gasto pago pela caixinha', async () => {
+    const response = await reembolsar(app(), gestor, gastoDaCaixinha.id);
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: 'gasto-pago-pela-caixinha' });
+  });
+
+  it('404 for an unknown gasto', async () => {
+    for (const id of [outro, 'abc']) {
+      const response = await reembolsar(app(), gestor, id);
+      expect(response.status).toBe(404);
+      expect(await response.json()).toEqual({ error: 'gasto-nao-encontrado' });
+    }
+  });
+
+  it('403 when not the gestor and 401 without the logged-in person', async () => {
+    expect((await reembolsar(app(), doParticipante, gastoDoBolso.id)).status).toBe(403);
+    expect((await reembolsar(app(), {}, gastoDoBolso.id)).status).toBe(401);
   });
 });
 

@@ -59,6 +59,16 @@ export const gastos = pgTable('gastos', {
   feitoEm: instant('feito_em').notNull(),
 });
 
+/** Reembolsos feitos; the unique gasto_id keeps a gasto from being reembolsado twice. */
+export const reembolsos = pgTable('reembolsos', {
+  id: uuid('id').primaryKey(),
+  gastoId: uuid('gasto_id')
+    .notNull()
+    .unique()
+    .references(() => gastos.id),
+  feitoEm: instant('feito_em').notNull(),
+});
+
 /** Events written in the aggregate's transaction; the relay publishes them in `seq` order. */
 export const outbox = pgTable('outbox', {
   seq: bigint('seq', { mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
