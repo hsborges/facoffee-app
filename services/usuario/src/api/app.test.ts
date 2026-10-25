@@ -152,6 +152,13 @@ describe('GET /contato', () => {
       { id: desativado, nome: 'Maria', email: 'maria@ufms.br', desativado: true },
     ]);
   });
+
+  it('404 for a request through the gateway, which always sends X-User-Id', async () => {
+    const response = await app().request('/contato', {
+      headers: { 'x-user-id': 'gestor-1', 'x-user-roles': 'gestor' },
+    });
+    expect(response.status).toBe(404);
+  });
 });
 
 describe('POST /:id/reativar', () => {

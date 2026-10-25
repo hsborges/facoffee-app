@@ -4,7 +4,7 @@ Ponto de entrada HTTPS (rede pública). Roteia via REST para Usuário, Participa
 
 | Rota pública | Encaminha para |
 |---|---|
-| `/api/usuario/*` | `http://usuario:3000/*` |
+| `/api/usuario/*` | `http://usuario:3000/*`, exceto a rota interna `contato` (404, [ADR 0019](../docs/adr/0019-envio-de-e-mails-da-notificacao.md)) |
 | `/api/participacao/*` | `http://participacao:3000/*`, exceto os gatilhos internos `iniciar-ano` e `iniciar-mes` (404, [ADR 0017](../docs/adr/0017-gatilhos-de-tempo-do-agendador.md)) |
 | `/api/financeiro/*` | `http://financeiro:3000/*` |
 | `/docs/*` | `http://docs:8080/docs/*` (Swagger UI, sem token) |

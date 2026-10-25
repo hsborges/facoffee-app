@@ -101,8 +101,11 @@ export const createApp = ({
       const result = await listar(solicitante);
       return result.ok ? c.json(result.value) : c.json({ error: result.error }, 403);
     })
-    // No identity: the gateway has no route here, so only the internal network reaches it.
-    .get('/contato', async (c) => c.json(await contatos()))
+    // Internal: the gateway has no route here and always sends X-User-Id, so a request carrying
+    // it came through the gateway somehow and is refused.
+    .get('/contato', async (c) =>
+      c.req.header('x-user-id') ? c.json({ error: 'not-found' }, 404) : c.json(await contatos()),
+    )
     .post('/:id/desativar', async (c) => {
       const solicitante = usuarioLogado(c);
       if (!solicitante) return c.json({ error: 'unauthorized' }, 401);

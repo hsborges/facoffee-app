@@ -18,7 +18,7 @@ Alcançada só pelo [gateway](../../gateway/), que valida o token e envia a iden
 
 O gateway chama `GET /acesso` antes de toda requisição, de qualquer contexto: registra o usuário (ou atualiza nome e e-mail) e responde 204 se o acesso está ativo, 403 se foi desativado ([ADR 0011](../../docs/adr/0011-acesso-desativado.md), [ADR 0012](../../docs/adr/0012-registro-do-usuario-no-primeiro-acesso.md)).
 
-Notificação chama `GET /contato`, rota interna sem identidade e fora do gateway: lista `[{ id, nome, email, desativado }]` de todos os usuários registrados, para os avisos por e-mail ([ADR 0019](../../docs/adr/0019-envio-de-e-mails-da-notificacao.md)).
+Notificação chama `GET /contato`, rota interna sem identidade e fora do gateway: lista `[{ id, nome, email, desativado }]` de todos os usuários registrados, para os avisos por e-mail. Com `X-User-Id`, que o gateway sempre envia, responde 404 ([ADR 0019](../../docs/adr/0019-envio-de-e-mails-da-notificacao.md)).
 
 Especificação completa em [`gateway/openapi.yaml`](../../gateway/openapi.yaml).
 
