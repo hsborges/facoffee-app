@@ -1,6 +1,9 @@
 {
   "realm": "facoffee",
   "enabled": true,
+  "displayName": "FACOFFEE",
+  "displayNameHtml": "<div class=\"kc-logo-text\"><span>FACOFFEE</span></div>",
+  "loginTheme": "facoffee",
   "roles": {
     "realm": [
       { "name": "gestor", "description": "Organiza a divisão dos custos da copa" },
