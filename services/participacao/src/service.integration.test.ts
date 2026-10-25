@@ -152,3 +152,23 @@ it('publishes Valor da cota definido once and only for the gestor', async () => 
     { payload: { contributionType: 'coffee-only', year: valor.ano, amountInCents: 2500 } },
   ]);
 });
+
+it('concurrent requests publish Participante saiu and Valor da cota definido once', async () => {
+  const id = randomUUID();
+  await entrar(id, 'completa');
+  const saidas = await Promise.all([sair(id), sair(id), sair(id)]);
+  expect(saidas.map((r) => r.status).sort()).toEqual([204, 409, 409]);
+
+  const valor = { tipoDeCota: 'completa', ano: 3000 + randomInt(1_000_000), valorEmCentavos: 3000 };
+  const gestor = { 'x-user-id': randomUUID(), 'x-user-roles': 'gestor' };
+  const definicoes = await Promise.all([1, 2, 3].map(() => post('/valor-da-cota', gestor, valor)));
+  expect(definicoes.map((r) => r.status).sort()).toEqual([204, 409, 409]);
+
+  const definidos = () =>
+    received.filter(
+      (e) => e.type === 'participation.contribution-amount-set' && e.payload.year === valor.ano,
+    );
+  expect(await eventually(() => left(id).length > 0 && definidos().length > 0)).toBe(true);
+  await sleep(1000);
+  expect([left(id).length, definidos().length]).toEqual([1, 1]);
+});
