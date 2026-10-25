@@ -5,7 +5,7 @@ Divisão de custos da copa da FACOM.
 - [Glossário](docs/GLOSSARIO.md) — linguagem ubíqua
 - [Modelos de domínio](docs/MODELOS_DOMINIO.md) — mapa conceitual, Event Storming, contextos
 - [Design System](docs/SYSTEM_DESIGN.md) — identidade visual
-- [Arquitetura](docs/arquitetura.png)
+- [Arquitetura](docs/arquitetura.png) — [ADR 0001: arquitetura baseada em serviços](docs/adr/0001-arquitetura-servicos.md)
 - [Práticas de engenharia](AGENTS.md) — fluxo, commits, versionamento, TDD, DDD, estilo
 
 ## Estrutura
