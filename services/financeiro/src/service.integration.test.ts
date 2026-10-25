@@ -3,6 +3,12 @@ import { randomUUID } from 'node:crypto';
 import { setTimeout as sleep } from 'node:timers/promises';
 import amqplib from 'amqplib';
 import { afterAll, beforeAll, expect, it, vi } from 'vitest';
+import {
+  type Repository,
+  registrarCotaDevida,
+  registrarSaida,
+} from './application/participantes.js';
+import type { Event } from './domain/event.js';
 import { queues } from './infra/consumer.js';
 import { connectDatabase } from './infra/db/database.js';
 import { participanteRepository } from './infra/db/participante-repository.js';
@@ -108,4 +114,37 @@ it('records each Cota devida once per month, even with repeated events', async (
     { mes: '2026-11', tipoDeCota: 'completa', valorEmCentavos: 3000 },
     { mes: '2026-12', tipoDeCota: 'completa', valorEmCentavos: 3000 },
   ]);
+});
+
+it('does not undo a saída handled while a Cota devida was in progress', async () => {
+  const id = randomUUID();
+  publicar(entrou(id));
+  expect(await eventually(async () => (await repository.buscar(id))?.ativo === true)).toBe(true);
+
+  let soltar = () => {};
+  const solta = new Promise<void>((resolve) => {
+    soltar = resolve;
+  });
+  const cota = database.db.transaction(async (tx) => {
+    const real = participanteRepository(tx);
+    // holds the cota between reading and saving the participante
+    const devagar: Repository = {
+      ...real,
+      buscar: async (buscado) => {
+        const participante = await real.buscar(buscado);
+        await solta;
+        return participante;
+      },
+    };
+    return registrarCotaDevida(devagar)(cotaDevida(id, '2026-11') as Event);
+  });
+  await sleep(200);
+  const saida = database.db.transaction((tx) =>
+    registrarSaida(participanteRepository(tx))(saiu(id) as Event),
+  );
+  await sleep(500);
+  soltar();
+  await Promise.all([cota, saida]);
+
+  expect(await repository.buscar(id)).toMatchObject({ ativo: false, cotas: [{ mes: '2026-11' }] });
 });

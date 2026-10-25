@@ -10,6 +10,7 @@ import { fail, ok, type Result } from '../domain/result.js';
 
 /** Persistence of participantes. */
 export type Repository = {
+  /** Finds the participante; inside a transaction it also holds off other handlers of the same one. */
   readonly buscar: (id: string) => Promise<Participante | undefined>;
   /** Saves the participante; cotas already saved are kept as they are. */
   readonly salvar: (participante: Participante) => Promise<void>;
