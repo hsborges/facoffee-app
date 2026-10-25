@@ -5,7 +5,7 @@
 | **Escopo** | Divisão de custos da copa da FACOM |
 | **Sistema** | FACOFFEE |
 | **Disciplina** | Técnicas Avançadas de Desenvolvimento de Software (2026/2) |
-| **Versão** | 2.2 |
+| **Versão** | 2.3 |
 | **Data** | 2026-10-24 |
 | **Status** | Aprovado |
 | **Base** | [Glossário da Linguagem Ubíqua](GLOSSARIO.md) (versão 2.1) e arquitetura do FACOFFEE ([arquitetura.png](arquitetura.png)) |
@@ -18,7 +18,7 @@ Este documento representa o domínio descrito no glossário de três formas:
 2. **[Event Storming](#2-event-storming)**: mostra o que acontece no domínio, quem provoca cada acontecimento e quais regras reagem a ele.
 3. **[Contextos delimitados](#3-contextos-delimitados)**: mostra como o domínio está dividido no FACOFFEE e quais eventos passam de um contexto para outro.
 
-Os modelos usam apenas termos do glossário. A exceção é a seção 3, que também nomeia os contextos de apoio da arquitetura (Usuário e Notificação). Os diagramas estão em [Mermaid](https://mermaid.js.org/) e aparecem renderizados no GitHub, no GitLab e em editores com suporte a Mermaid.
+Os modelos usam apenas termos do glossário. A exceção é a seção 3, que também nomeia contextos da arquitetura cujos termos não estão no glossário (Usuário e Notificação). Os diagramas estão em [Mermaid](https://mermaid.js.org/) e aparecem renderizados no GitHub, no GitLab e em editores com suporte a Mermaid.
 
 ## 1. Mapa conceitual
 
@@ -189,7 +189,7 @@ A coluna **Publicado para** indica quais contextos recebem o evento. Os eventos 
 | 8 | **Gasto feito** | Alguém pagou uma compra, um conserto, uma manutenção ou uma reposição, com dinheiro da caixinha ou do próprio bolso, e guardou a nota. | Financeiro: Caixinha | *Pagar compra, conserto, manutenção ou reposição* | *interno* |
 | 9 | **Reembolso feito** | O gestor devolveu o valor a quem pagou um gasto do próprio bolso. | Financeiro: Caixinha | Gasto pago do próprio bolso | Notificação |
 
-O contexto Participação também recebe um evento de fora do domínio:
+O contexto Participação também recebe um evento do contexto Usuário:
 
 | Evento | O que aconteceu | Contexto de origem | Efeito no domínio |
 |---|---|---|---|
@@ -218,7 +218,7 @@ O contexto Participação também recebe um evento de fora do domínio:
 
 | Decisão | Efeito |
 |---|---|
-| Início do mês e início do ano são gatilhos de política, não eventos. | Saíram *Mês iniciado* e *Ano iniciado*. No FACOFFEE, quem dispara esses gatilhos é o agendador. |
+| Início do mês e início do ano são gatilhos de política, não eventos. | Saíram *Mês iniciado* e *Ano iniciado*. No FACOFFEE, quem dispara esses gatilhos é o agendador, um processo agendado na rede interna que chama Participação. |
 | Crédito, pendência e saldo da caixinha são leituras calculadas. | Saíram os eventos de quitação, de crédito e de entrada e saída de dinheiro da caixinha. |
 | O crédito é abatido automaticamente. | Não existem os eventos *Crédito abatido* e *Cota quitada*; a quitação aparece na leitura *Crédito e pendentes*. |
 | O pagamento adiantado vira crédito, abatido mês a mês. | A regra de saída ("os meses pagos adiantado viram crédito") passa a acontecer sozinha. |
@@ -226,18 +226,18 @@ O contexto Participação também recebe um evento de fora do domínio:
 | A compra é um tipo de gasto. | *Compra feita* e *Gasto pago* viraram um só evento: *Gasto feito*. |
 | O complemento já define a parte de cada participante. | *Complemento solicitado* e *Complemento devido* viraram um só evento. |
 | Lembrar um pendente não muda nada no domínio. | Saiu *Pendente cobrado*. |
-| A desativação do acesso não é um evento do domínio, mas tem efeito nele. | *Usuário desativado* vem do contexto Usuário e é traduzido em *Participante saiu*. |
+| A desativação do acesso acontece no contexto Usuário, mas tem efeito em Participação. | *Usuário desativado* vem do contexto Usuário e é traduzido em *Participante saiu*. |
 | Só vai para outros contextos o evento que alguém usa. | *Tipo de cota trocado* e *Gasto feito* ficam internos. *Cota devida* já leva o valor do tipo de cota, e o saldo da caixinha é calculado no próprio Financeiro. |
 
 ## 3. Contextos delimitados
 
-O FACOFFEE divide o domínio em dois contextos de negócio e usa dois contextos de apoio. O diagrama completo da arquitetura está em [arquitetura.png](arquitetura.png).
+O FACOFFEE divide o domínio em três contextos de negócio e usa um contexto de apoio. O diagrama completo da arquitetura está em [arquitetura.png](arquitetura.png).
 
 | Contexto | Tipo | Responsabilidade | Termos do glossário |
 |---|---|---|---|
 | **Participação** | Negócio | Quem participa, com qual tipo de cota, quanto vale cada tipo e quais cotas são devidas a cada mês. | Participante, Gestor, Tipo de cota, Valor da cota, Cota |
 | **Financeiro** | Negócio | O dinheiro: pagamentos, crédito, pendências, complementos, gastos, reembolsos e caixinha. | Pagamento, Comprovante, Crédito, Pendente, Complemento, Caixinha, Saldo da caixinha, Gasto, Compra, Nota, Reembolso |
-| **Usuário** | Apoio | O acesso das pessoas ao FACOFFEE, autenticadas pelo Passaporte UFMS (Keycloak). | — |
+| **Usuário** | Negócio | O acesso das pessoas ao FACOFFEE, autenticadas pelo Passaporte UFMS (Keycloak). | — |
 | **Notificação** | Apoio | Os avisos aos participantes, por e-mail e WhatsApp. | — |
 
 ### Mapa de contextos
@@ -277,3 +277,4 @@ Nenhum ponto crítico em aberto nesta versão.
 | 2.0 | 2026-10-24 | Revisão a partir da arquitetura do FACOFFEE. Nova seção [3. Contextos delimitados](#3-contextos-delimitados), com mapa de contextos e eventos entre contextos. Agregados, eventos e leituras passam a indicar o contexto. O agregado Participante foi dividido entre Participação e Financeiro. O pagamento passa a ser recebido pelo gestor. A desativação do acesso encerra a participação. Nova leitura *Participantes do momento*. O ponto crítico sobre a divisão do complemento foi resolvido (participantes do momento da solicitação) e entrou o ponto crítico sobre a desativação do acesso. |
 | 2.1 | 2026-10-24 | Decisões: o crédito é abatido automaticamente (ponto crítico fechado) e o complemento é dividido entre todos os participantes ativos. A leitura *Participantes do momento* passa a se chamar *Participantes ativos*. O acesso é desativado pelo gestor ou a pedido do participante, e isso encerra a participação (ponto crítico fechado). |
 | 2.2 | 2026-10-24 | O diagrama de classes foi substituído por um [mapa conceitual](#1-mapa-conceitual). Pendente, Saldo da caixinha e Consumo passam a aparecer como conceitos. |
+| 2.3 | 2026-10-24 | Usuário passa a ser contexto de negócio, alinhado à arquitetura e ao [ADR 0001](adr/0001-arquitetura-servicos.md). O agendador é um processo agendado na rede interna que chama Participação. |

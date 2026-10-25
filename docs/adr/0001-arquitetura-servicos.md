@@ -26,7 +26,7 @@ Adotar uma arquitetura baseada em serviços, com um serviço por contexto.
 | **Participação** | Domínio | Participante, Tipo de cota, Valor da cota e Cota. |
 | **Financeiro** | Domínio | Pagamento, Comprovante, Crédito, Complemento, Caixinha, Gasto, Nota e Reembolso. Guarda comprovantes e notas em armazenamento de arquivos. |
 | **Notificação** | Suporte | Avisos aos participantes por e-mail (Gmail) e WhatsApp. |
-| **Agendador** | Infraestrutura | Dispara os gatilhos de tempo de Participação: início do mês e início do ano. |
+| **Agendador** | Infraestrutura | Processo agendado na rede interna. Chama Participação no início do mês e no início do ano para disparar os gatilhos de tempo. |
 
 **Dados**
 
@@ -35,8 +35,8 @@ Adotar uma arquitetura baseada em serviços, com um serviço por contexto.
 
 **Comunicação**
 
-- Chamadas síncronas (REST) só partem do API Gateway para os serviços.
-- Entre serviços, a comunicação é só por eventos de domínio, via RabbitMQ. Os contratos ficam em `contracts/events/`.
+- Chamadas síncronas (REST) só partem do API Gateway para os serviços e do Agendador para Participação.
+- Entre serviços de domínio e de suporte, a comunicação é só por eventos de domínio, via RabbitMQ. Os contratos ficam em `contracts/events/`.
 - Eventos publicados e consumidos por cada serviço:
 
 | Serviço | Publica | Consome |
