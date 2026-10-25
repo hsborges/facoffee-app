@@ -202,6 +202,27 @@ describe('POST /receber-pagamento', () => {
     expect(await response.json()).toEqual({ id: expect.any(String) });
   });
 
+  it.each([
+    [participante.toUpperCase(), participante],
+    [participante, participante.toUpperCase()],
+  ])(
+    'matches ids in any case (comprovante of %s, pagamento of %s)',
+    async (doComprovante, doPagamento) => {
+      const api = app();
+      const form = formulario({ arquivo: PNG, participanteId: doComprovante });
+      const comprovante = await enviar(api, '/guardar-comprovante', gestor, form);
+      const { id } = (await comprovante.json()) as { id: string };
+
+      const response = await receber(api, gestor, {
+        ...emDinheiro,
+        participanteId: doPagamento,
+        forma: 'pix',
+        comprovanteId: id.toUpperCase(),
+      });
+      expect(response.status).toBe(201);
+    },
+  );
+
   it('201 for a pagamento em dinheiro', async () => {
     expect((await receber(app(), gestor, emDinheiro)).status).toBe(201);
   });
@@ -227,6 +248,7 @@ describe('POST /receber-pagamento', () => {
       { ...emDinheiro, forma: 'cheque' },
       { ...emDinheiro, comprovanteId: 'abc' },
       'nao-e-objeto',
+      { ...emDinheiro, observacao: 'x'.repeat(5000) },
     ]) {
       const response = await receber(app(), gestor, body);
       expect(response.status).toBe(400);

@@ -23,7 +23,7 @@ Guardados num bucket S3 ([ADR 0018](../../docs/adr/0018-armazenamento-de-comprov
 
 ## Receber pagamento
 
-`POST /receber-pagamento` (só o gestor), em JSON: `participanteId`, `valorEmCentavos`, `forma` (`pix` ou `dinheiro`) e, no PIX, `comprovanteId` (o `id` de `/guardar-comprovante`). Responde `201 { id }` e publica *Pagamento recebido* pela outbox. Todo pagamento entra na caixinha: as leituras somam a tabela `pagamentos`.
+`POST /receber-pagamento` (só o gestor), em JSON: `participanteId`, `valorEmCentavos`, `forma` (`pix` ou `dinheiro`) e, no PIX, `comprovanteId` (o `id` de `/guardar-comprovante`). Responde `201 { id }` e publica *Pagamento recebido* pela outbox. Todo pagamento entra na caixinha: a tabela `pagamentos` é a fonte do saldo da caixinha, que ainda não tem leitura.
 
 | Recusa | Status |
 |---|---|

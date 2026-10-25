@@ -18,7 +18,7 @@ export const pagamentoRepository = (db: Executor): Pagamentos => ({
       const saved = await tx
         .insert(pagamentos)
         .values(pagamento)
-        .onConflictDoNothing()
+        .onConflictDoNothing({ target: pagamentos.comprovanteId })
         .returning({ id: pagamentos.id });
       if (saved.length === 0) return fail('comprovante-ja-usado' as const);
       await enqueue(tx, events);

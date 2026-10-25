@@ -238,3 +238,28 @@ it('receives a pagamento por PIX and publishes Pagamento recebido, once per comp
     },
   ]);
 });
+
+it('receives repeated pagamentos em dinheiro, only from a participante Financeiro knows', async () => {
+  const participante = randomUUID();
+  publicar(entrou(participante));
+  expect(await eventually(async () => (await repository.buscar(participante)) !== undefined)).toBe(
+    true,
+  );
+
+  const receber = (participanteId: string) =>
+    fetch(`http://localhost:${running.port}/receber-pagamento`, {
+      method: 'POST',
+      headers: {
+        'x-user-id': randomUUID(),
+        'x-user-roles': 'gestor',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ participanteId, valorEmCentavos: 1500, forma: 'dinheiro' }),
+    });
+  expect((await receber(participante)).status).toBe(201);
+  expect((await receber(participante)).status).toBe(201);
+
+  const desconhecido = await receber(randomUUID());
+  expect(desconhecido.status).toBe(404);
+  expect(await desconhecido.json()).toEqual({ error: 'participante-nao-encontrado' });
+});

@@ -63,7 +63,12 @@ const pedidoDePagamento = async (c: Context): Promise<PedidoDePagamento | undefi
     FORMAS.includes(forma as Forma) &&
     (comprovanteId === null || (typeof comprovanteId === 'string' && UUID.test(comprovanteId)));
   return valido
-    ? { participanteId, valorEmCentavos, forma: forma as Forma, comprovanteId }
+    ? {
+        participanteId: participanteId.toLowerCase(),
+        valorEmCentavos,
+        forma: forma as Forma,
+        comprovanteId: comprovanteId?.toLowerCase() ?? null,
+      }
     : undefined;
 };
 
@@ -71,6 +76,12 @@ const pedidoDePagamento = async (c: Context): Promise<PedidoDePagamento | undefi
 const limite = bodyLimit({
   maxSize: TAMANHO_MAXIMO + 64 * 1024,
   onError: (c) => c.json({ error: 'arquivo-grande-demais' }, 413),
+});
+
+// A pedido de pagamento is a few fields; anything bigger is refused before being read.
+const limiteDoPedido = bodyLimit({
+  maxSize: 4 * 1024,
+  onError: (c) => c.json({ error: 'pedido-invalido' }, 400),
 });
 
 const formulario = async (c: Context) => {
@@ -82,7 +93,7 @@ const formulario = async (c: Context) => {
   };
 };
 
-const guardado = (c: Context, result: Result<string, keyof typeof STATUS_DO_ERRO>) =>
+const criado = (c: Context, result: Result<string, keyof typeof STATUS_DO_ERRO>) =>
   result.ok
     ? c.json({ id: result.value }, 201)
     : c.json({ error: result.error }, STATUS_DO_ERRO[result.error]);
@@ -141,13 +152,13 @@ export const createApp = ({
       const { conteudo, participanteId } = await formulario(c);
       const valido = conteudo && typeof participanteId === 'string' && UUID.test(participanteId);
       if (!valido) return c.json({ error: 'pedido-invalido' }, 400);
-      return guardado(c, await guardarComprovante(quem, participanteId, conteudo));
+      return criado(c, await guardarComprovante(quem, participanteId.toLowerCase(), conteudo));
     })
     .post('/guardar-nota', limite, async (c) => {
       if (!solicitante(c)) return c.json({ error: 'unauthorized' }, 401);
       const { conteudo } = await formulario(c);
       if (!conteudo) return c.json({ error: 'pedido-invalido' }, 400);
-      return guardado(c, await guardarNota(conteudo));
+      return criado(c, await guardarNota(conteudo));
     })
     .get('/comprovante/:id', async (c) => {
       const quem = solicitante(c);
@@ -162,10 +173,10 @@ export const createApp = ({
       if (!UUID.test(id)) return c.json({ error: 'not-found' }, 404);
       return baixado(c, await baixarNota(id));
     })
-    .post('/receber-pagamento', async (c) => {
+    .post('/receber-pagamento', limiteDoPedido, async (c) => {
       const quem = solicitante(c);
       if (!quem) return c.json({ error: 'unauthorized' }, 401);
       const pedido = await pedidoDePagamento(c);
       if (!pedido) return c.json({ error: 'pedido-invalido' }, 400);
-      return guardado(c, await receberPagamento(quem, pedido));
+      return criado(c, await receberPagamento(quem, pedido));
     });
