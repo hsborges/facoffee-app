@@ -17,6 +17,29 @@ tags:
   - name: usuario
     description: Usuários
 paths:
+  /api/usuario:
+    get:
+      tags: [usuario]
+      operationId: listarUsuarios
+      summary: Listar usuários
+      description: |
+        Usuários que já acessaram o FACOFFEE, em ordem de nome, indicando quem está com o acesso
+        desativado. Só o gestor lista os usuários.
+      responses:
+        '200':
+          description: Usuários
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UsuarioRegistrado'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/SomenteGestor'
+        '500':
+          $ref: '#/components/responses/ErroInterno'
   /api/usuario/eu:
     get:
       tags: [usuario]
@@ -80,6 +103,40 @@ paths:
                 error: not-found
         '500':
           $ref: '#/components/responses/ErroInterno'
+  /api/usuario/{id}/reativacao:
+    post:
+      tags: [usuario]
+      operationId: reativarAcesso
+      summary: Reativar acesso
+      description: |
+        Reativa o acesso de um usuário ao FACOFFEE. Só o gestor reativa. Reativar não devolve a
+        participação: para voltar a participar, a pessoa pede a entrada de novo. Reativar um
+        acesso ativo não tem efeito.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identificador do usuário.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Acesso reativado.
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/SomenteGestor'
+        '404':
+          description: Identificador inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              example:
+                error: not-found
+        '500':
+          $ref: '#/components/responses/ErroInterno'
 components:
   securitySchemes:
     login:
@@ -118,6 +175,19 @@ components:
             $ref: '#/components/schemas/Erro'
           example:
             error: acesso-desativado
+    SomenteGestor:
+      description: Só o gestor pode fazer isso, ou acesso desativado.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          examples:
+            semPermissao:
+              value:
+                error: sem-permissao
+            acessoDesativado:
+              value:
+                error: acesso-desativado
     ErroInterno:
       description: Erro interno.
   schemas:
@@ -153,3 +223,24 @@ components:
         nome: João Silva
         email: joao.silva@ufms.br
         perfis: [participante]
+    UsuarioRegistrado:
+      type: object
+      required: [id, nome, email, desativado]
+      properties:
+        id:
+          type: string
+          description: Identificador do usuário.
+        nome:
+          type: string
+          description: Nome; vazio se não informado.
+        email:
+          type: string
+          description: E-mail; vazio se não informado.
+        desativado:
+          type: boolean
+          description: Se o acesso ao FACOFFEE está desativado.
+      example:
+        id: 4f1c2a9e-8b7d-4c3a-9e2f-1a2b3c4d5e6f
+        nome: João Silva
+        email: joao.silva@ufms.br
+        desativado: false
