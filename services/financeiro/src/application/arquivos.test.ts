@@ -6,6 +6,7 @@ import {
   baixarNota,
   guardarComprovante,
   guardarNota,
+  notaDoParticipante,
 } from './arquivos.js';
 
 const PDF = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31]);
@@ -82,25 +83,36 @@ describe('baixarComprovante', () => {
 describe('nota', () => {
   it('is guardada by any participante and seen by all', async () => {
     const { armazem } = emMemoria();
-    expect(await guardarNota(armazem, newId)(PDF)).toEqual({ ok: true, value: 'arquivo-1' });
+    expect(await guardarNota(armazem, newId)(participante, PDF)).toEqual({
+      ok: true,
+      value: 'arquivo-1',
+    });
     expect(await baixarNota(armazem)('arquivo-1')).toEqual({
       ok: true,
-      value: { tipo: 'application/pdf', conteudo: PDF },
+      value: { tipo: 'application/pdf', conteudo: PDF, participanteId: participante.id },
     });
   });
 
   it('is not found under the comprovantes, nor the other way round', async () => {
     const { armazem } = emMemoria();
-    await guardarNota(armazem, newId)(PDF);
+    await guardarNota(armazem, newId)(participante, PDF);
     expect(await baixarComprovante(armazem)(gestor, 'arquivo-1')).toEqual({
       ok: false,
       error: 'nao-encontrado',
     });
   });
 
+  it('belongs to the participante who guardou it', async () => {
+    const { armazem } = emMemoria();
+    await guardarNota(armazem, newId)(participante, PDF);
+    expect(await notaDoParticipante(armazem)(participante.id, 'arquivo-1')).toBe(true);
+    expect(await notaDoParticipante(armazem)(gestor.id, 'arquivo-1')).toBe(false);
+    expect(await notaDoParticipante(armazem)(participante.id, 'nao-existe')).toBe(false);
+  });
+
   it('refuses an empty arquivo', async () => {
     const { armazem } = emMemoria();
-    expect(await guardarNota(armazem, newId)(new Uint8Array())).toEqual({
+    expect(await guardarNota(armazem, newId)(participante, new Uint8Array())).toEqual({
       ok: false,
       error: 'arquivo-vazio',
     });

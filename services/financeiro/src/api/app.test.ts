@@ -7,7 +7,7 @@ import {
   comprovanteDoParticipante,
   guardarComprovante,
   guardarNota,
-  notaGuardada,
+  notaDoParticipante,
 } from '../application/arquivos.js';
 import { consultarCreditoEPendente, listarCreditoEPendentes } from '../application/credito.js';
 import { registrarGasto } from '../application/gastos.js';
@@ -48,10 +48,14 @@ const app = (deps: Partial<ApiDependencies> = {}) => {
       comprovanteDoParticipante(armazem),
       { now: () => new Date(), newId },
     ),
-    registrarGasto: registrarGasto({ salvar: async () => ok(undefined) }, notaGuardada(armazem), {
-      now: () => new Date(),
-      newId,
-    }),
+    registrarGasto: registrarGasto(
+      { salvar: async () => ok(undefined) },
+      notaDoParticipante(armazem),
+      {
+        now: () => new Date(),
+        newId,
+      },
+    ),
     listarCreditoEPendentes: listarCreditoEPendentes(buscarTotais),
     consultarCreditoEPendente: consultarCreditoEPendente(buscarTotais),
     health: async () => ({ database: true, rabbitmq: true, armazenamento: true }),
@@ -282,8 +286,8 @@ describe('POST /registrar-gasto', () => {
       { ...headers, 'content-type': 'application/json' },
       JSON.stringify(body),
     );
-  const comNota = async (api: ReturnType<typeof app>) => {
-    const nota = await enviar(api, '/guardar-nota', doParticipante, formulario({ arquivo: PNG }));
+  const comNota = async (api: ReturnType<typeof app>, headers = doParticipante) => {
+    const nota = await enviar(api, '/guardar-nota', headers, formulario({ arquivo: PNG }));
     return ((await nota.json()) as { id: string }).id;
   };
 
@@ -302,11 +306,15 @@ describe('POST /registrar-gasto', () => {
     },
   );
 
-  it('404 for a nota that was not guardada', async () => {
-    const body = { valorEmCentavos: 4590, origem: 'caixinha', notaId: outro };
-    const response = await registrar(app(), doParticipante, body);
-    expect(response.status).toBe(404);
-    expect(await response.json()).toEqual({ error: 'nota-nao-encontrada' });
+  it('404 for a nota that was not guardada by who registers', async () => {
+    const api = app();
+    const notaDoOutro = await comNota(api, doOutro);
+    for (const notaId of [outro, notaDoOutro]) {
+      const body = { valorEmCentavos: 4590, origem: 'caixinha', notaId };
+      const response = await registrar(api, doParticipante, body);
+      expect(response.status).toBe(404);
+      expect(await response.json()).toEqual({ error: 'nota-nao-encontrada' });
+    }
   });
 
   it('400 for an invalid pedido and 401 without the logged-in person', async () => {

@@ -342,7 +342,7 @@ paths:
       summary: Guardar nota
       description: |
         Guarda a nota fiscal ou o recibo de um gasto. Qualquer participante guarda. Devolve o
-        identificador da nota, usado ao registrar o gasto.
+        identificador da nota, usado por quem a guardou ao registrar o gasto.
       requestBody:
         required: true
         content:
@@ -468,8 +468,8 @@ paths:
       description: |
         Registra uma compra, um conserto, uma manutenção ou uma reposição que a pessoa logada
         pagou, com dinheiro da caixinha ou do próprio bolso. Qualquer participante registra gastos.
-        Basta o valor total e a nota, guardada antes em `guardar-nota`; cada nota vale para um
-        gasto só. O gasto pago do próprio bolso só sai da caixinha no reembolso.
+        Basta o valor total e a nota, guardada antes em `guardar-nota` pela própria pessoa logada;
+        cada nota vale para um gasto só. O gasto pago do próprio bolso só sai da caixinha no reembolso.
       requestBody:
         required: true
         content:
@@ -516,7 +516,7 @@ paths:
         '401':
           $ref: '#/components/responses/NaoAutorizado'
         '404':
-          description: Nota não guardada, ou a pessoa logada não é um participante conhecido.
+          description: Nota não guardada pela pessoa logada, ou ela não é um participante conhecido.
           content:
             application/json:
               schema:

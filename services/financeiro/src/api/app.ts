@@ -17,7 +17,10 @@ export type ApiDependencies = {
     participanteId: string,
     conteudo: Uint8Array,
   ) => Promise<Result<string, GuardarComprovanteErro>>;
-  readonly guardarNota: (conteudo: Uint8Array) => Promise<Result<string, ArquivoInvalido>>;
+  readonly guardarNota: (
+    solicitante: Pick<Solicitante, 'id'>,
+    conteudo: Uint8Array,
+  ) => Promise<Result<string, ArquivoInvalido>>;
   readonly baixarComprovante: (
     solicitante: Solicitante,
     id: string,
@@ -140,7 +143,7 @@ const baixado = (c: Context, result: Result<Arquivo, NaoEncontrado>) =>
  * (multipart, up to 5 MB, PDF, JPEG or PNG); `GET /comprovante/:id` serves only the participante
  * and the gestor, and `GET /nota/:id` any participante. The gestor receives pagamentos with
  * `POST /receber-pagamento` (JSON; a pagamento por PIX references its comprovante). Any
- * participante registers a gasto with `POST /registrar-gasto` (JSON, referencing its nota).
+ * participante registers a gasto with `POST /registrar-gasto` (JSON, referencing a nota they guardaram).
  * Leitura *Crédito e pendentes*: `GET /participante` lists every participante, only for the
  * gestor; `GET /participante/eu` gives the logged-in participante their own.
  * Without `X-User-Id`, 401.
@@ -189,10 +192,11 @@ export const createApp = ({
       return criado(c, await guardarComprovante(quem, participanteId.toLowerCase(), conteudo));
     })
     .post('/guardar-nota', limite, async (c) => {
-      if (!solicitante(c)) return c.json({ error: 'unauthorized' }, 401);
+      const quem = solicitante(c);
+      if (!quem) return c.json({ error: 'unauthorized' }, 401);
       const { conteudo } = await formulario(c);
       if (!conteudo) return c.json({ error: 'pedido-invalido' }, 400);
-      return criado(c, await guardarNota(conteudo));
+      return criado(c, await guardarNota(quem, conteudo));
     })
     .get('/comprovante/:id', async (c) => {
       const quem = solicitante(c);

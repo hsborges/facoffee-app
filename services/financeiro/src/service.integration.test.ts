@@ -314,7 +314,7 @@ it('turns a pagamento adiantado into crédito, abatido by the next cotas, across
   ).toBe(403);
 });
 
-it('registers a gasto do próprio bolso with its nota, once per nota, by a known participante', async () => {
+it('registers a gasto do próprio bolso with its own nota, once per nota, by a known participante', async () => {
   const participante = randomUUID();
   publicar(entrou(participante));
   expect(await eventually(async () => (await repository.buscar(participante)) !== undefined)).toBe(
@@ -322,22 +322,29 @@ it('registers a gasto do próprio bolso with its nota, once per nota, by a known
   );
 
   const url = `http://localhost:${running.port}`;
-  const form = new FormData();
-  form.append('arquivo', new Blob([new TextEncoder().encode('%PDF-1.7 nota')]), 'nota.pdf');
-  const nota = await fetch(`${url}/guardar-nota`, {
-    method: 'POST',
-    headers: { 'x-user-id': participante },
-    body: form,
-  });
-  const { id: notaId } = (await nota.json()) as { id: string };
+  const guardarNota = async (quem: string) => {
+    const form = new FormData();
+    form.append('arquivo', new Blob([new TextEncoder().encode('%PDF-1.7 nota')]), 'nota.pdf');
+    const nota = await fetch(`${url}/guardar-nota`, {
+      method: 'POST',
+      headers: { 'x-user-id': quem },
+      body: form,
+    });
+    return ((await nota.json()) as { id: string }).id;
+  };
+  const notaId = await guardarNota(participante);
 
-  const registrar = (quem: string) =>
+  const registrar = (quem: string, nota = notaId) =>
     fetch(`${url}/registrar-gasto`, {
       method: 'POST',
       headers: { 'x-user-id': quem, 'content-type': 'application/json' },
-      body: JSON.stringify({ valorEmCentavos: 4590, origem: 'proprio-bolso', notaId }),
+      body: JSON.stringify({ valorEmCentavos: 4590, origem: 'proprio-bolso', notaId: nota }),
     });
-  const desconhecido = await registrar(randomUUID());
+  const outro = randomUUID();
+  const comNotaAlheia = await registrar(outro);
+  expect(comNotaAlheia.status).toBe(404);
+  expect(await comNotaAlheia.json()).toEqual({ error: 'nota-nao-encontrada' });
+  const desconhecido = await registrar(outro, await guardarNota(outro));
   expect(desconhecido.status).toBe(404);
   expect(await desconhecido.json()).toEqual({ error: 'participante-nao-encontrado' });
 

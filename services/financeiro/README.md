@@ -35,11 +35,11 @@ Guardados num bucket S3 ([ADR 0018](../../docs/adr/0018-armazenamento-de-comprov
 
 ## Registrar gasto
 
-`POST /registrar-gasto` (qualquer participante), em JSON: `valorEmCentavos` (o valor total), `origem` (`caixinha` ou `proprio-bolso`) e `notaId` (o `id` de `/guardar-nota`). Quem registra é quem pagou, e é quem recebe o reembolso no gasto do próprio bolso. Responde `201 { id }`. *Gasto feito* é interno: fica só na tabela `gastos`, sem publicar nada. O gasto do próprio bolso não sai da caixinha; só o reembolso sai (`saidaDaCaixinha` em `src/domain/gasto.ts`).
+`POST /registrar-gasto` (qualquer participante), em JSON: `valorEmCentavos` (o valor total), `origem` (`caixinha` ou `proprio-bolso`) e `notaId` (o `id` de `/guardar-nota`, guardada por quem registra). Quem registra é quem pagou, e é quem recebe o reembolso no gasto do próprio bolso. Responde `201 { id }`. *Gasto feito* é interno: fica só na tabela `gastos`, sem publicar nada. O gasto do próprio bolso não sai da caixinha; só o reembolso sai (`saidaDaCaixinha` em `src/domain/gasto.ts`).
 
 | Recusa | Status |
 |---|---|
-| nota não guardada (`nota-nao-encontrada`) | 404 |
+| nota não guardada por quem registra (`nota-nao-encontrada`) | 404 |
 | quem registra não é um participante que Financeiro conhece (`participante-nao-encontrado`) | 404 |
 | nota já usada em outro gasto (`nota-ja-usada`) | 409 |
 

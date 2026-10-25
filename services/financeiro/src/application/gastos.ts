@@ -17,16 +17,22 @@ export type RegistrarGastoErro = 'nota-nao-encontrada' | SalvarGastoErro;
 
 /**
  * Use case: *Pagar compra, conserto, manutenção ou reposição*. Any participante registers the gasto
- * they paid, pela caixinha or do próprio bolso, with a nota guardada before. *Gasto feito* is
+ * they paid, pela caixinha or do próprio bolso, with a nota they guardaram before. *Gasto feito* is
  * internal: the saved gasto is the fact, and nothing is published. Gives the id of the gasto.
  */
 export const registrarGasto =
-  (gastos: Gastos, notaGuardada: (id: string) => Promise<boolean>, clock: Clock) =>
+  (
+    gastos: Gastos,
+    notaDoParticipante: (participanteId: string, id: string) => Promise<boolean>,
+    clock: Clock,
+  ) =>
   async (
     solicitante: Pick<Solicitante, 'id'>,
     pedido: PedidoDeGasto,
   ): Promise<Result<string, RegistrarGastoErro>> => {
-    if (!(await notaGuardada(pedido.notaId))) return fail('nota-nao-encontrada');
+    if (!(await notaDoParticipante(solicitante.id, pedido.notaId))) {
+      return fail('nota-nao-encontrada');
+    }
     const gasto = {
       ...pedido,
       id: clock.newId(),

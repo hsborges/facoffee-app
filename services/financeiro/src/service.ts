@@ -8,7 +8,7 @@ import {
   comprovanteDoParticipante,
   guardarComprovante,
   guardarNota,
-  notaGuardada,
+  notaDoParticipante,
 } from './application/arquivos.js';
 import { consultarCreditoEPendente, listarCreditoEPendentes } from './application/credito.js';
 import { registrarGasto } from './application/gastos.js';
@@ -78,7 +78,7 @@ export const startService = async (config: Config, logger: Logger) => {
       comprovanteDoParticipante(armazem),
       { now: () => new Date(), newId: randomUUID },
     ),
-    registrarGasto: registrarGasto(gastoRepository(database.db), notaGuardada(armazem), {
+    registrarGasto: registrarGasto(gastoRepository(database.db), notaDoParticipante(armazem), {
       now: () => new Date(),
       newId: randomUUID,
     }),
