@@ -111,6 +111,14 @@ services:
       OIDC_JWKS_URL: http://keycloak:8080/realms/facoffee/protocol/openid-connect/certs
       OIDC_CLIENT_ID: facoffee-web
 
+  # Sem porta publicada: só é alcançado pelo gateway (ADR 0007).
+  usuario:
+    build:
+      context: ..
+      dockerfile: templates/service/Dockerfile
+      args:
+        PACKAGE: "@facoffee/usuario"
+
   # Template de serviço (templates/service); sobe só com --profile example.
   example:
     profiles: [example]

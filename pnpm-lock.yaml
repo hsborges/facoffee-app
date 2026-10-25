@@ -208,7 +208,14 @@ importers:
 
   services/participacao: {}
 
-  services/usuario: {}
+  services/usuario:
+    dependencies:
+      '@hono/node-server':
+        specifier: ^2.1.5
+        version: 2.1.5(hono@4.13.13)
+      hono:
+        specifier: ^4.13.13
+        version: 4.13.13
 
   templates/service:
     dependencies:
