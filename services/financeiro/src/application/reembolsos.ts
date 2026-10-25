@@ -31,6 +31,8 @@ export const reembolsarGasto =
     solicitante: Pick<Solicitante, 'perfis'>,
     gastoId: string,
   ): Promise<Result<string, ReembolsarGastoErro>> => {
+    // Before the lookup, so only the gestor learns whether a gasto exists.
+    if (!solicitante.perfis.includes('gestor')) return fail('sem-permissao');
     const gasto = await reembolsos.buscarGasto(gastoId);
     if (!gasto) return fail('gasto-nao-encontrado');
     const result = reembolsar(solicitante, gasto, {

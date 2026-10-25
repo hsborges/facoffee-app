@@ -75,4 +75,12 @@ describe('reembolsarGasto', () => {
     });
     expect(salvos).toEqual([]);
   });
+
+  it('refuses someone other than the gestor before looking for the gasto', async () => {
+    const { reembolsar } = inMemory();
+    expect(await reembolsar({ perfis: ['participante'] }, 'nao-existe')).toEqual({
+      ok: false,
+      error: 'sem-permissao',
+    });
+  });
 });
