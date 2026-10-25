@@ -6,7 +6,8 @@ info:
     API do FACOFFEE.
 
     Todas as rotas exigem autenticação. Para testar aqui, clique em **Authorize** e entre com
-    usuário e senha (`login`) ou informe um access token (`bearer`).
+    usuário e senha (`login`) ou informe um access token (`bearer`). Usuário com acesso
+    desativado recebe 403 em todas as rotas.
 servers:
   - url: /
 security:
@@ -31,6 +32,52 @@ paths:
                 $ref: '#/components/schemas/Usuario'
         '401':
           $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/AcessoDesativado'
+        '500':
+          $ref: '#/components/responses/ErroInterno'
+  /api/usuario/{id}/desativacao:
+    post:
+      tags: [usuario]
+      operationId: desativarAcesso
+      summary: Desativar acesso
+      description: |
+        Desativa o acesso de um usuário ao FACOFFEE. O gestor desativa o acesso de qualquer
+        pessoa; os demais, só o próprio. Desativar um acesso já desativado não tem efeito.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identificador do usuário.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Acesso desativado.
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          description: Sem permissão para desativar o acesso de outra pessoa, ou acesso desativado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              examples:
+                semPermissao:
+                  value:
+                    error: sem-permissao
+                acessoDesativado:
+                  value:
+                    error: acesso-desativado
+        '404':
+          description: Identificador inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              example:
+                error: not-found
         '500':
           $ref: '#/components/responses/ErroInterno'
 components:
@@ -63,6 +110,14 @@ components:
             $ref: '#/components/schemas/Erro'
           example:
             error: unauthorized
+    AcessoDesativado:
+      description: O acesso do usuário ao FACOFFEE foi desativado.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          example:
+            error: acesso-desativado
     ErroInterno:
       description: Erro interno.
   schemas:
