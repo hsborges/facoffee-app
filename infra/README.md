@@ -11,7 +11,8 @@ docker compose up -d --wait
 | Serviço | Endereço |
 |---|---|
 | RabbitMQ (AMQP / painel) | `localhost:5672` / http://localhost:15672 |
-| PostgreSQL (bancos `usuario`, `participacao`, `financeiro`) | `localhost:5432` |
+| PostgreSQL (bancos `usuario`, `participacao`, `financeiro`, `example`) | `localhost:5432` |
+| Serviço de exemplo (perfil `example`) | http://localhost:3000 |
 | Keycloak | http://localhost:8080 |
 | SeaweedFS (S3) | http://localhost:8333 |
 | Mailpit (SMTP / caixa de entrada) | `localhost:1025` / http://localhost:8025 |
@@ -32,3 +33,15 @@ O realm `facoffee` é importado de [`keycloak/facoffee-realm.json`](keycloak/fac
 | `participante` | `participante` | `participante` |
 
 `docker compose down -v` apaga tudo, inclusive os dados.
+
+## Serviço de exemplo
+
+O [template de serviço](../templates/service/) sobe no perfil `example` e publica e consome um evento pelo RabbitMQ:
+
+```sh
+docker compose --profile example up -d --wait --build
+curl -X POST localhost:3000/examples -H 'content-type: application/json' -d '{"name":"Café"}'
+curl localhost:3000/examples/<id>   # confirmedAt preenchido após consumir o evento
+```
+
+O banco `example` só é criado num volume novo do PostgreSQL; num volume antigo, rode `docker compose down -v` antes.

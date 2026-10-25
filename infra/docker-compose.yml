@@ -24,6 +24,7 @@ services:
       USUARIO_DB_PASSWORD: ${USUARIO_DB_PASSWORD}
       PARTICIPACAO_DB_PASSWORD: ${PARTICIPACAO_DB_PASSWORD}
       FINANCEIRO_DB_PASSWORD: ${FINANCEIRO_DB_PASSWORD}
+      EXAMPLE_DB_PASSWORD: ${EXAMPLE_DB_PASSWORD}
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
@@ -80,6 +81,24 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+
+  # Template de serviço (templates/service); sobe só com --profile example.
+  example:
+    profiles: [example]
+    build:
+      context: ..
+      dockerfile: templates/service/Dockerfile
+    environment:
+      SERVICE: example
+      DATABASE_URL: postgres://example:${EXAMPLE_DB_PASSWORD}@postgres:5432/example
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
 volumes:
   rabbitmq:

@@ -2,6 +2,7 @@ packages:
   - services/*
   - web
   - contracts
+  - templates/*
 minimumReleaseAgeExclude:
   - '@biomejs/biome@2.6.3'
   - '@biomejs/cli-android-arm64@2.6.3'
@@ -14,3 +15,5 @@ minimumReleaseAgeExclude:
   - '@biomejs/cli-linux-x64@2.6.3'
   - '@biomejs/cli-win32-arm64@2.6.3'
   - '@biomejs/cli-win32-x64@2.6.3'
+allowBuilds:
+  esbuild: false
