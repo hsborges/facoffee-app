@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/hsborges/facoffee-app/blob/main/contracts/events/participacao.cota-devida.v1.json",
+  "title": "Cota devida",
+  "description": "O participante passou a dever a cota do mês, com o valor do seu tipo de cota.",
+  "type": "object",
+  "allOf": [{ "$ref": "envelope.v1.json" }],
+  "properties": {
+    "tipo": { "const": "participacao.cota-devida" },
+    "versao": { "const": 1 },
+    "payload": {
+      "type": "object",
+      "required": ["participanteId", "mes", "tipoDeCota", "valorEmCentavos"],
+      "properties": {
+        "participanteId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Identificador da pessoa, o mesmo do contexto Usuário (sub do Passaporte UFMS)."
+        },
+        "mes": {
+          "type": "string",
+          "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+          "description": "Mês da cota (AAAA-MM)."
+        },
+        "tipoDeCota": {
+          "type": "string",
+          "enum": ["so-cafe", "completa"],
+          "description": "Tipo de cota: só café ou completa."
+        },
+        "valorEmCentavos": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Valor da cota em centavos de real."
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "id": "0b6f2f0e-6a1c-4c55-9a43-6f1f1b0c9e13",
+      "tipo": "participacao.cota-devida",
+      "versao": 1,
+      "ocorridoEm": "2026-11-01T03:00:00Z",
+      "payload": {
+        "participanteId": "7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d",
+        "mes": "2026-11",
+        "tipoDeCota": "completa",
+        "valorEmCentavos": 3000
+      }
+    }
+  ]
+}

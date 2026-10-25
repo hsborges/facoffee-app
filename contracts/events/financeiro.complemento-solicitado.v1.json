@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/hsborges/facoffee-app/blob/main/contracts/events/financeiro.complemento-solicitado.v1.json",
+  "title": "Complemento solicitado",
+  "description": "O gestor pediu um complemento; cada participante ativo passou a dever uma parte igual.",
+  "type": "object",
+  "allOf": [{ "$ref": "envelope.v1.json" }],
+  "properties": {
+    "tipo": { "const": "financeiro.complemento-solicitado" },
+    "versao": { "const": 1 },
+    "payload": {
+      "type": "object",
+      "required": ["complementoId", "valorTotalEmCentavos", "partes"],
+      "properties": {
+        "complementoId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Identificador do complemento."
+        },
+        "valorTotalEmCentavos": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Valor total do complemento em centavos de real."
+        },
+        "partes": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Parte de cada participante ativo no momento da solicitação. A soma das partes é o valor total.",
+          "items": {
+            "type": "object",
+            "required": ["participanteId", "valorEmCentavos"],
+            "properties": {
+              "participanteId": {
+                "type": "string",
+                "format": "uuid",
+                "description": "Identificador da pessoa, o mesmo do contexto Usuário (sub do Passaporte UFMS)."
+              },
+              "valorEmCentavos": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Parte do participante em centavos de real."
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "id": "0b6f2f0e-6a1c-4c55-9a43-6f1f1b0c9e16",
+      "tipo": "financeiro.complemento-solicitado",
+      "versao": 1,
+      "ocorridoEm": "2026-11-01T03:00:00Z",
+      "payload": {
+        "complementoId": "5c4b3a29-1817-4615-a413-121110090807",
+        "valorTotalEmCentavos": 1001,
+        "partes": [
+          { "participanteId": "7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d", "valorEmCentavos": 501 },
+          { "participanteId": "2b3c4d5e-6f70-4a81-9b2c-3d4e5f6a7b8c", "valorEmCentavos": 500 }
+        ]
+      }
+    }
+  ]
+}
