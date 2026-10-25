@@ -22,3 +22,4 @@ Registros de decisões de arquitetura. Um arquivo por decisão: `NNNN-titulo.md`
 | [0016](0016-nomenclatura-das-rotas-http.md) | Nomenclatura das rotas HTTP | Aceito |
 | [0017](0017-gatilhos-de-tempo-do-agendador.md) | Gatilhos de tempo do agendador | Aceito |
 | [0018](0018-armazenamento-de-comprovantes-e-notas.md) | Armazenamento de comprovantes e notas | Aceito |
+| [0019](0019-envio-de-e-mails-da-notificacao.md) | Envio de e-mails da Notificação | Aceito |
