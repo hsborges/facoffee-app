@@ -17,9 +17,9 @@ describe('register', () => {
         example: { id: ids.id, name: 'Coffee', registeredAt: now, confirmedAt: null },
         event: {
           id: ids.eventId,
-          tipo: 'example.example-registered',
-          versao: 1,
-          ocorridoEm: '2026-11-01T03:00:00.000Z',
+          type: 'example.example-registered',
+          version: 1,
+          occurredAt: '2026-11-01T03:00:00.000Z',
           payload: { exampleId: ids.id, name: 'Coffee' },
         },
       },

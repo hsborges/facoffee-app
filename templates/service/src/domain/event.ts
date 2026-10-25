@@ -1,8 +1,8 @@
-// Envelope from contracts/events/envelope.v1.json (ADR 0004); field names are part of the contract.
+// Envelope from contracts/events/envelope.v1.json (ADR 0006); field names are part of the contract.
 export type Event<Type extends string = string, Payload = unknown> = {
   readonly id: string;
-  readonly tipo: Type;
-  readonly versao: number;
-  readonly ocorridoEm: string;
+  readonly type: Type;
+  readonly version: number;
+  readonly occurredAt: string;
   readonly payload: Payload;
 };

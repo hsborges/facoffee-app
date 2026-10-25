@@ -26,9 +26,9 @@ export const register = (
     example: { id, name, registeredAt: now, confirmedAt: null },
     event: {
       id: eventId,
-      tipo: 'example.example-registered',
-      versao: 1,
-      ocorridoEm: now.toISOString(),
+      type: 'example.example-registered',
+      version: 1,
+      occurredAt: now.toISOString(),
       payload: { exampleId: id, name },
     },
   });

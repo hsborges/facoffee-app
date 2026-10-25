@@ -5,8 +5,8 @@
 | **Escopo** | Divisão de custos da copa da FACOM |
 | **Sistema** | FACOFFEE |
 | **Disciplina** | Técnicas Avançadas de Desenvolvimento de Software (2026/2) |
-| **Versão** | 2.1 |
-| **Data** | 2026-10-24 |
+| **Versão** | 2.2 |
+| **Data** | 2026-10-25 |
 | **Status** | Aprovado |
 
 ## Propósito
@@ -268,6 +268,53 @@ Dois termos aparecem em mais de um contexto:
 
 **Relacionados:** [Tipo de cota](#tipo-de-cota), [Cota](#cota), [Gasto](#gasto), [Gestor](#gestor).
 
+## Nomes nos contratos de eventos
+
+Os contratos dos eventos trocados entre os contextos ([`contracts/events/`](../contracts/events/)) usam nomes em inglês ([ADR 0006](adr/0006-contratos-dos-eventos-em-ingles.md)). O nome em português continua valendo nas conversas, nos modelos e no código de cada contexto.
+
+Estas tabelas são a única fonte das traduções: cada termo tem um só nome nos contratos, e os testes de `contracts/` recusam tipo de evento, campo ou valor com palavra que não esteja aqui. Para usar um termo novo num contrato, registre-o aqui primeiro.
+
+### Termos
+
+| Termo | Nos contratos | Observação |
+|---|---|---|
+| Usuário (contexto) | `user` | |
+| Participação (contexto) | `participation` | |
+| Financeiro (contexto) | `finance` | |
+| Notificação (contexto) | `notification` | |
+| Identificador | `id` | |
+| [Usuário](#termos-a-evitar) (conta de acesso) | `user` | |
+| [Participante](#participante) | `participant` | |
+| [Cota](#cota) | `contribution` | Não `quota`: em inglês, *quota* é limite ou cota de alocação (falso cognato). Nem `fee`, `dues` ou `subscription`, que equivalem a mensalidade e assinatura, termos a evitar. |
+| [Tipo de cota](#tipo-de-cota) | `contributionType` | |
+| Só café, Completa | `coffee-only`, `full` | |
+| [Valor da cota](#valor-da-cota) | `contribution-amount` | |
+| Valor (em centavos) | `amountInCents` | Não `value` nem `price`. |
+| Valor total (em centavos) | `totalAmountInCents` | |
+| Mês, ano | `month`, `year` | |
+| [Pagamento](#pagamento) | `payment` | |
+| Forma do pagamento | `method` | |
+| PIX, dinheiro | `pix`, `cash` | "Dinheiro" é o pagamento em mãos, não *money*. |
+| [Complemento](#complemento) | `top-up` | O valor extra que repõe a caixinha. Não `complement` (falso cognato) nem `supplement`. |
+| Parte (do complemento) | `share` | |
+| [Reembolso](#reembolso) | `reimbursement` | Devolve a quem pagou um gasto do próprio bolso. Não `refund`, que é a devolução do valor de uma compra. |
+| [Gasto](#gasto) | `expense` | |
+
+### Eventos
+
+O tipo do evento nos contratos é `<contexto>.<evento>`, com o contexto de origem da tabela de termos.
+
+| Evento | Nos contratos |
+|---|---|
+| Usuário desativado | `user-deactivated` |
+| Participante entrou | `participant-joined` |
+| Participante saiu | `participant-left` |
+| Cota devida | `contribution-due` |
+| Valor da cota definido | `contribution-amount-set` |
+| Pagamento recebido | `payment-received` |
+| Complemento solicitado | `top-up-requested` |
+| Reembolso feito | `reimbursement-made` |
+
 ## Termos a evitar
 
 | Termo evitado | Use | Motivo |
@@ -299,3 +346,4 @@ Nenhuma questão em aberto nesta versão.
 | 1.1 | 2026-10-09 | [Reembolso](#reembolso) e [Nota](#nota) passam a valer para qualquer [gasto](#gasto), não só para compras, alinhando o glossário aos modelos de domínio. |
 | 2.0 | 2026-10-24 | Revisão a partir da arquitetura do FACOFFEE. A [Visão por área](#visão-por-área) indica o contexto de cada termo. [Participante](#participante) também sai quando o acesso é desativado. [Complemento](#complemento) é dividido entre os participantes do momento da solicitação. [Gestor](#gestor) passa a ser descrito como papel de um participante, com as ações que só ele faz. [Cota](#cota) ganha regras sobre o valor do mês. "Usuário", "administrador" e "pagamento realizado" entram nos termos a evitar. Abertas as questões 1 e 2. |
 | 2.1 | 2026-10-24 | Decisões: o [crédito](#crédito) é abatido automaticamente; o [complemento](#complemento) é dividido entre todos os participantes ativos; o acesso é desativado pelo [gestor](#gestor) ou a pedido do [participante](#participante), e isso encerra a participação. Questões 1 e 2 fechadas. |
+| 2.2 | 2026-10-25 | Nova seção [Nomes nos contratos de eventos](#nomes-nos-contratos-de-eventos), com o nome em inglês de cada termo e evento usado nos contratos de eventos. |

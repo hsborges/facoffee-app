@@ -1,35 +1,35 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/hsborges/facoffee-app/blob/main/contracts/events/financeiro.pagamento-recebido.v1.json",
+  "$id": "https://github.com/hsborges/facoffee-app/blob/main/contracts/events/finance.payment-received.v1.json",
   "title": "Pagamento recebido",
   "description": "O gestor recebeu dinheiro de um participante, por PIX com comprovante ou em mãos.",
   "type": "object",
   "allOf": [{ "$ref": "envelope.v1.json" }],
   "properties": {
-    "tipo": { "const": "financeiro.pagamento-recebido" },
-    "versao": { "const": 1 },
+    "type": { "const": "finance.payment-received" },
+    "version": { "const": 1 },
     "payload": {
       "type": "object",
-      "required": ["pagamentoId", "participanteId", "valorEmCentavos", "forma"],
+      "required": ["paymentId", "participantId", "amountInCents", "method"],
       "properties": {
-        "pagamentoId": {
+        "paymentId": {
           "type": "string",
           "format": "uuid",
           "description": "Identificador do pagamento."
         },
-        "participanteId": {
+        "participantId": {
           "type": "string",
           "format": "uuid",
           "description": "Identificador da pessoa, o mesmo do contexto Usuário (sub do Passaporte UFMS)."
         },
-        "valorEmCentavos": {
+        "amountInCents": {
           "type": "integer",
           "minimum": 1,
           "description": "Valor recebido em centavos de real."
         },
-        "forma": {
+        "method": {
           "type": "string",
-          "enum": ["pix", "dinheiro"],
+          "enum": ["pix", "cash"],
           "description": "Forma do pagamento."
         }
       }
@@ -38,14 +38,14 @@
   "examples": [
     {
       "id": "0b6f2f0e-6a1c-4c55-9a43-6f1f1b0c9e15",
-      "tipo": "financeiro.pagamento-recebido",
-      "versao": 1,
-      "ocorridoEm": "2026-11-01T03:00:00Z",
+      "type": "finance.payment-received",
+      "version": 1,
+      "occurredAt": "2026-11-01T03:00:00Z",
       "payload": {
-        "pagamentoId": "9d8e7f60-5a4b-4c3d-8e2f-1a0b9c8d7e6f",
-        "participanteId": "7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d",
-        "valorEmCentavos": 18000,
-        "forma": "pix"
+        "paymentId": "9d8e7f60-5a4b-4c3d-8e2f-1a0b9c8d7e6f",
+        "participantId": "7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d",
+        "amountInCents": 18000,
+        "method": "pix"
       }
     }
   ]

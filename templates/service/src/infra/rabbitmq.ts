@@ -3,10 +3,10 @@ import type { ConfirmChannel } from 'amqplib';
 import type { Event } from '../domain/event.js';
 import type { Logger } from './logger.js';
 
-// Topology from ADR 0004.
-export const EXCHANGE = 'facoffee.eventos';
-export const routingKey = (event: Pick<Event, 'tipo' | 'versao'>) =>
-  `${event.tipo}.v${event.versao}`;
+// Topology from ADR 0006.
+export const EXCHANGE = 'facoffee.events';
+export const routingKey = (event: Pick<Event, 'type' | 'version'>) =>
+  `${event.type}.v${event.version}`;
 
 export const connectRabbitmq = (url: string, logger: Logger) => {
   const connection = amqp.connect([url]);
@@ -25,12 +25,12 @@ export const createPublisher = (connection: AmqpConnectionManager) => {
   });
   return {
     publish: async (rk: string, event: unknown) => {
-      const { id, tipo } = event as Event;
+      const { id, type } = event as Event;
       await channel.publish(EXCHANGE, rk, Buffer.from(JSON.stringify(event)), {
         persistent: true,
         contentType: 'application/json',
         messageId: id,
-        type: tipo,
+        type,
       });
     },
     close: () => channel.close(),

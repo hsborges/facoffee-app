@@ -3,9 +3,9 @@ import { parseEvent, retry } from './consumer.js';
 
 const envelope = {
   id: '0b6f2f0e-6a1c-4c55-9a43-6f1f1b0c9e11',
-  tipo: 'example.example-registered',
-  versao: 1,
-  ocorridoEm: '2026-11-01T03:00:00Z',
+  type: 'example.example-registered',
+  version: 1,
+  occurredAt: '2026-11-01T03:00:00Z',
   payload: {},
 };
 const buffer = (value: unknown) => Buffer.from(JSON.stringify(value));
@@ -18,7 +18,7 @@ describe('parseEvent', () => {
   it.each([
     ['without id', { ...envelope, id: undefined }],
     ['with a non-uuid id', { ...envelope, id: '1' }],
-    ['with a non-integer version', { ...envelope, versao: '1' }],
+    ['with a non-integer version', { ...envelope, version: '1' }],
     ['without payload', { ...envelope, payload: null }],
   ])('rejects an envelope %s', (_case, event) => {
     expect(parseEvent(buffer(event))).toEqual({ ok: false, error: 'invalid envelope' });
