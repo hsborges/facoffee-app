@@ -4,15 +4,28 @@
   "private": true,
   "type": "module",
   "files": [
-    "dist"
+    "dist",
+    "drizzle"
   ],
   "scripts": {
     "build": "tsc",
     "start": "node dist/main.js",
-    "test": "vitest run"
+    "test": "vitest run --exclude 'src/**/*.integration.test.ts'",
+    "test:integration": "vitest run integration",
+    "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.5",
-    "hono": "^4.13.13"
+    "amqp-connection-manager": "^5.0.1",
+    "amqplib": "^2.2.0",
+    "drizzle-orm": "^0.45.4",
+    "hono": "^4.13.13",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "drizzle-kit": "^0.31.11"
   }
 }
