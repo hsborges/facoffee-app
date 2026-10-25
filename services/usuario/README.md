@@ -11,16 +11,18 @@ Alcançada só pelo [gateway](../../gateway/), que valida o token e envia a iden
 
 | Rota pública | Resposta |
 |---|---|
+| `GET /api/usuario` | Usuários registrados, com quem está desativado: `[{ id, nome, email, desativado }]`, ou 403 se não é gestor |
 | `GET /api/usuario/eu` | Usuário logado: `{ id, nome, email, perfis }` |
 | `POST /api/usuario/<id>/desativacao` | Desativa o acesso e publica *Usuário desativado*: 204, ou 403 se não é gestor nem o próprio usuário |
+| `POST /api/usuario/<id>/reativacao` | Reativa o acesso, sem publicar evento: 204, ou 403 se não é gestor ([ADR 0013](../../docs/adr/0013-reativacao-do-acesso.md)) |
 
-O gateway chama `GET /acesso` antes de toda requisição, de qualquer contexto: 204 se o acesso está ativo, 403 se foi desativado ([ADR 0011](../../docs/adr/0011-acesso-desativado.md)).
+O gateway chama `GET /acesso` antes de toda requisição, de qualquer contexto: registra o usuário (ou atualiza nome e e-mail) e responde 204 se o acesso está ativo, 403 se foi desativado ([ADR 0011](../../docs/adr/0011-acesso-desativado.md), [ADR 0012](../../docs/adr/0012-registro-do-usuario-no-primeiro-acesso.md)).
 
 Especificação completa em [`gateway/openapi.yaml`](../../gateway/openapi.yaml).
 
 Perfis de acesso: `gestor` e `participante`, papéis do realm no Keycloak. Os demais papéis do token são ignorados.
 
-Banco, outbox e publicação vêm do [template de serviço](../../templates/service/); sem consumidor. A tabela `usuarios_desativados` guarda quem teve o acesso desativado.
+Banco, outbox e publicação vêm do [template de serviço](../../templates/service/); sem consumidor. A tabela `usuarios` guarda id, nome e e-mail de quem já acessou; `usuarios_desativados`, quem teve o acesso desativado.
 
 ## Configuração
 

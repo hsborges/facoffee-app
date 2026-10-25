@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { Ajv } from 'ajv';
 import addFormats from 'ajv-formats';
 import { describe, expect, it } from 'vitest';
-import { desativar, perfisDos } from './usuario.js';
+import { desativar, perfisDos, somenteGestor } from './usuario.js';
 
 describe('perfisDos', () => {
   it('keeps only the FACOFFEE perfis', () => {
@@ -13,6 +13,19 @@ describe('perfisDos', () => {
 
   it('no perfil when the usuário has none of them', () => {
     expect(perfisDos([''])).toEqual([]);
+  });
+});
+
+describe('somenteGestor', () => {
+  it('accepts the gestor and refuses everyone else', () => {
+    expect(somenteGestor({ perfis: ['gestor', 'participante'] })).toEqual({
+      ok: true,
+      value: undefined,
+    });
+    expect(somenteGestor({ perfis: ['participante'] })).toEqual({
+      ok: false,
+      error: 'sem-permissao',
+    });
   });
 });
 

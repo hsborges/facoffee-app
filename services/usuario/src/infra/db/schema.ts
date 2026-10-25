@@ -2,6 +2,13 @@ import { bigint, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-co
 
 const instant = (name: string) => timestamp(name, { withTimezone: true });
 
+/** Usuários registered on their first access; nome and email follow the Passaporte UFMS (ADR 0012). */
+export const usuarios = pgTable('usuarios', {
+  id: uuid('id').primaryKey(),
+  nome: text('nome').notNull(),
+  email: text('email').notNull(),
+});
+
 /** Deactivated accesses; the gateway refuses every request from these ids (ADR 0011). */
 export const usuariosDesativados = pgTable('usuarios_desativados', {
   id: uuid('id').primaryKey(),

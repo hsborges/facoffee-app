@@ -2,7 +2,12 @@ import { randomUUID } from 'node:crypto';
 import type { AddressInfo } from 'node:net';
 import { serve } from '@hono/node-server';
 import { createApp } from './api/app.js';
-import { desativarAcesso } from './application/usuarios.js';
+import {
+  desativarAcesso,
+  listarUsuarios,
+  reativarAcesso,
+  registrarAcesso,
+} from './application/usuarios.js';
 import type { Config } from './infra/config.js';
 import { connectDatabase } from './infra/db/database.js';
 import { usuarioRepository } from './infra/db/usuario-repository.js';
@@ -26,7 +31,9 @@ export const startService = async (config: Config, logger: Logger) => {
   const repository = usuarioRepository(database.db);
   const app = createApp({
     desativar: desativarAcesso(repository, clock),
-    estaDesativado: repository.estaDesativado,
+    registrarAcesso: registrarAcesso(repository),
+    listar: listarUsuarios(repository),
+    reativar: reativarAcesso(repository),
     health: async () => ({
       database: await database.isHealthy(),
       rabbitmq: connection.isConnected(),
