@@ -19,7 +19,7 @@ Forças em jogo:
 
 Complementa o ADR 0001, sem substituí-lo: abre uma exceção à regra de comunicação, como a do agendador.
 
-**Contatos**: Usuário ganha a rota interna `GET /contato`, sem identidade, que lista id, nome, e-mail e se o acesso está desativado. Como os gatilhos do [ADR 0017](0017-gatilhos-de-tempo-do-agendador.md), ela fica fora do gateway (`/api/usuario/contato` responde 404 de fora). Notificação chama a rota (`USUARIO_URL`) a cada evento.
+**Contatos**: Usuário ganha a rota interna `GET /contato`, sem identidade, que lista id, nome, e-mail e se o acesso está desativado. Como os gatilhos do [ADR 0017](0017-gatilhos-de-tempo-do-agendador.md), ela fica fora do gateway (`/api/usuario/contato` e o que vier abaixo respondem 404 de fora). Por garantia, a rota também responde 404 a requisições com `X-User-Id`, que o gateway sempre envia. Notificação valida o payload e só então chama a rota (`USUARIO_URL`), a cada evento.
 
 **Destinatários**:
 
@@ -27,15 +27,15 @@ Complementa o ADR 0001, sem substituí-lo: abre uma exceção à regra de comuni
 - *Valor da cota definido*: todo usuário com acesso ativo, porque Notificação não sabe quem participa.
 - Participante sem contato (nunca acessou o FACOFFEE): fica sem e-mail, com um aviso no log.
 
-**Envio desacoplado do consumo**: o tratador grava os e-mails na tabela `emails`, na mesma transação que registra o evento em `processed_events`. Assim, um evento repetido não grava e-mail de novo. Um processo à parte envia os e-mails devidos, um por transação (`for update skip locked`). Quando o envio falha, a tentativa é contada e o e-mail volta a ser tentado 1 minuto depois, com espera dobrando até 1 hora, sem limite de tentativas. Se Usuário estiver fora, o tratador falha e o evento segue as tentativas e a fila de mensagens mortas do ADR 0005.
+**Envio desacoplado do consumo**: o tratador grava os e-mails na tabela `emails`, na mesma transação que registra o evento em `processed_events`. Assim, um evento repetido não grava e-mail de novo. Um processo à parte envia os e-mails devidos, um por transação (`for update skip locked`). Quando o envio falha, a tentativa é contada e o e-mail volta a ser tentado 1 minuto depois, com espera dobrando até 1 hora, sem limite de tentativas. A exceção é o destinatário recusado de vez pelo servidor (5xx no `RCPT TO`): o e-mail fica na tabela, marcado como recusado, e não é tentado de novo. Senha errada, remetente recusado ou servidor fora do ar continuam sendo tentados, porque passam quando a causa é corrigida. Se Usuário estiver fora, o tratador falha e o evento segue as tentativas e a fila de mensagens mortas do ADR 0005.
 
-**SMTP**: [Nodemailer](https://nodemailer.com/), configurado por `SMTP_URL` e `SMTP_FROM`. Em produção, `smtps://<conta>:<senha-de-app>@smtp.gmail.com:465`; no ambiente local, `smtp://mailpit:1025`. As mensagens são em texto puro, com os termos do [glossário](../GLOSSARIO.md).
+**SMTP**: [Nodemailer](https://nodemailer.com/), configurado por `SMTP_URL` e `SMTP_FROM`. Em produção, `smtps://<conta>:<senha-de-app>@smtp.gmail.com:465`; no ambiente local, `smtp://mailpit:1025`. Conexão, saudação e socket têm tempo limite de 15 s a 30 s, para um servidor travado não segurar a transação do e-mail. Os logs de falha trazem só o código do erro SMTP, sem a mensagem, que costuma ter o endereço. As mensagens são em texto puro, com os termos do [glossário](../GLOSSARIO.md).
 
 ## Consequências
 
 Ganhos:
 
-- Um evento repetido não duplica e-mail; um e-mail que falhou fica no banco até ser aceito pelo servidor SMTP.
+- Um evento repetido não duplica e-mail; um e-mail que falhou fica no banco até ser aceito pelo servidor SMTP ou recusado de vez.
 - Uma queda do Gmail não trava a fila de eventos: o consumo segue, e só o envio espera.
 - Nome e e-mail ficam só em Usuário, sem cópia em Notificação e sem contrato de evento novo.
 - Trocar Gmail por outro provedor é só mudar `SMTP_URL`.
@@ -48,8 +48,8 @@ Custos:
 
 Riscos:
 
-- `GET /contato` não confere identidade: depende só do bloqueio do gateway, e Usuário não pode ser alcançável de fora da rede interna.
+- `GET /contato` não confere identidade: depende do bloqueio do gateway e da recusa de `X-User-Id`, e Usuário não pode ser alcançável de fora da rede interna.
 - O envio é pelo menos uma vez: se o processo cair entre o servidor SMTP aceitar o e-mail e o commit, ele é enviado de novo.
-- Um endereço recusado sempre é tentado de hora em hora, para sempre; só aparece nos logs.
+- Uma configuração errada do SMTP (senha, remetente) é tentada de hora em hora até ser corrigida; só aparece nos logs. O e-mail recusado pelo destinatário só aparece no log e na tabela, sem reenvio automático.
 - *Valor da cota definido* também chega a quem tem acesso mas não participa.
 - O Gmail limita os envios por dia e exige senha de app na conta.
