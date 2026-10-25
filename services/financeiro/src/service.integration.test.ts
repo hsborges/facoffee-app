@@ -278,7 +278,7 @@ it('turns a pagamento adiantado into crédito, abatido by the next cotas, across
       const atual = await situacao();
       return Object.entries(esperada).every(([k, v]) => atual[k] === v);
     });
-    expect(await situacao()).toEqual({ id: participante, ...esperada });
+    expect(await situacao()).toMatchObject({ id: participante, ...esperada });
   };
 
   publicar(entrou(participante));
@@ -305,6 +305,14 @@ it('turns a pagamento adiantado into crédito, abatido by the next cotas, across
   publicar(cotaDevida(participante, '2027-03'));
   publicar(cotaDevida(participante, '2027-04'));
   await quando({ ativo: true, creditoEmCentavos: 0, pendenteEmCentavos: 3000 });
+  expect(await situacao()).toMatchObject({
+    cotas: ['2027-04', '2027-03', '2026-12', '2026-11'].map((mes) => ({
+      mes,
+      tipoDeCota: 'completa',
+      valorEmCentavos: 3000,
+    })),
+    complementos: [],
+  });
 
   const todos = (await (await fetch(`${url}/participante`, { headers: gestor })).json()) as {
     id: string;
@@ -583,6 +591,7 @@ it('divides a complemento among the participantes ativos and abate the crédito 
   });
   expect(await situacao(pendente)).toMatchObject({
     pendenteEmCentavos: 3000 + (parte(pendente) ?? 0),
+    complementos: [{ id, parteEmCentavos: parte(pendente) }],
   });
   expect(await situacao(entrouDepois)).toMatchObject({ pendenteEmCentavos: 0 });
   expect(await situacao(saiuAntes)).toMatchObject({ pendenteEmCentavos: 0 });

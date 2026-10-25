@@ -78,7 +78,7 @@ Pagamentos recebidos − cotas devidas − partes de complementos: positivo é c
 | Rota | Quem |
 |---|---|
 | `GET /participante` → `200 [{ id, ativo, creditoEmCentavos, pendenteEmCentavos }]` | só o gestor (os demais, 403) |
-| `GET /participante/eu` → `200 { id, ativo, creditoEmCentavos, pendenteEmCentavos }` | o próprio participante; 404 se Financeiro não o conhece |
+| `GET /participante/eu` → `200 { id, ativo, creditoEmCentavos, pendenteEmCentavos, cotas: [{ mes, tipoDeCota, valorEmCentavos }], complementos: [{ id, solicitadoEm, parteEmCentavos }] }`, cotas e partes da mais recente à mais antiga | o próprio participante; 404 se Financeiro não o conhece |
 
 ## Eventos consumidos
 

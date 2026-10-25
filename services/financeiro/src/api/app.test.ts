@@ -28,6 +28,12 @@ const doOutro = { 'x-user-id': outro, 'x-user-roles': 'participante' };
 
 const totais = [{ id: participante, ativo: true, devidoEmCentavos: 3000, pagoEmCentavos: 9000 }];
 const buscarTotais = async (id?: string) => totais.filter((t) => id === undefined || t.id === id);
+const devido = {
+  cotas: [{ mes: '2026-11', tipoDeCota: 'completa' as const, valorEmCentavos: 3000 }],
+  complementos: [
+    { id: outro, solicitadoEm: new Date('2026-11-20T15:00:00Z'), parteEmCentavos: 1001 },
+  ],
+};
 
 const gastoDoBolso: Gasto = {
   id: '33333333-3333-4333-8333-333333333333',
@@ -94,7 +100,7 @@ const app = (deps: Partial<ApiDependencies> = {}) => {
       gastosDoAnoAnteriorEmCentavos: 90000,
     }),
     listarCreditoEPendentes: listarCreditoEPendentes(buscarTotais),
-    consultarCreditoEPendente: consultarCreditoEPendente(buscarTotais),
+    consultarCreditoEPendente: consultarCreditoEPendente(buscarTotais, async () => devido),
     health: async () => ({ database: true, rabbitmq: true, armazenamento: true }),
     logger: createLogger('test', () => {}),
     ...deps,
@@ -474,10 +480,16 @@ describe('Crédito e pendentes', () => {
     expect(await response.json()).toEqual({ error: 'sem-permissao' });
   });
 
-  it('GET /participante/eu gives the participante only their own situação', async () => {
+  it('GET /participante/eu gives the participante only their own situação, cotas and complementos', async () => {
     const response = await app().request('/participante/eu', { headers: doParticipante });
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual(situacao);
+    expect(await response.json()).toEqual({
+      ...situacao,
+      cotas: devido.cotas,
+      complementos: [
+        { id: outro, solicitadoEm: '2026-11-20T15:00:00.000Z', parteEmCentavos: 1001 },
+      ],
+    });
     const desconhecido = await app().request('/participante/eu', { headers: doOutro });
     expect(desconhecido.status).toBe(404);
     expect(await desconhecido.json()).toEqual({ error: 'participante-nao-encontrado' });

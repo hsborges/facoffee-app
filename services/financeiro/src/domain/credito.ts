@@ -1,3 +1,5 @@
+import type { Cota } from './participante.js';
+
 /** What a participante owes and paid since entering for the first time, leaving included. */
 export type Totais = {
   readonly id: string;
@@ -15,6 +17,19 @@ export type Situacao = {
   readonly creditoEmCentavos: number;
   readonly pendenteEmCentavos: number;
 };
+
+/** What one participante owes, newest first: the cotas devidas and their partes de complementos. */
+export type Devido = {
+  readonly cotas: readonly Cota[];
+  readonly complementos: readonly {
+    readonly id: string;
+    readonly solicitadoEm: Date;
+    readonly parteEmCentavos: number;
+  }[];
+};
+
+/** The participante's own leitura *Crédito e pendentes*, with what makes up the devido. */
+export type MinhaSituacao = Situacao & Devido;
 
 /**
  * Pagamentos minus what is devido: positive is crédito, negative is pendente, with no multa nor

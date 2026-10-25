@@ -30,7 +30,7 @@ import type { Config } from './infra/config.js';
 import { type Handler, startConsumer } from './infra/consumer.js';
 import { caixinhaRepository } from './infra/db/caixinha-repository.js';
 import { complementoRepository } from './infra/db/complemento-repository.js';
-import { buscarTotais } from './infra/db/credito-repository.js';
+import { buscarDevido, buscarTotais } from './infra/db/credito-repository.js';
 import { connectDatabase } from './infra/db/database.js';
 import { gastoRepository } from './infra/db/gasto-repository.js';
 import { pagamentoRepository } from './infra/db/pagamento-repository.js';
@@ -100,7 +100,10 @@ export const startService = async (config: Config, logger: Logger) => {
       now: () => new Date(),
     }),
     listarCreditoEPendentes: listarCreditoEPendentes(buscarTotais(database.db)),
-    consultarCreditoEPendente: consultarCreditoEPendente(buscarTotais(database.db)),
+    consultarCreditoEPendente: consultarCreditoEPendente(
+      buscarTotais(database.db),
+      buscarDevido(database.db),
+    ),
     health: async () => ({
       database: await database.isHealthy(),
       rabbitmq: connection.isConnected(),
