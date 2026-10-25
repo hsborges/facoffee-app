@@ -10,6 +10,8 @@ import {
   guardarNota,
   notaDoParticipante,
 } from './application/arquivos.js';
+import { consultarCaixinha } from './application/caixinha.js';
+import { solicitarComplemento } from './application/complementos.js';
 import { consultarCreditoEPendente, listarCreditoEPendentes } from './application/credito.js';
 import { registrarGasto } from './application/gastos.js';
 import { receberPagamento } from './application/pagamentos.js';
@@ -26,6 +28,8 @@ import type { Result } from './domain/result.js';
 import { connectArmazem } from './infra/armazem-s3.js';
 import type { Config } from './infra/config.js';
 import { type Handler, startConsumer } from './infra/consumer.js';
+import { caixinhaRepository } from './infra/db/caixinha-repository.js';
+import { complementoRepository } from './infra/db/complemento-repository.js';
 import { buscarTotais } from './infra/db/credito-repository.js';
 import { connectDatabase } from './infra/db/database.js';
 import { gastoRepository } from './infra/db/gasto-repository.js';
@@ -87,6 +91,13 @@ export const startService = async (config: Config, logger: Logger) => {
     reembolsarGasto: reembolsarGasto(reembolsoRepository(database.db), {
       now: () => new Date(),
       newId: randomUUID,
+    }),
+    solicitarComplemento: solicitarComplemento(complementoRepository(database.db), {
+      now: () => new Date(),
+      newId: randomUUID,
+    }),
+    consultarCaixinha: consultarCaixinha(caixinhaRepository(database.db), {
+      now: () => new Date(),
     }),
     listarCreditoEPendentes: listarCreditoEPendentes(buscarTotais(database.db)),
     consultarCreditoEPendente: consultarCreditoEPendente(buscarTotais(database.db)),

@@ -9,6 +9,7 @@ import {
   registrarCotaDevida,
   registrarSaida,
 } from './application/participantes.js';
+import { anoAnterior } from './domain/caixinha.js';
 import type { Event } from './domain/event.js';
 import { queues } from './infra/consumer.js';
 import { connectDatabase } from './infra/db/database.js';
@@ -428,4 +429,161 @@ it('reembolsa a gasto do próprio bolso once and publishes Reembolso feito', asy
       },
     },
   ]);
+});
+
+it('keeps Saldo da caixinha and Gastos do ano anterior, with gastos pela caixinha and do próprio bolso', async () => {
+  const participante = randomUUID();
+  publicar(entrou(participante));
+  expect(await eventually(async () => (await repository.buscar(participante)) !== undefined)).toBe(
+    true,
+  );
+  const url = `http://localhost:${running.port}`;
+  const gestor = { 'x-user-id': randomUUID(), 'x-user-roles': 'gestor' };
+  const caixinha = async () =>
+    (await (await fetch(`${url}/caixinha`, { headers: { 'x-user-id': participante } })).json()) as {
+      saldoEmCentavos: number;
+      gastosDoAnoAnteriorEmCentavos: number;
+    };
+  const registrar = async (origem: string, valorEmCentavos: number) => {
+    const form = new FormData();
+    form.append('arquivo', new Blob([new TextEncoder().encode('%PDF-1.7 nota')]), 'nota.pdf');
+    const nota = await fetch(`${url}/guardar-nota`, {
+      method: 'POST',
+      headers: { 'x-user-id': participante },
+      body: form,
+    });
+    const { id: notaId } = (await nota.json()) as { id: string };
+    const gasto = await fetch(`${url}/registrar-gasto`, {
+      method: 'POST',
+      headers: { 'x-user-id': participante, 'content-type': 'application/json' },
+      body: JSON.stringify({ valorEmCentavos, origem, notaId }),
+    });
+    return ((await gasto.json()) as { id: string }).id;
+  };
+  const antes = await caixinha();
+
+  await fetch(`${url}/receber-pagamento`, {
+    method: 'POST',
+    headers: { ...gestor, 'content-type': 'application/json' },
+    body: JSON.stringify({
+      participanteId: participante,
+      valorEmCentavos: 10000,
+      forma: 'dinheiro',
+    }),
+  });
+  await registrar('caixinha', 3000);
+  const doBolso = await registrar('proprio-bolso', 2500);
+  expect((await caixinha()).saldoEmCentavos - antes.saldoEmCentavos).toBe(7000);
+
+  await fetch(`${url}/gasto/${doBolso}/reembolsar`, { method: 'POST', headers: gestor });
+  const depois = await caixinha();
+  expect(depois.saldoEmCentavos - antes.saldoEmCentavos).toBe(4500);
+  expect(depois.gastosDoAnoAnteriorEmCentavos).toBe(antes.gastosDoAnoAnteriorEmCentavos);
+
+  // No route registers a gasto in the past, so these go straight to the table.
+  const ano = anoAnterior(new Date());
+  const gasto = (
+    valorEmCentavos: number,
+    origem: 'caixinha' | 'proprio-bolso',
+    feitoEm: string,
+  ) => ({
+    id: randomUUID(),
+    participanteId: participante,
+    valorEmCentavos,
+    origem,
+    notaId: randomUUID(),
+    feitoEm: new Date(feitoEm),
+  });
+  await database.db.insert(gastos).values([
+    gasto(700, 'caixinha', `${ano + 1}-01-01T03:59:00Z`), // 31/12 23:59 in Campo Grande
+    gasto(50, 'proprio-bolso', `${ano}-06-15T12:00:00Z`),
+    gasto(9, 'caixinha', `${ano}-01-01T03:59:00Z`), // still the year before, in Campo Grande
+  ]);
+  expect(
+    (await caixinha()).gastosDoAnoAnteriorEmCentavos - antes.gastosDoAnoAnteriorEmCentavos,
+  ).toBe(750);
+});
+
+it('divides a complemento among the participantes ativos and abate the crédito of each one', async () => {
+  const { queue } = await channel.assertQueue('', { exclusive: true });
+  await channel.bindQueue(queue, EXCHANGE, 'finance.top-up-requested.v1');
+  const publicados: Event[] = [];
+  await channel.consume(
+    queue,
+    (msg) => msg && publicados.push(JSON.parse(msg.content.toString())),
+    { noAck: true },
+  );
+
+  const [comCredito, pendente, saiuAntes, entrouDepois] = [
+    randomUUID(),
+    randomUUID(),
+    randomUUID(),
+    randomUUID(),
+  ];
+  for (const event of [
+    entrou(comCredito),
+    entrou(pendente),
+    cotaDevida(pendente, '2026-11'),
+    entrou(saiuAntes),
+    saiu(saiuAntes),
+  ]) {
+    publicar(event);
+  }
+  expect(
+    await eventually(
+      async () =>
+        (await repository.buscar(saiuAntes))?.ativo === false &&
+        (await repository.buscar(pendente))?.cotas.length === 1 &&
+        (await repository.buscar(comCredito)) !== undefined,
+    ),
+  ).toBe(true);
+  const url = `http://localhost:${running.port}`;
+  const gestor = { 'x-user-id': randomUUID(), 'x-user-roles': 'gestor' };
+  await fetch(`${url}/receber-pagamento`, {
+    method: 'POST',
+    headers: { ...gestor, 'content-type': 'application/json' },
+    body: JSON.stringify({ participanteId: comCredito, valorEmCentavos: 10000, forma: 'dinheiro' }),
+  });
+
+  // Every ativo left in the shared database shares it too; one centavo is left over.
+  const ativos = await repository.ativos();
+  const valorTotal = ativos.length * 100 + 1;
+  const solicitado = await fetch(`${url}/solicitar-complemento`, {
+    method: 'POST',
+    headers: { ...gestor, 'content-type': 'application/json' },
+    body: JSON.stringify({ valorEmCentavos: valorTotal }),
+  });
+  expect(solicitado.status).toBe(201);
+  const { id } = (await solicitado.json()) as { id: string };
+  publicar(entrou(entrouDepois));
+  publicar(saiu(pendente));
+
+  expect(await eventually(async () => publicados.length > 0)).toBe(true);
+  const { payload } = publicados[0] as Event<
+    string,
+    {
+      topUpId: string;
+      totalAmountInCents: number;
+      shares: { participantId: string; amountInCents: number }[];
+    }
+  >;
+  expect(payload).toMatchObject({ topUpId: id, totalAmountInCents: valorTotal });
+  expect(payload.shares.map((s) => s.participantId)).toEqual(ativos);
+  expect(payload.shares.reduce((total, s) => total + s.amountInCents, 0)).toBe(valorTotal);
+  const parte = (quem: string) =>
+    payload.shares.find((s) => s.participantId === quem)?.amountInCents;
+  expect(parte(saiuAntes)).toBeUndefined();
+
+  const situacao = async (quem: string) =>
+    (await fetch(`${url}/participante/eu`, { headers: { 'x-user-id': quem } })).json();
+  expect(await eventually(async () => (await situacao(entrouDepois)).ativo === true)).toBe(true);
+  expect(await eventually(async () => (await situacao(pendente)).ativo === false)).toBe(true);
+  expect(await situacao(comCredito)).toMatchObject({
+    creditoEmCentavos: 10000 - (parte(comCredito) ?? 0),
+  });
+  expect(await situacao(pendente)).toMatchObject({
+    pendenteEmCentavos: 3000 + (parte(pendente) ?? 0),
+  });
+  expect(await situacao(entrouDepois)).toMatchObject({ pendenteEmCentavos: 0 });
+  expect(await situacao(saiuAntes)).toMatchObject({ pendenteEmCentavos: 0 });
 });

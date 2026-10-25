@@ -9,6 +9,7 @@ import {
   guardarNota,
   notaDoParticipante,
 } from '../application/arquivos.js';
+import { solicitarComplemento } from '../application/complementos.js';
 import { consultarCreditoEPendente, listarCreditoEPendentes } from '../application/credito.js';
 import { registrarGasto } from '../application/gastos.js';
 import { receberPagamento } from '../application/pagamentos.js';
@@ -84,6 +85,14 @@ const app = (deps: Partial<ApiDependencies> = {}) => {
       },
       { now: () => new Date(), newId },
     ),
+    solicitarComplemento: solicitarComplemento(
+      { ativos: async () => [participante, outro], salvar: async () => {} },
+      { now: () => new Date(), newId },
+    ),
+    consultarCaixinha: async () => ({
+      saldoEmCentavos: -1500,
+      gastosDoAnoAnteriorEmCentavos: 90000,
+    }),
     listarCreditoEPendentes: listarCreditoEPendentes(buscarTotais),
     consultarCreditoEPendente: consultarCreditoEPendente(buscarTotais),
     health: async () => ({ database: true, rabbitmq: true, armazenamento: true }),
@@ -396,6 +405,52 @@ describe('POST /gasto/:id/reembolsar', () => {
   it('403 when not the gestor and 401 without the logged-in person', async () => {
     expect((await reembolsar(app(), doParticipante, gastoDoBolso.id)).status).toBe(403);
     expect((await reembolsar(app(), {}, gastoDoBolso.id)).status).toBe(401);
+  });
+});
+
+describe('POST /solicitar-complemento', () => {
+  const solicitar = (headers: Record<string, string>, corpo: unknown) =>
+    app().request('/solicitar-complemento', {
+      method: 'POST',
+      headers: { ...headers, 'content-type': 'application/json' },
+      body: JSON.stringify(corpo),
+    });
+
+  it('201 with the id of the complemento', async () => {
+    const response = await solicitar(gestor, { valorEmCentavos: 1001 });
+    expect(response.status).toBe(201);
+    expect(await response.json()).toEqual({ id: expect.any(String) });
+  });
+
+  it('409 when the parte would be less than one centavo', async () => {
+    const response = await solicitar(gestor, { valorEmCentavos: 1 });
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: 'parte-menor-que-um-centavo' });
+  });
+
+  it('400 for an invalid pedido', async () => {
+    for (const corpo of [{}, { valorEmCentavos: 0 }, { valorEmCentavos: 10.5 }, 'x']) {
+      const response = await solicitar(gestor, corpo);
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ error: 'pedido-invalido' });
+    }
+  });
+
+  it('403 when not the gestor and 401 without the logged-in person', async () => {
+    expect((await solicitar(doParticipante, { valorEmCentavos: 1001 })).status).toBe(403);
+    expect((await solicitar({}, { valorEmCentavos: 1001 })).status).toBe(401);
+  });
+});
+
+describe('GET /caixinha', () => {
+  it('gives any participante the saldo and the gastos do ano anterior', async () => {
+    const response = await app().request('/caixinha', { headers: doParticipante });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      saldoEmCentavos: -1500,
+      gastosDoAnoAnteriorEmCentavos: 90000,
+    });
+    expect((await app().request('/caixinha')).status).toBe(401);
   });
 });
 

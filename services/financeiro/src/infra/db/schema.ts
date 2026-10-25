@@ -69,6 +69,28 @@ export const reembolsos = pgTable('reembolsos', {
   feitoEm: instant('feito_em').notNull(),
 });
 
+/** Complementos solicitados. */
+export const complementos = pgTable('complementos', {
+  id: uuid('id').primaryKey(),
+  valorTotalEmCentavos: integer('valor_total_em_centavos').notNull(),
+  solicitadoEm: instant('solicitado_em').notNull(),
+});
+
+/** Partes de complementos devidas; one per participante ativo at the solicitação. */
+export const partes = pgTable(
+  'partes',
+  {
+    complementoId: uuid('complemento_id')
+      .notNull()
+      .references(() => complementos.id),
+    participanteId: uuid('participante_id')
+      .notNull()
+      .references(() => participantes.id),
+    valorEmCentavos: integer('valor_em_centavos').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.complementoId, t.participanteId] })],
+);
+
 /** Events written in the aggregate's transaction; the relay publishes them in `seq` order. */
 export const outbox = pgTable('outbox', {
   seq: bigint('seq', { mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),

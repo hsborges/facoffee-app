@@ -23,7 +23,7 @@ Guardados num bucket S3 ([ADR 0018](../../docs/adr/0018-armazenamento-de-comprov
 
 ## Receber pagamento
 
-`POST /receber-pagamento` (só o gestor), em JSON: `participanteId`, `valorEmCentavos`, `forma` (`pix` ou `dinheiro`) e, no PIX, `comprovanteId` (o `id` de `/guardar-comprovante`). Responde `201 { id }` e publica *Pagamento recebido* pela outbox. Todo pagamento entra na caixinha: a tabela `pagamentos` é a fonte do saldo da caixinha, que ainda não tem leitura.
+`POST /receber-pagamento` (só o gestor), em JSON: `participanteId`, `valorEmCentavos`, `forma` (`pix` ou `dinheiro`) e, no PIX, `comprovanteId` (o `id` de `/guardar-comprovante`). Responde `201 { id }` e publica *Pagamento recebido* pela outbox. Todo pagamento entra na caixinha (ver [Caixinha](#caixinha)).
 
 | Recusa | Status |
 |---|---|
@@ -54,9 +54,26 @@ Guardados num bucket S3 ([ADR 0018](../../docs/adr/0018-armazenamento-de-comprov
 | gasto pago pela caixinha (`gasto-pago-pela-caixinha`) | 409 |
 | gasto já reembolsado (`gasto-ja-reembolsado`) | 409 |
 
+## Solicitar complemento
+
+`POST /solicitar-complemento` (só o gestor), em JSON: `valorEmCentavos` (o valor total, que o gestor calcula). Divide em partes iguais entre os participantes ativos no momento, inclusive os pendentes e sem olhar o tipo de cota; os centavos que sobram vão um para cada, na ordem do id, e a soma das partes é sempre o valor total. Responde `201 { id }` e publica *Complemento solicitado* pela outbox. Fica nas tabelas `complementos` e `partes`; cada parte é devida como uma cota, então quem entra depois não deve e quem sai depois continua devendo.
+
+| Recusa | Status |
+|---|---|
+| não é o gestor (`sem-permissao`) | 403 |
+| nenhum participante ativo (`sem-participantes-ativos`) | 409 |
+| valor menor que o número de participantes ativos (`parte-menor-que-um-centavo`) | 409 |
+
+## Caixinha
+
+`GET /caixinha` (qualquer participante) → `200 { saldoEmCentavos, gastosDoAnoAnteriorEmCentavos }`.
+
+- *Saldo da caixinha*: pagamentos recebidos − gastos pagos pela caixinha − reembolsos. O gasto do próprio bolso só sai no reembolso. Fica negativo quando os gastos passam do que entrou.
+- *Gastos do ano anterior*: soma de todos os gastos, de qualquer origem, feitos no ano anterior pelo horário de Campo Grande ([ADR 0015](../../docs/adr/0015-fuso-horario-do-dominio.md)).
+
 ## Crédito e pendentes
 
-Pagamentos recebidos − cotas devidas: positivo é crédito, negativo é pendente, sem multa nem juros. Como tudo entra na mesma soma, o crédito abate as próximas cotas sozinho, e crédito e pendência continuam valendo depois da saída e no retorno. As partes de complementos entram na soma quando existirem ([#25](https://github.com/hsborges/facoffee-app/issues/25)).
+Pagamentos recebidos − cotas devidas − partes de complementos: positivo é crédito, negativo é pendente, sem multa nem juros. Como tudo entra na mesma soma, o crédito abate as próximas cotas e complementos sozinho, e crédito e pendência continuam valendo depois da saída e no retorno.
 
 | Rota | Quem |
 |---|---|
