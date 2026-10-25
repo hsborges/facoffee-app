@@ -19,7 +19,7 @@ Este glossário define a linguagem ubíqua usada na divisão de custos da copa d
 - Glossários entregues na atividade *System Design com Domain-Driven Design (DDD)*: 23 glossários distintos, entre individuais e de duplas.
 - Entraram os termos que aparecem em pelo menos 6 dos 23 glossários. As definições foram conferidas com os fatos do domínio.
 - Os termos [Crédito](#crédito) e [Complemento](#complemento) foram definidos para responder às questões levantadas durante a consolidação.
-- A versão 2.0 incorpora as decisões tomadas no desenho da arquitetura do FACOFFEE (`diagrama-tdsoft-v2.excalidraw`): a divisão em contextos, a saída por desativação do acesso e a divisão do complemento entre todos os participantes ativos.
+- A versão 2.0 incorpora as decisões tomadas no desenho da arquitetura do FACOFFEE ([arquitetura.png](arquitetura.png)): a divisão em contextos, a saída por desativação do acesso e a divisão do complemento entre todos os participantes ativos.
 
 ## Convenções
 
@@ -31,7 +31,7 @@ Este glossário define a linguagem ubíqua usada na divisão de custos da copa d
 
 ## Visão por área
 
-A coluna **Contexto** indica em qual contexto do FACOFFEE o termo é tratado. Os contextos estão descritos nos [Modelos de Domínio](modelos-de-dominio.md#3-contextos-delimitados).
+A coluna **Contexto** indica em qual contexto do FACOFFEE o termo é tratado. Os contextos estão descritos nos [Modelos de Domínio](MODELOS_DOMINIO.md#3-contextos-delimitados).
 
 | Área | Termos | Contexto |
 |---|---|---|

@@ -8,7 +8,7 @@
 | **Versão** | 2.2 |
 | **Data** | 2026-10-24 |
 | **Status** | Aprovado |
-| **Base** | [Glossário da Linguagem Ubíqua](glossario-linguagem-ubiqua.md) (versão 2.1) e arquitetura do FACOFFEE (`diagrama-tdsoft-v2.excalidraw`) |
+| **Base** | [Glossário da Linguagem Ubíqua](GLOSSARIO.md) (versão 2.1) e arquitetura do FACOFFEE ([arquitetura.png](arquitetura.png)) |
 
 ## Propósito
 
@@ -231,7 +231,7 @@ O contexto Participação também recebe um evento de fora do domínio:
 
 ## 3. Contextos delimitados
 
-O FACOFFEE divide o domínio em dois contextos de negócio e usa dois contextos de apoio. O diagrama completo da arquitetura está em `diagrama-tdsoft-v2.excalidraw`.
+O FACOFFEE divide o domínio em dois contextos de negócio e usa dois contextos de apoio. O diagrama completo da arquitetura está em [arquitetura.png](arquitetura.png).
 
 | Contexto | Tipo | Responsabilidade | Termos do glossário |
 |---|---|---|---|

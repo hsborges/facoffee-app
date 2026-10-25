@@ -2,7 +2,7 @@
 
 Este documento descreve os padrões visuais, paleta de cores, tipografia e componentes da aplicação **FACOFFEE**.
 
-![Logo FACOFFEE](./logo.svg)
+![Logo FACOFFEE](./facoffee-logo.svg)
 
 ---
 
