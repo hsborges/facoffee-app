@@ -26,7 +26,7 @@ Credenciais em `.env`.
 O realm `facoffee` é importado de [`keycloak/facoffee-realm.json`](keycloak/facoffee-realm.json) quando o Keycloak sobe (realm já existente não é sobrescrito; para reimportar, `docker compose down -v`).
 
 - Emissor OIDC: `http://localhost:8080/realms/facoffee`
-- Client do web: `facoffee-web` (público, Authorization Code + PKCE S256, redirect `http://localhost:5173/*`)
+- Client do web: `facoffee-web` (público, Authorization Code + PKCE S256, redirect `http://localhost:5173/*`; também usado pelo login do Swagger UI em https://localhost/docs)
 - Papéis do realm: `gestor` e `participante`
 
 | Usuário de teste | Senha | Papéis |

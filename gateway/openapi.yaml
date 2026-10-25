@@ -5,11 +5,12 @@ info:
   description: |
     API do FACOFFEE.
 
-    Todas as rotas exigem autenticação. Para testar aqui, clique em **Authorize** e informe um
-    access token.
+    Todas as rotas exigem autenticação. Para testar aqui, clique em **Authorize** e entre com
+    usuário e senha (`login`) ou informe um access token (`bearer`).
 servers:
   - url: /
 security:
+  - login: [openid]
   - bearer: []
 tags:
   - name: usuario
@@ -34,6 +35,15 @@ paths:
           $ref: '#/components/responses/ErroInterno'
 components:
   securitySchemes:
+    login:
+      type: oauth2
+      description: Entrar com usuário e senha.
+      flows:
+        authorizationCode:
+          authorizationUrl: http://localhost:8080/realms/facoffee/protocol/openid-connect/auth
+          tokenUrl: http://localhost:8080/realms/facoffee/protocol/openid-connect/token
+          scopes:
+            openid: Identificação do usuário
     bearer:
       type: http
       scheme: bearer
