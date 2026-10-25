@@ -61,7 +61,7 @@ paths:
           $ref: '#/components/responses/AcessoDesativado'
         '500':
           $ref: '#/components/responses/ErroInterno'
-  /api/usuario/{id}/desativacao:
+  /api/usuario/{id}/desativar:
     post:
       tags: [usuario]
       operationId: desativarAcesso
@@ -105,7 +105,7 @@ paths:
                 error: not-found
         '500':
           $ref: '#/components/responses/ErroInterno'
-  /api/usuario/{id}/reativacao:
+  /api/usuario/{id}/reativar:
     post:
       tags: [usuario]
       operationId: reativarAcesso
@@ -139,7 +139,7 @@ paths:
                 error: not-found
         '500':
           $ref: '#/components/responses/ErroInterno'
-  /api/participacao/entrada:
+  /api/participacao/entrar:
     post:
       tags: [participacao]
       operationId: pedirEntrada
@@ -182,7 +182,7 @@ paths:
                 error: ja-participando
         '500':
           $ref: '#/components/responses/ErroInterno'
-  /api/participacao/troca-cota:
+  /api/participacao/trocar-tipo-de-cota:
     post:
       tags: [participacao]
       operationId: trocarTipoDeCota
@@ -220,7 +220,7 @@ paths:
           $ref: '#/components/responses/NaoParticipando'
         '500':
           $ref: '#/components/responses/ErroInterno'
-  /api/participacao/saida:
+  /api/participacao/sair:
     post:
       tags: [participacao]
       operationId: pedirSaida
@@ -239,7 +239,7 @@ paths:
           $ref: '#/components/responses/NaoParticipando'
         '500':
           $ref: '#/components/responses/ErroInterno'
-  /api/participacao/valor-da-cota:
+  /api/participacao/definir-valor-da-cota:
     post:
       tags: [participacao]
       operationId: definirValorDaCota
