@@ -737,8 +737,8 @@ paths:
       operationId: listarGastos
       summary: Gastos
       description: |
-        Gastos registrados, do mais recente ao mais antigo, indicando os já reembolsados.
-        Qualquer participante consulta os gastos.
+        Gastos registrados, do mais recente ao mais antigo, indicando os já reembolsados. Só o
+        gestor lista os gastos.
       responses:
         '200':
           description: Gastos.
@@ -751,7 +751,7 @@ paths:
         '401':
           $ref: '#/components/responses/NaoAutorizado'
         '403':
-          $ref: '#/components/responses/AcessoDesativado'
+          $ref: '#/components/responses/SomenteGestor'
         '500':
           $ref: '#/components/responses/ErroInterno'
   /api/financeiro/participante:
@@ -1016,7 +1016,7 @@ components:
         notaId:
           type: string
           format: uuid
-          description: Nota do gasto, baixada em `nota/{id}`.
+          description: Nota do gasto, baixada em `/api/financeiro/nota/{id}`.
         feitoEm:
           type: string
           format: date-time
