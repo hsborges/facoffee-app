@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { errors, type JWTVerifyGetKey, jwtVerify } from 'jose';
 
+/** What a token must match: issuer (`iss`), client (`azp`) and the issuer's public keys (JWKS). */
 export type VerifierConfig = {
   readonly issuer: string;
   readonly clientId: string;
@@ -17,7 +18,12 @@ const realmRoles = (claim: unknown): readonly string[] => {
 // Percent-encoded: header values must be ASCII, and names have accents.
 const textClaim = (claim: unknown) => (typeof claim === 'string' ? encodeURIComponent(claim) : '');
 
-// Traefik ForwardAuth target: any non-2xx response is returned to the client and the request stops.
+/**
+ * Token verifier called by Traefik ForwardAuth on `/verify` (ADR 0007).
+ * Valid token: 204 with the `X-User-*` identity headers. Missing or invalid token: 401. Since any
+ * non-2xx response is returned to the client, the request stops at the gateway. An unreachable
+ * JWKS is not a 401: the error propagates (500).
+ */
 export const createApp = ({ issuer, clientId, keys }: VerifierConfig) =>
   new Hono()
     .get('/health', (c) => c.json({ status: 'ok' }))

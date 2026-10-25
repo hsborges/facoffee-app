@@ -1,5 +1,6 @@
 import { fail, ok, type Result } from '../domain/result.js';
 
+/** Service configuration, read from environment variables. */
 export type Config = {
   readonly service: string;
   readonly port: number;
@@ -7,6 +8,10 @@ export type Config = {
   readonly rabbitmqUrl: string;
 };
 
+/**
+ * Reads `SERVICE`, `DATABASE_URL`, `RABBITMQ_URL` (required) and `PORT` (default 3000).
+ * Fails with every problem found, not just the first.
+ */
 export const readConfig = (
   env: Readonly<Record<string, string | undefined>>,
 ): Result<Config, string[]> => {

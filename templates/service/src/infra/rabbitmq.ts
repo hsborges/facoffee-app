@@ -3,11 +3,13 @@ import type { ConfirmChannel } from 'amqplib';
 import type { Event } from '../domain/event.js';
 import type { Logger } from './logger.js';
 
-// Topology from ADR 0006.
+/** Topic exchange of all domain events (ADR 0006). */
 export const EXCHANGE = 'facoffee.events';
+/** Routing key of an event: `<type>.v<version>` (ADR 0006). */
 export const routingKey = (event: Pick<Event, 'type' | 'version'>) =>
   `${event.type}.v${event.version}`;
 
+/** Connection to RabbitMQ that reconnects on its own and logs connects and disconnects. */
 export const connectRabbitmq = (url: string, logger: Logger) => {
   const connection = amqp.connect([url]);
   connection.on('connect', () => logger.info('connected to rabbitmq'));
@@ -17,7 +19,10 @@ export const connectRabbitmq = (url: string, logger: Logger) => {
   return connection;
 };
 
-// Publisher confirms: the promise resolves only after the broker acknowledges the message.
+/**
+ * Publishes persistent JSON events to {@link EXCHANGE}.
+ * Publisher confirms: the promise resolves only after the broker acknowledges the message.
+ */
 export const createPublisher = (connection: AmqpConnectionManager) => {
   const channel = connection.createChannel({
     publishTimeout: 5000,

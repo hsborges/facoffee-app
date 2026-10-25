@@ -3,6 +3,7 @@ import type { Example, RegisterError } from '../domain/example.js';
 import type { Result } from '../domain/result.js';
 import type { Logger } from '../infra/logger.js';
 
+/** Use cases and infrastructure the HTTP API calls; injected so tests can replace them. */
 export type ApiDependencies = {
   readonly register: (command: {
     readonly name: string;
@@ -14,6 +15,10 @@ export type ApiDependencies = {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/**
+ * HTTP API: `GET /health` (200 or 503 with each dependency), `POST /examples` and
+ * `GET /examples/:id`. Logs every request except health probes; unhandled errors become 500.
+ */
 export const createApp = ({ register, find, health, logger }: ApiDependencies) =>
   new Hono()
     .use(async (c, next) => {

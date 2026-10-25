@@ -7,11 +7,15 @@ Ponto de entrada HTTPS (rede pública). Roteia via REST para Usuário, Participa
 | `/api/usuario/*` | `http://usuario:3000/*` |
 | `/api/participacao/*` | `http://participacao:3000/*` |
 | `/api/financeiro/*` | `http://financeiro:3000/*` |
+| `/docs/*` | `http://docs:8080/docs/*` (Swagger UI, sem token) |
 
-Toda rota exige `Authorization: Bearer <access token do Keycloak>`. Sem token ou com token inválido: 401. Com token válido, o serviço recebe `X-User-Id` (o `sub`), `X-User-Roles` (papéis do realm, separados por vírgula), `X-User-Name` (o `name`) e `X-User-Email` (o `email`); nome e e-mail vêm codificados com `encodeURIComponent` ([ADR 0008](../docs/adr/0008-dados-do-usuario-logado.md)). Header ausente no token vai vazio.
+Toda rota `/api/*` exige `Authorization: Bearer <access token do Keycloak>`. Sem token ou com token inválido: 401. Com token válido, o serviço recebe `X-User-Id` (o `sub`), `X-User-Roles` (papéis do realm, separados por vírgula), `X-User-Name` (o `name`) e `X-User-Email` (o `email`); nome e e-mail vêm codificados com `encodeURIComponent` ([ADR 0008](../docs/adr/0008-dados-do-usuario-logado.md)). Header ausente no token vai vazio.
 
-| Pasta | Conteúdo |
+Rotas, respostas e autenticação estão em [`openapi.yaml`](openapi.yaml) (OpenAPI 3.1, [ADR 0009](../docs/adr/0009-openapi-da-api-publica.md)), navegável no Swagger UI em https://localhost/docs, sem token; em *Authorize*, `login` entra com usuário e senha do Keycloak. Serviço que expõe ou muda uma rota atualiza esse arquivo no mesmo PR.
+
+| Caminho | Conteúdo |
 |---|---|
+| `openapi.yaml` | Especificação da API pública |
 | `traefik/` | Configuração do Traefik: estática (`traefik.yml`) e rotas e middlewares (`dynamic.yml`) |
 | `src/` | Verificador de token chamado pelo ForwardAuth (`GET /verify`) |
 

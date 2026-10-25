@@ -4,6 +4,7 @@ import { enqueue } from '../outbox.js';
 import type { Executor } from './database.js';
 import { examples } from './schema.js';
 
+/** {@link Repository} on PostgreSQL; `save` upserts the Example and enqueues its events at once. */
 export const exampleRepository = (db: Executor): Repository => ({
   find: async (id) => {
     const [row] = await db.select().from(examples).where(eq(examples.id, id));

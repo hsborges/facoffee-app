@@ -15,7 +15,7 @@ pnpm install
 
 | Comando | O que faz |
 |---|---|
-| `pnpm lint` | Lint e formatação (Biome), sem alterar arquivos |
+| `pnpm lint` | Lint e formatação (Biome) e TSDoc nos exports (`scripts/check-tsdoc.ts`), sem alterar arquivos |
 | `pnpm format` | Corrige lint e formatação |
 | `pnpm test` | Testes (Vitest) de todos os workspaces |
 | `pnpm build` | Build (TypeScript) de todos os workspaces |
