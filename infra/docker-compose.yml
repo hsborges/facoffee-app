@@ -160,6 +160,21 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  # Dispara os gatilhos de tempo de Participação a cada hora (ADR 0017). Sem servidor HTTP.
+  agendador:
+    build:
+      context: ..
+      dockerfile: templates/service/Dockerfile
+      args:
+        PACKAGE: "@facoffee/agendador"
+    environment:
+      PARTICIPACAO_URL: http://participacao:3000
+    healthcheck:
+      disable: true
+    depends_on:
+      participacao:
+        condition: service_healthy
+
   # Template de serviço (templates/service); sobe só com --profile example.
   example:
     profiles: [example]
