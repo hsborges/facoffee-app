@@ -399,9 +399,9 @@ paths:
                   enum: [pix, dinheiro]
                   description: Forma do pagamento; `dinheiro` é o pagamento em mãos.
                 comprovanteId:
-                  type: string
+                  type: [string, 'null']
                   format: uuid
-                  description: Comprovante do PIX; obrigatório no PIX e ausente no dinheiro.
+                  description: Comprovante do PIX; obrigatório no PIX, ausente ou nulo no dinheiro.
       responses:
         '201':
           description: Pagamento recebido.
@@ -417,8 +417,8 @@ paths:
                     description: Identificador do pagamento.
         '400':
           description: |
-            Pedido inválido, pagamento por PIX sem comprovante ou pagamento em dinheiro com
-            comprovante.
+            Pedido inválido ou acima de 4 KB, pagamento por PIX sem comprovante ou pagamento em
+            dinheiro com comprovante.
           content:
             application/json:
               schema:
