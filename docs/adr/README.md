@@ -22,7 +22,7 @@ Registros de decisões de arquitetura. Um arquivo por decisão: `NNNN-titulo.md`
 | [0016](0016-nomenclatura-das-rotas-http.md) | Nomenclatura das rotas HTTP | Aceito |
 | [0017](0017-gatilhos-de-tempo-do-agendador.md) | Gatilhos de tempo do agendador | Aceito |
 | [0018](0018-armazenamento-de-comprovantes-e-notas.md) | Armazenamento de comprovantes e notas | Aceito |
-| [0019](0019-base-do-front-end.md) | Base do front-end | Aceito; entrada de quem não está logado substituída por 0025 |
+| [0019](0019-base-do-front-end.md) | Base do front-end | Aceito; entrada de quem não está logado substituída por 0025; navegação substituída por 0029 |
 | [0020](0020-envio-de-e-mails-da-notificacao.md) | Envio de e-mails da Notificação | Aceito |
 | [0021](0021-front-end-servido-pelo-gateway.md) | Front-end servido pelo gateway | Aceito |
 | [0022](0022-http-no-ambiente-local.md) | HTTP no ambiente local | Aceito |
@@ -32,3 +32,4 @@ Registros de decisões de arquitetura. Um arquivo por decisão: `NNNN-titulo.md`
 | [0026](0026-dockerfile-por-servico.md) | Dockerfile por serviço | Aceito |
 | [0027](0027-lembrete-aos-pendentes.md) | Lembrete aos pendentes | Aceito |
 | [0028](0028-mobile-first.md) | Mobile first | Aceito |
+| [0029](0029-visoes-do-gestor-e-do-participante.md) | Visões do gestor e do participante | Aceito |
