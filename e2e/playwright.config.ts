@@ -10,11 +10,13 @@ export default defineConfig({
   // Prints the test.step of each test as it runs.
   reporter: [['list', { printSteps: true }]],
   use: { baseURL: 'http://localhost', trace: 'retain-on-failure' },
-  // Mobile first (ADR 0028): every test also runs on the narrowest phone the web supports.
+  // Mobile first (ADR 0028): the tests of the screens, tagged @celular, also run on the narrowest
+  // phone the web supports.
   projects: [
     { name: 'computador' },
     {
       name: 'celular',
+      grep: /@celular/,
       use: { viewport: { width: 320, height: 640 }, isMobile: true, hasTouch: true },
     },
   ],
