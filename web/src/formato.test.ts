@@ -1,5 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { dataEmCampoGrande, emCentavos, emReais, mesEmCampoGrande, mesPorExtenso } from './formato';
+import {
+  dataEmCampoGrande,
+  emCentavos,
+  emReais,
+  iniciais,
+  mesEmCampoGrande,
+  mesPorExtenso,
+} from './formato';
+
+describe('iniciais', () => {
+  it('takes the first and the last name', () => {
+    expect(iniciais('ana maria de souza')).toBe('AS');
+    expect(iniciais('  Bruno  ')).toBe('B');
+    expect(iniciais('')).toBe('');
+  });
+});
 
 describe('emReais', () => {
   it('shows centavos as reais', () => {

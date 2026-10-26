@@ -152,9 +152,10 @@ textarea {
   top: 1rem;
 }
 
+/* No celular, logo e avatar na primeira linha e o menu na segunda; no computador, tudo numa linha. */
 .topo {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr auto;
   align-items: center;
   gap: 0.5rem 2rem;
   padding: 1rem;
@@ -163,6 +164,11 @@ textarea {
 
 .topo img {
   height: 3rem;
+}
+
+.topo nav {
+  grid-row: 2;
+  grid-column: 1 / -1;
 }
 
 .topo ul {
@@ -188,12 +194,41 @@ textarea {
   text-underline-offset: 0.5rem;
 }
 
+.avatar {
+  width: 3rem;
+  height: 3rem;
+  padding: 0;
+  border-radius: var(--raio-pilula);
+}
+
+/* Menu da conta: popover nativo, que fecha com Esc e com clique fora; logo abaixo do avatar. */
 .conta {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-left: auto;
+  position: absolute;
+  inset: 4.5rem 1rem auto auto;
+  max-width: calc(100% - 2rem);
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid var(--light-sand);
+  border-radius: var(--raio-card);
+  box-shadow: var(--sombra);
+  color: var(--espresso-dark);
+  background: var(--pure-white);
+}
+
+.conta:popover-open {
+  display: grid;
+  justify-items: start;
+  gap: 0.5rem;
+}
+
+.conta p {
+  margin: 0;
   color: var(--muted-mocha);
+}
+
+.conta a {
+  padding-block: 0.5rem;
+  font-weight: 500;
 }
 
 main {
@@ -202,7 +237,17 @@ main {
 
 @media (min-width: 48rem) {
   .topo {
+    grid-template-columns: auto 1fr auto;
     padding-inline: 2rem;
+  }
+
+  .topo nav {
+    grid-row: auto;
+    grid-column: auto;
+  }
+
+  .conta {
+    right: 2rem;
   }
 
   main {

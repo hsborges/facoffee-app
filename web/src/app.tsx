@@ -1,11 +1,12 @@
 import { type ReactNode, useEffect, useState } from 'react';
-import { useAuth } from 'react-oidc-context';
-import { NavLink, Route, Routes } from 'react-router';
+import { hasAuthParams, useAuth } from 'react-oidc-context';
+import { Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router';
 import logo from '../../infra/keycloak/themes/facoffee/login/resources/img/facoffee-logo.svg';
 import { obterUsuarioLogado, type UsuarioLogado } from './api';
+import { iniciais } from './formato';
 import { Gastos, Participantes, SolicitarComplemento, ValorDaCota } from './gestor';
 import { PaginaInicial } from './inicial';
-import { navegacao } from './navegacao';
+import { navegacao, type Visao, visaoAtual } from './navegacao';
 import { Caixinha, MinhaSituacao } from './participante';
 
 const Pagina = ({ titulo, children }: { titulo: string; children: ReactNode }) => {
@@ -29,10 +30,14 @@ const Aviso = ({ children }: { children: ReactNode }) => (
   </main>
 );
 
+const VISAO = 'facoffee.visao';
+
+const inicio = (visao: Visao) => navegacao(visao)[0]?.caminho ?? '/';
+
 /**
  * Shows the start page to whoever is not logged in (ADR 0025); after the login through the
  * Keycloak (OIDC, ADR 0019), reads the logged-in usuário from the gateway and shows the layout
- * with the navigation of their perfis.
+ * in the visão of their perfis; the gestor chooses it after the login (ADR 0029).
  */
 export const App = () => {
   const auth = useAuth();
@@ -41,6 +46,13 @@ export const App = () => {
   const { isAuthenticated, isLoading, error } = auth;
   const token = auth.user?.access_token;
   const [eu, setEu] = useState<UsuarioLogado>();
+  // Kept across reloads of the tab; a new login chooses again.
+  const [escolhida, setEscolhida] = useState(() => {
+    if (hasAuthParams()) sessionStorage.removeItem(VISAO);
+    return (sessionStorage.getItem(VISAO) as Visao | null) ?? undefined;
+  });
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!token) return;
@@ -95,17 +107,40 @@ export const App = () => {
       </Aviso>
     );
 
-  const itens = navegacao(eu.usuario.perfis);
+  const visao = visaoAtual(eu.usuario.perfis, escolhida, pathname);
+  if (!visao) {
+    const escolher = (nova: Visao) => {
+      sessionStorage.setItem(VISAO, nova);
+      setEscolhida(nova);
+      if (visaoAtual(eu.usuario.perfis, nova, pathname) !== nova) navigate(inicio(nova));
+    };
+    return (
+      <Aviso>
+        <p>Como você quer usar o FACOFFEE agora? Dá para trocar a qualquer momento no menu.</p>
+        <div className="acoes">
+          <button type="button" onClick={() => escolher('gestor')}>
+            Visão do gestor
+          </button>
+          <button type="button" onClick={() => escolher('participante')}>
+            Visão do participante
+          </button>
+        </div>
+      </Aviso>
+    );
+  }
+
+  const itens = navegacao(visao);
+  const outra = visao === 'gestor' ? 'participante' : 'gestor';
   const paginas: Readonly<Record<string, ReactNode>> = {
     '/': <MinhaSituacao token={token} usuarioId={eu.usuario.id} sair={sair} />,
-    '/caixinha': (
+    '/caixinha': <Caixinha token={token} />,
+    '/participantes': <Participantes token={token} usuarioId={eu.usuario.id} />,
+    '/gastos': (
       <>
-        <Caixinha token={token} />
-        {eu.usuario.perfis.includes('gestor') && <SolicitarComplemento token={token} />}
+        <Gastos token={token} />
+        <SolicitarComplemento token={token} />
       </>
     ),
-    '/participantes': <Participantes token={token} usuarioId={eu.usuario.id} />,
-    '/gastos': <Gastos token={token} />,
     '/valor-da-cota': <ValorDaCota token={token} />,
   };
   return (
@@ -126,8 +161,24 @@ export const App = () => {
             ))}
           </ul>
         </nav>
-        <div className="conta">
-          <span>{eu.usuario.nome}</span>
+        <button
+          type="button"
+          className="secundario avatar"
+          popoverTarget="conta"
+          aria-label={`Conta de ${eu.usuario.nome}`}
+        >
+          {iniciais(eu.usuario.nome)}
+        </button>
+        <div id="conta" className="conta" popover="auto">
+          <p>{eu.usuario.nome}</p>
+          {eu.usuario.perfis.includes('gestor') && (
+            <Link
+              to={inicio(outra)}
+              onClick={() => document.getElementById('conta')?.hidePopover()}
+            >
+              Trocar para <strong>{outra === 'gestor' ? 'Gestor' : 'Participante'}</strong>
+            </Link>
+          )}
           <button type="button" className="fantasma" onClick={sair}>
             Sair
           </button>

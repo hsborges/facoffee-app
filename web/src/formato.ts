@@ -29,6 +29,15 @@ const datas = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Campo_Grande
 /** The day of an instant (ISO 8601) in Campo Grande: `20/11/2026`. */
 export const dataEmCampoGrande = (instante: string) => datas.format(new Date(instante));
 
+/** Initials of the first and the last name, for the avatar: `Ana Maria Souza` is `AS`. */
+export const iniciais = (nome: string) => {
+  const nomes = nome.trim().split(/\s+/);
+  return [nomes[0], nomes.length > 1 ? nomes.at(-1) : '']
+    .map((parte) => parte?.[0] ?? '')
+    .join('')
+    .toUpperCase();
+};
+
 /** Name of each tipo de cota. */
 export const NOME_DO_TIPO_DE_COTA: Readonly<Record<TipoDeCota, string>> = {
   'so-cafe': 'Só café',
