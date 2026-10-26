@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { creditoOuPendencia, receberPagamento, registrarGasto } from './gestor';
+import {
+  confirmarComprovante,
+  creditoOuPendencia,
+  receberPagamento,
+  registrarGasto,
+} from './gestor';
 
 const participanteId = '11111111-1111-4111-8111-111111111111';
 const arquivo = new File(['%PDF'], 'arquivo.pdf');
@@ -105,6 +110,21 @@ describe('registrarGasto', () => {
       }),
     ).toEqual({ feito: false, erro: 'arquivo-grande-demais' });
     expect(chamadas()).toHaveLength(1);
+  });
+});
+
+describe('confirmarComprovante', () => {
+  it('confirms the valor for the arquivo the gestor saw', async () => {
+    const chamadas = responde(Response.json({ id: 'pagamento' }, { status: 201 }));
+    expect(
+      await confirmarComprovante('token', { id: 'enviado', comprovanteId: 'arquivo' }, 2500),
+    ).toEqual({ feito: true, id: 'pagamento' });
+    const [confirmar] = chamadas();
+    expect(confirmar?.caminho).toBe('/api/financeiro/comprovante-enviado/enviado/confirmar');
+    expect(JSON.parse(confirmar?.corpo as string)).toEqual({
+      valorEmCentavos: 2500,
+      comprovanteId: 'arquivo',
+    });
   });
 });
 

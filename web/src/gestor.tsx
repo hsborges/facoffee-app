@@ -57,6 +57,20 @@ export const receberPagamento = async (
   );
 };
 
+/**
+ * Confirmar comprovante, with the valor confirmado, for the arquivo the gestor saw: if the
+ * participante changed it meanwhile, the API refuses it.
+ */
+export const confirmarComprovante = (
+  token: string,
+  { id, comprovanteId }: Pick<ComprovanteEnviado, 'id' | 'comprovanteId'>,
+  valorEmCentavos: number,
+) =>
+  comandar(token, `/api/financeiro/comprovante-enviado/${id}/confirmar`, {
+    valorEmCentavos,
+    comprovanteId,
+  });
+
 /** Registrar gasto: guarda the nota first, then registers the gasto with it. */
 export const registrarGasto = (
   token: string,
@@ -133,10 +147,7 @@ export const Participantes = ({ token, usuarioId }: { token: string; usuarioId: 
   const confirmar = (comprovante: ComprovanteEnviado) =>
     aoEnviar((dados) =>
       fazer(
-        () =>
-          comandar(token, `/api/financeiro/comprovante-enviado/${comprovante.id}/confirmar`, {
-            valorEmCentavos: emCentavos(String(dados.get('valor'))),
-          }),
+        () => confirmarComprovante(token, comprovante, emCentavos(String(dados.get('valor')))),
         'Comprovante confirmado: pagamento recebido.',
         'Não foi possível confirmar o comprovante.',
       ),

@@ -225,6 +225,7 @@ const ERROS: ReadonlyMap<string, string> = new Map([
   ['comprovante-ja-usado', 'Esse comprovante já foi usado em outro pagamento.'],
   ['comprovante-enviado-nao-encontrado', 'Esse comprovante não foi encontrado.'],
   ['comprovante-ja-analisado', 'O gestor já confirmou ou recusou esse comprovante.'],
+  ['comprovante-alterado', 'O participante trocou o arquivo desse comprovante. Veja-o de novo.'],
   ['recusa-sem-motivo', 'Informe o motivo da recusa.'],
   ['nota-ja-usada', 'Essa nota já foi usada em outro gasto.'],
   [
