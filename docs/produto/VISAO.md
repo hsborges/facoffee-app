@@ -5,10 +5,10 @@
 | **Escopo** | Divisão de custos da copa da FACOM |
 | **Sistema** | FACOFFEE |
 | **Disciplina** | Técnicas Avançadas de Desenvolvimento de Software (2026/2) |
-| **Versão** | 1.4 |
+| **Versão** | 1.5 |
 | **Data** | 2026-10-26 |
 | **Status** | Proposto |
-| **Base** | [Glossário](../dominio/GLOSSARIO.md) (versão 2.7) e [Modelos de Domínio](../dominio/MODELOS.md) (versão 2.10) |
+| **Base** | [Glossário](../dominio/GLOSSARIO.md) (versão 2.8) e [Modelos de Domínio](../dominio/MODELOS.md) (versão 2.11) |
 
 ## Propósito
 
@@ -111,7 +111,7 @@ O que não pode mudar, mesmo com o FACOFFEE:
 1. **Continua um combinado entre colegas.** Voluntário, sem multa, sem juros, sem cara de cobrança formal.
 2. **Leve.** Não pode dar mais trabalho ao gestor nem ao pessoal do que dá hoje. Se pesar, o gestor desiste.
 3. **Ninguém é exposto.** Cada participante vê só a própria situação. A lista de quem está pendente é só do gestor.
-4. **Só o gestor registra pagamento.** É ele quem recebe, inclusive o dinheiro em mãos; nenhum colega declara que outro pagou.
+4. **Só o gestor registra pagamento.** É ele quem recebe, inclusive o dinheiro em mãos; nenhum colega declara que outro pagou. O participante pode enviar o próprio comprovante, mas ele só vale como pagamento quando o gestor confirma.
 5. **Transparência no agregado.** A caixinha é de todos: total que entrou, gastos por tipo e saldo ficam visíveis a todos. Notas, só a pedido.
 6. **Lembrar sem pressionar.** Lembretes devem tirar o peso da cobrança do gestor sem constranger o colega.
 7. **Confiança no consumo.** O consumo não é medido nem controlado.
@@ -125,6 +125,7 @@ Cada necessidade aponta para onde o domínio já a trata.
 | Saber quem participa e com qual tipo de cota | Gestor | Contexto Participação: [Participante](../dominio/GLOSSARIO.md#participante), [Tipo de cota](../dominio/GLOSSARIO.md#tipo-de-cota) |
 | Saber quem está pendente, sem caçar comprovante | Gestor | Leitura *Crédito e pendentes* (Financeiro) |
 | Registrar pagamento por PIX (com comprovante) ou em dinheiro | Gestor | Comando *Receber pagamento por PIX ou em dinheiro*; [Comprovante](../dominio/GLOSSARIO.md#comprovante) |
+| Enviar o comprovante do PIX sem depender do WhatsApp, e o gestor só conferir | Participante e gestor | Comandos *Enviar comprovante*, *Confirmar comprovante* e *Recusar comprovante*; leitura *Comprovantes enviados* ([ADR 0030](../adr/0030-pagamento-iniciado-pelo-participante.md)) |
 | Aceitar pagamento adiantado de semestre ou ano | Gestor | [Crédito](../dominio/GLOSSARIO.md#crédito) abatido automaticamente |
 | Ver a própria situação (em dia, pendente, crédito) | Participante | Leitura *Crédito e pendentes*, só a do próprio participante |
 | Lembrar quem está pendente sem o gestor cobrar | Gestor | Política de Notificação sobre a leitura *Crédito e pendentes* (Financeiro): uma vez por mês, a partir do dia 10 ([ADR 0027](../adr/0027-lembrete-aos-pendentes.md)) |
@@ -166,3 +167,4 @@ Cada necessidade aponta para onde o domínio já a trata.
 | 1.2 | 2026-10-26 | Decidida a questão do pagamento feito por outra pessoa (#74): o pagamento é do participante cujas cotas ele quita. |
 | 1.3 | 2026-10-26 | Fechada a lacuna da explicação dos valores (#77): todos veem os gastos do ano anterior por tipo de gasto e o valor de cada tipo de cota do ano. |
 | 1.4 | 2026-10-26 | Decidida a questão dos lembretes (#72): aviso da cota devida no início do mês e um lembrete por mês, a partir do dia 10, aos pendentes ativos. |
+| 1.5 | 2026-10-26 | O participante envia o próprio comprovante, que só vale como pagamento quando o gestor confirma (#87). |
