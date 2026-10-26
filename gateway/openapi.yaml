@@ -498,15 +498,16 @@ paths:
       description: |
         Registra uma compra, um conserto, uma manutenção ou uma reposição que a pessoa logada
         pagou, com dinheiro da caixinha ou do próprio bolso. Qualquer participante registra gastos.
-        Basta o valor total e a nota, guardada antes em `guardar-nota` pela própria pessoa logada;
-        cada nota vale para um gasto só. O gasto pago do próprio bolso só sai da caixinha no reembolso.
+        Basta o tipo, o valor total e a nota, guardada antes em `guardar-nota` pela própria pessoa
+        logada; cada nota vale para um gasto só. O gasto pago do próprio bolso só sai da caixinha no
+        reembolso.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [valorEmCentavos, origem, notaId]
+              required: [valorEmCentavos, origem, tipo, notaId]
               properties:
                 valorEmCentavos:
                   type: integer
@@ -518,6 +519,8 @@ paths:
                   type: string
                   enum: [caixinha, proprio-bolso]
                   description: De onde saiu o dinheiro.
+                tipo:
+                  $ref: '#/components/schemas/TipoDeGasto'
                 notaId:
                   type: string
                   format: uuid
@@ -536,7 +539,7 @@ paths:
                     format: uuid
                     description: Identificador do gasto.
         '400':
-          description: Pedido inválido ou acima de 4 KB.
+          description: Pedido inválido ou acima de 4 KB; um gasto sem tipo é inválido.
           content:
             application/json:
               schema:
@@ -729,6 +732,99 @@ paths:
           $ref: '#/components/responses/NaoAutorizado'
         '403':
           $ref: '#/components/responses/AcessoDesativado'
+        '500':
+          $ref: '#/components/responses/ErroInterno'
+  /api/financeiro/caixinha/{mes}:
+    get:
+      tags: [financeiro]
+      operationId: consultarCaixinhaDoMes
+      summary: Caixinha do mês
+      description: |
+        O que entrou na caixinha no mês, o que saiu por tipo de gasto e quanto sobrou. Qualquer
+        participante consulta; mostra só os totais, sem a situação de ninguém. O mês vira à
+        meia-noite de Campo Grande (MS). Saldo no fim = saldo no início + recebido − gastos de todos
+        os tipos; no mês atual, é o saldo da caixinha.
+      parameters:
+        - name: mes
+          in: path
+          required: true
+          description: O mês, no formato `AAAA-MM`.
+          schema:
+            type: string
+            pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+            example: '2026-10'
+      responses:
+        '200':
+          description: Caixinha do mês.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  [
+                    mes,
+                    saldoNoInicioEmCentavos,
+                    recebidoEmCentavos,
+                    gastosPorTipoEmCentavos,
+                    saldoNoFimEmCentavos,
+                  ]
+                properties:
+                  mes:
+                    type: string
+                    description: O mês, no formato `AAAA-MM`.
+                  saldoNoInicioEmCentavos:
+                    type: integer
+                    description: Saldo da caixinha no início do mês, em centavos de real.
+                  recebidoEmCentavos:
+                    type: integer
+                    minimum: 0
+                    description: Pagamentos recebidos no mês, em centavos de real.
+                  gastosPorTipoEmCentavos:
+                    type: object
+                    required: [cafe, outros-itens, conserto-e-manutencao, reposicao]
+                    additionalProperties: false
+                    description: |
+                      O que saiu da caixinha no mês, por tipo de gasto, em centavos de real: os
+                      gastos pagos pela caixinha e os reembolsos feitos no mês. Um gasto pago do
+                      próprio bolso conta no mês do reembolso.
+                    properties:
+                      cafe:
+                        type: integer
+                        minimum: 0
+                      outros-itens:
+                        type: integer
+                        minimum: 0
+                      conserto-e-manutencao:
+                        type: integer
+                        minimum: 0
+                      reposicao:
+                        type: integer
+                        minimum: 0
+                  saldoNoFimEmCentavos:
+                    type: integer
+                    description: Saldo da caixinha no fim do mês, em centavos de real.
+              example:
+                mes: '2026-10'
+                saldoNoInicioEmCentavos: 12000
+                recebidoEmCentavos: 75000
+                gastosPorTipoEmCentavos:
+                  cafe: 42000
+                  outros-itens: 18000
+                  conserto-e-manutencao: 0
+                  reposicao: 2500
+                saldoNoFimEmCentavos: 24500
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/AcessoDesativado'
+        '404':
+          description: O mês não está no formato `AAAA-MM`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              example:
+                error: not-found
         '500':
           $ref: '#/components/responses/ErroInterno'
   /api/financeiro/gasto:
@@ -993,9 +1089,15 @@ components:
       description: |
         Tipo de cota: `so-cafe` dá direito ao café; `completa`, ao café, às bolachas, aos chás e
         aos demais itens da copa.
+    TipoDeGasto:
+      type: string
+      enum: [cafe, outros-itens, conserto-e-manutencao, reposicao]
+      description: |
+        Tipo de gasto: `cafe`; `outros-itens` da copa (açúcar, leite, bolachas, chás, filtros,
+        copos); `conserto-e-manutencao` da máquina de café; `reposicao` de itens quebrados.
     Gasto:
       type: object
-      required: [id, participanteId, valorEmCentavos, origem, notaId, feitoEm, reembolsado]
+      required: [id, participanteId, valorEmCentavos, origem, tipo, notaId, feitoEm, reembolsado]
       properties:
         id:
           type: string
@@ -1013,6 +1115,8 @@ components:
           type: string
           enum: [caixinha, proprio-bolso]
           description: De onde saiu o dinheiro.
+        tipo:
+          $ref: '#/components/schemas/TipoDeGasto'
         notaId:
           type: string
           format: uuid
@@ -1029,6 +1133,7 @@ components:
         participanteId: 4f1c2a9e-8b7d-4c3a-9e2f-1a2b3c4d5e6f
         valorEmCentavos: 4590
         origem: proprio-bolso
+        tipo: cafe
         notaId: 9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d
         feitoEm: '2026-11-20T15:00:00.000Z'
         reembolsado: false
