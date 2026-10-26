@@ -53,7 +53,7 @@ Contratos de eventos em `contracts/events/` também seguem SemVer: mudança inco
 - Antes de implementar, leia as regras da funcionalidade; mudança de comportamento que contraria um cenário é mudança de regra, e o cenário muda junto.
 - Regra que deixa de valer é removida do arquivo e do índice; o ID não volta a ser usado.
 - O glossário e MODELOS.md apontam para as regras por ID, sem repetir o texto: termo novo entra no glossário, regra nova entra em `docs/requisitos/`.
-- `pnpm lint` falha com ID duplicado, ID citado em teste que não existe, índice desatualizado ou regra sem teste; `node scripts/check-requisitos.ts --matriz` gera a matriz de rastreabilidade.
+- `pnpm lint` falha com ID fora do formato ou duplicado, ID citado em teste que não existe, arquivo com regras sem exatamente uma funcionalidade, índice desatualizado, regra sem teste ou regra sem `Cenário`; `node scripts/check-requisitos.ts --matriz` gera a matriz de rastreabilidade.
 - Issue e PR citam os IDs afetados nos campos **Requisitos** e **Requisitos afetados**.
 
 ## Decisões — ADRs

@@ -1,10 +1,13 @@
 import { globSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-const ID = /\bR(?:F|N|NF)-(?:[A-Z]{3}-)?\d{2}\b/g;
-const HEADING = /^#{1,3} (R(?:F|N|NF)-(?:[A-Z]{3}-)?\d{2}) (.+)$/;
+// Loose on purpose, so a malformed ID (`RN-FIN-7`, `RN-01`) is read and then reported, not skipped.
+const ID = /\bR(?:F|N|NF)-(?:[A-Z]+-)?\d+\b/g;
+const FORMATO = /^(?:R[FN]-(?:PAR|FIN|USU|NOT|AGE|WEB)|RNF)-\d{2,}$/;
+const HEADING = /^#{1,3} (R(?:F|N|NF)-(?:[A-Z]+-)?\d+) (.+)$/;
 const REVISAO = /^- Verificação: revisão\b/;
-const LINHA_DO_INDICE = /^\| \[(RF-[A-Z]{3}-\d{2})\]\(([^)]+)\) \|/;
+const CENARIO = /^\s*Cenário:/;
+const LINHA_DO_INDICE = /^\| \[(RF-[A-Z]+-\d+)\]\(([^)]+)\) \|/;
 
 /** A requisito (RF, RN or RNF) defined by a heading `# ID Título` in docs/requisitos/ (ADR 0032). */
 export type Requisito = {
@@ -14,6 +17,8 @@ export type Requisito = {
   readonly linha: number;
   /** Marked `- Verificação: revisão`: verified by review, no test required. */
   readonly revisao: boolean;
+  /** Has at least one Gherkin `Cenário:` under its heading. */
+  readonly comCenario: boolean;
 };
 
 /** An ID cited in a test file. */
@@ -21,23 +26,21 @@ export type Citacao = { readonly id: string; readonly arquivo: string; readonly 
 
 /** Requisitos defined in a Markdown file, in order. */
 export const requisitosDe = (arquivo: string, texto: string): readonly Requisito[] => {
-  const requisitos: Requisito[] = [];
-  texto.split('\n').forEach((line, i) => {
+  const linhas = texto.split('\n');
+  const headings = linhas.flatMap((line, i) => {
     const heading = HEADING.exec(line);
-    const ultimo = requisitos.at(-1);
-    if (heading?.[1] && heading[2]) {
-      requisitos.push({
-        id: heading[1],
-        titulo: heading[2],
-        arquivo,
-        linha: i + 1,
-        revisao: false,
-      });
-    } else if (REVISAO.test(line) && ultimo) {
-      requisitos[requisitos.length - 1] = { ...ultimo, revisao: true };
-    }
+    return heading?.[1] && heading[2]
+      ? [{ id: heading[1], titulo: heading[2], arquivo, linha: i + 1 }]
+      : [];
   });
-  return requisitos;
+  return headings.map((heading, n) => {
+    const secao = linhas.slice(heading.linha, (headings[n + 1]?.linha ?? linhas.length + 1) - 1);
+    return {
+      ...heading,
+      revisao: secao.some((line) => REVISAO.test(line)),
+      comCenario: secao.some((line) => CENARIO.test(line)),
+    };
+  });
 };
 
 /** IDs cited anywhere in a test file, with their line. */
@@ -51,26 +54,37 @@ const mesmoConjunto = (a: readonly string[], b: readonly string[]) =>
   a.length === b.length && [...a].sort().join() === [...b].sort().join();
 
 /**
- * Problems in the requisitos: duplicated IDs, cited IDs that do not exist, an index out of sync with
- * the files, and RN/RNF without a test nor `Verificação: revisão`.
+ * Problems in the requisitos: IDs out of format or duplicated, cited IDs that do not exist, files
+ * with RN but not exactly one RF, an index out of sync with the files, RN/RNF without a test nor
+ * `Verificação: revisão`, and RN without Cenário.
  */
 export const verificar = (
   requisitos: readonly Requisito[],
   indice: { readonly arquivo: string; readonly texto: string },
   citacoes: readonly Citacao[],
 ): readonly string[] => {
-  const definidos = new Map<string, Requisito>();
-  const duplicados = requisitos.flatMap((r) => {
-    const primeiro = definidos.get(r.id);
-    if (!primeiro) definidos.set(r.id, r);
-    return primeiro ? [`${onde(r)} ${r.id} duplicado (já definido em ${onde(primeiro)})`] : [];
-  });
+  const foraDoFormato = requisitos
+    .filter((r) => !FORMATO.test(r.id))
+    .map((r) => `${onde(r)} ${r.id} fora do formato RF-<CTX>-NN, RN-<CTX>-NN ou RNF-NN`);
+
+  const definidos = new Map(requisitos.toReversed().map((r) => [r.id, r]));
+  const duplicados = requisitos
+    .filter((r) => definidos.get(r.id) !== r)
+    .map((r) => `${onde(r)} ${r.id} duplicado (já definido em ${onde(definidos.get(r.id) ?? r)})`);
 
   const inexistentes = citacoes
     .filter((c) => !definidos.has(c.id))
     .map((c) => `${onde(c)} ${c.id} não existe em docs/requisitos/`);
 
   const porArquivo = Map.groupBy(requisitos, (r) => r.arquivo);
+  const semUmaFuncionalidade = [...porArquivo].flatMap(([arquivo, rs]) => {
+    const rfs = rs.filter((r) => r.id.startsWith('RF-')).length;
+    if (rfs > 1) return [`${arquivo} define mais de uma funcionalidade`];
+    return rfs === 0 && rs.some((r) => r.id.startsWith('RN-'))
+      ? [`${arquivo} regras sem funcionalidade (falta o # RF-)`]
+      : [];
+  });
+
   const funcionalidades = new Map(
     [...porArquivo].flatMap(([arquivo, rs]) =>
       rs.some((r) => r.id.startsWith('RF-')) ? [[arquivo, rs.map((r) => r.id)]] : [],
@@ -98,7 +112,20 @@ export const verificar = (
     .filter((r) => !r.id.startsWith('RF-') && !r.revisao && !citados.has(r.id))
     .map((r) => `${onde(r)} ${r.id} sem teste que o cite (ou marque "- Verificação: revisão")`);
 
-  return [...duplicados, ...inexistentes, ...indiceErrado, ...foraDoIndice, ...semTeste];
+  const semCenario = requisitos
+    .filter((r) => r.id.startsWith('RN-') && !r.comCenario)
+    .map((r) => `${onde(r)} ${r.id} sem Cenário`);
+
+  return [
+    ...foraDoFormato,
+    ...duplicados,
+    ...inexistentes,
+    ...semUmaFuncionalidade,
+    ...indiceErrado,
+    ...foraDoIndice,
+    ...semTeste,
+    ...semCenario,
+  ];
 };
 
 /** Traceability matrix (RF → RN → tests) in Markdown. */
