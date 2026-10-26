@@ -47,8 +47,11 @@
   background: var(--pure-white);
   font-family: var(--fonte-corpo);
   line-height: 1.5;
-  /* Nome ou e-mail longo quebra em vez de alargar a página a 320 px. */
-  overflow-wrap: break-word;
+  /*
+   * Nome ou e-mail longo quebra em vez de alargar a página a 320 px. `anywhere`, e não `break-word`,
+   * porque só ele reduz a largura mínima de células de tabela e itens flex.
+   */
+  overflow-wrap: anywhere;
 }
 
 /* Mobile first (ADR 0028): o estilo base é o do celular; a partir de 48rem, o do computador. */

@@ -21,7 +21,13 @@ test.use({
 type Usuario = { readonly usuario: string; readonly nome: string; readonly email: string };
 
 // A new usuário per test, so the tests do not depend on each other.
-const novoUsuario = async (): Promise<Usuario> => {
+const novoUsuario = async ({
+  sobrenome,
+  gestor = false,
+}: {
+  readonly sobrenome?: string;
+  readonly gestor?: boolean;
+} = {}): Promise<Usuario> => {
   const usuario = `e2e-${randomUUID().slice(0, 8)}`;
   const email = `${usuario}@facoffee.local`;
   return test.step(`Criar o usuário ${usuario} no Keycloak`, async () => {
@@ -34,24 +40,38 @@ const novoUsuario = async (): Promise<Usuario> => {
         password: process.env.KEYCLOAK_ADMIN_PASSWORD ?? 'admin',
       }),
     });
+    const headers = {
+      authorization: `Bearer ${(await admin.json()).access_token}`,
+      'content-type': 'application/json',
+    };
     const criado = await fetch(`${KEYCLOAK}/admin/realms/facoffee/users`, {
       method: 'POST',
-      headers: {
-        authorization: `Bearer ${(await admin.json()).access_token}`,
-        'content-type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({
         username: usuario,
         email,
         firstName: 'E2E',
-        lastName: usuario,
+        lastName: sobrenome ?? usuario,
         enabled: true,
         emailVerified: true,
         credentials: [{ type: 'password', value: usuario, temporary: false }],
       }),
     });
     expect(criado.status).toBe(201);
-    return { usuario, nome: `E2E ${usuario}`, email };
+    if (gestor) {
+      const papel = await fetch(`${KEYCLOAK}/admin/realms/facoffee/roles/gestor`, { headers });
+      const id = criado.headers.get('location')?.split('/').pop();
+      const mapeado = await fetch(
+        `${KEYCLOAK}/admin/realms/facoffee/users/${id}/role-mappings/realm`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify([await papel.json()]),
+        },
+      );
+      expect(mapeado.status).toBe(204);
+    }
+    return { usuario, nome: `E2E ${sobrenome ?? usuario}`, email };
   });
 };
 
@@ -137,24 +157,28 @@ const assuntosDosEmails = async (email: string): Promise<readonly string[]> => {
   return (await r.json()).messages.map((m: { Subject: string }) => m.Subject);
 };
 
-test('entrar, cota devida e pagamento recebido: crédito correto e e-mail enviado', async ({
-  browser,
-}) => {
+test('entrar, cota devida e pagamento recebido: crédito correto e e-mail enviado', {
+  tag: '@celular',
+}, async ({ browser }) => {
   const pessoa = await novoUsuario();
   const participante = await entrarNoFacoffee(browser, pessoa.usuario);
   const gestor = await entrarNoFacoffee(browser, 'gestor');
   await pedirEntrada(participante, pessoa.usuario);
 
   await test.step('Gestor define o valor da cota Só café: R$ 20,00', async () => {
+    // Once per ano: the other project's run of this test, on the same stack, may have defined it.
+    await gestor.goto('/caixinha');
+    const soCafe = gestor
+      .getByRole('table', { name: /^Valor da cota em \d+$/ })
+      .getByRole('row')
+      .filter({ hasText: 'Só café' });
+    const indefinido = gestor.getByText('O valor da cota deste ano ainda não foi definido.');
+    await expect(soCafe.or(indefinido)).toBeVisible();
+    if (await soCafe.isVisible()) return expect(soCafe).toContainText(/R\$\s20,00/);
     await gestor.goto('/valor-da-cota');
     await gestor.getByLabel('Valor mensal (R$)').fill('20');
     await gestor.getByRole('button', { name: 'Definir valor da cota' }).click();
-    // The other project's run of this test, on the same stack, may have defined it already.
-    await expect(
-      gestor.getByText(
-        /^(Valor da cota Só café em \d+ definido|O valor desse tipo de cota já foi definido para esse ano)\.$/,
-      ),
-    ).toBeVisible();
+    await expect(gestor.getByText(/^Valor da cota Só café em \d+ definido\.$/)).toBeVisible();
   });
 
   await test.step('Todo início de mês: a cota de R$ 20,00 fica devida', async () => {
@@ -207,16 +231,18 @@ test('entrar, cota devida e pagamento recebido: crédito correto e e-mail enviad
   });
 });
 
-test('telas do gestor: gasto do próprio bolso e nenhuma tela rola na horizontal', async ({
-  browser,
-}) => {
-  const gestor = await entrarNoFacoffee(browser, 'gestor');
-
-  // Only who has pedido entrada has gastos; the other project's run may have done it already.
-  await expect(gestor.getByRole('heading', { name: 'Participação' })).toBeVisible();
-  if (await gestor.getByRole('button', { name: 'Pedir entrada' }).isVisible())
-    await pedirEntrada(gestor, 'gestor');
-  await participarNaTelaDoGestor(gestor, 'Gestor Teste');
+test('telas do gestor: gasto do próprio bolso e nenhuma tela rola na horizontal', {
+  tag: '@celular',
+}, async ({ browser }) => {
+  // A new gestor per run, whose name has a word wider than 320 px: in the topo and the tables.
+  const pessoa = await novoUsuario({
+    sobrenome: `Wolfeschlegelsteinhausenbergerdorff${randomUUID().slice(0, 4)}`,
+    gestor: true,
+  });
+  const gestor = await entrarNoFacoffee(browser, pessoa.usuario);
+  // Only who has pedido entrada has gastos.
+  await pedirEntrada(gestor, pessoa.usuario);
+  await participarNaTelaDoGestor(gestor, pessoa.nome);
 
   await test.step('Gestor registra um gasto de R$ 12,34 pago do próprio bolso', async () => {
     await gestor.goto('/gastos');
@@ -231,7 +257,7 @@ test('telas do gestor: gasto do próprio bolso e nenhuma tela rola na horizontal
     await gestor.getByRole('button', { name: 'Registrar gasto' }).click();
     await expect(gestor.getByText('Gasto registrado.', { exact: true })).toBeVisible();
     await expect(
-      gestor.getByRole('button', { name: /^Reembolsar R\$\s12,34 a / }).first(),
+      linhaDe(gestor, pessoa.nome).getByRole('button', { name: /^Reembolsar R\$\s12,34 a / }),
     ).toBeVisible();
   });
 
