@@ -292,59 +292,35 @@ td {
 
 /*
  * Tabela com mais de três colunas: no celular, cada linha vira um bloco e cada célula traz o rótulo
- * da coluna (data-rotulo), escondido do leitor de tela, que já anuncia o cabeçalho.
+ * da coluna (data-rotulo), escondido do leitor de tela, que já anuncia o cabeçalho. Só abaixo de
+ * 48rem (ADR 0028): a tabela é o estilo do navegador, e desfazê-la no computador custaria o dobro.
  */
-.empilhada thead {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
-.empilhada tr {
-  display: block;
-  padding-block: 0.75rem;
-  border-bottom: 1px solid var(--light-sand);
-}
-
-.empilhada :is(th, td) {
-  display: block;
-  padding: 0.125rem 0;
-  border: 0;
-}
-
-.empilhada td::before {
-  content: attr(data-rotulo) ": ";
-  content: attr(data-rotulo) ": " / "";
-  color: var(--muted-mocha);
-}
-
-@media (min-width: 48rem) {
+@media (width < 48rem) {
   .empilhada thead {
-    position: static;
-    width: auto;
-    height: auto;
-    overflow: visible;
-    clip-path: none;
-    white-space: normal;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   .empilhada tr {
-    display: table-row;
-    padding: 0;
-    border: 0;
-  }
-
-  .empilhada :is(th, td) {
-    display: table-cell;
-    padding: 0.5rem 0.75rem 0.5rem 0;
+    display: block;
+    padding-block: 0.75rem;
     border-bottom: 1px solid var(--light-sand);
   }
 
+  .empilhada :is(th, td) {
+    display: block;
+    padding: 0.125rem 0;
+    border: 0;
+  }
+
   .empilhada td::before {
-    content: none;
+    content: attr(data-rotulo) ": ";
+    content: attr(data-rotulo) ": " / "";
+    color: var(--muted-mocha);
   }
 }
 
