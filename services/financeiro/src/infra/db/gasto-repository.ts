@@ -15,6 +15,7 @@ export const buscarGastos =
         participanteId: gastos.participanteId,
         valorEmCentavos: gastos.valorEmCentavos,
         origem: gastos.origem,
+        tipo: gastos.tipo,
         notaId: gastos.notaId,
         feitoEm: gastos.feitoEm,
         reembolsado: isNotNull(reembolsos.id).mapWith(Boolean),

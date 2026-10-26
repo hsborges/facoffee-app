@@ -5,10 +5,10 @@
 | **Escopo** | Divisão de custos da copa da FACOM |
 | **Sistema** | FACOFFEE |
 | **Disciplina** | Técnicas Avançadas de Desenvolvimento de Software (2026/2) |
-| **Versão** | 1.0 |
-| **Data** | 2026-10-25 |
+| **Versão** | 1.1 |
+| **Data** | 2026-10-26 |
 | **Status** | Proposto |
-| **Base** | [Glossário](../dominio/GLOSSARIO.md) (versão 2.4) e [Modelos de Domínio](../dominio/MODELOS.md) (versão 2.6) |
+| **Base** | [Glossário](../dominio/GLOSSARIO.md) (versão 2.5) e [Modelos de Domínio](../dominio/MODELOS.md) (versão 2.7) |
 
 ## Propósito
 
@@ -131,7 +131,7 @@ Cada necessidade aponta para onde o domínio já a trata.
 | Avisar o valor da cota do ano | Todos | Evento *Valor da cota definido* → Notificação |
 | Avisar o início da cobrança do mês | Todos | **Lacuna:** *Cota devida* vai só para Financeiro, não para Notificação ([#72](../../../../issues/72)) |
 | Registrar gastos com nota e reembolsar quem pagou | Gestor | [Gasto](../dominio/GLOSSARIO.md#gasto), [Nota](../dominio/GLOSSARIO.md#nota), [Reembolso](../dominio/GLOSSARIO.md#reembolso) |
-| Resumo do mês: entrou, saiu e sobrou | Todos | Leitura *Saldo da caixinha*. **Lacuna:** ela dá só o saldo; o total que entrou no mês e o gasto por tipo não existem ([#73](../../../../issues/73)) |
+| Resumo do mês: entrou, saiu e sobrou | Todos | Leitura *Caixinha do mês* (Financeiro), com o que saiu por [Tipo de gasto](../dominio/GLOSSARIO.md#tipo-de-gasto) |
 | Pedir complemento quando a caixinha não dá conta | Gestor | [Complemento](../dominio/GLOSSARIO.md#complemento) |
 | Embasar o valor da cota do ano | Gestor e participantes | Leitura *Gastos do ano anterior*. **Lacuna:** hoje só o gestor a usa ([#77](../../../../issues/77)) |
 
@@ -149,16 +149,17 @@ Cada necessidade aponta para onde o domínio já a trata.
 ## Questões em aberto
 
 1. **Lembretes** ([#72](../../../../issues/72)). É a prioridade 1, mas o modelo atual não tem como disparar: Notificação não recebe *Cota devida* nem nada sobre cota ou complemento pendente. O gestor também nunca pensou em lembretes vindos de outro lugar; só não quer que o pessoal se sinta pressionado. Gatilho, frequência e canal (e-mail, WhatsApp) precisam ser decididos e validados com ele.
-2. **Gasto por tipo** ([#73](../../../../issues/73)). O gestor quer mostrar o total gasto por tipo de coisa (café, bolacha, conserto), mas o [Gasto](../dominio/GLOSSARIO.md#gasto) hoje não tem tipo. Exige um termo novo no glossário e mudança no Financeiro.
-3. **Pagamento feito por outra pessoa** ([#74](../../../../issues/74)). Às vezes alguém paga pelo outro. Falta definir no domínio a quem o pagamento é atribuído.
-4. **Desequilíbrio entre os tipos de cota.** Alguns participantes do tipo de cota só café consomem bolacha e chá. O gestor quer mais equilíbrio, mas não quer controlar consumo. O produto pode, no máximo, deixar claro o que cada tipo de cota inclui.
+2. **Pagamento feito por outra pessoa** ([#74](../../../../issues/74)). Às vezes alguém paga pelo outro. Falta definir no domínio a quem o pagamento é atribuído.
+3. **Desequilíbrio entre os tipos de cota.** Alguns participantes do tipo de cota só café consomem bolacha e chá. O gestor quer mais equilíbrio, mas não quer controlar consumo. O produto pode, no máximo, deixar claro o que cada tipo de cota inclui.
 
 ### Decididas
 
 - **Substituto do gestor.** Não é problema: quando o gestor viaja, outros colegas ajudam informalmente. O FACOFFEE não precisa de um papel de substituto.
+- **Gasto por tipo** ([#73](../../../../issues/73)). Todo gasto tem um [tipo de gasto](../dominio/GLOSSARIO.md#tipo-de-gasto): café, outros itens da copa, conserto e manutenção ou reposição. O resumo do mês mostra a todos o que entrou, o que saiu com cada tipo e o saldo no início e no fim do mês.
 
 ## Histórico de revisões
 
 | Versão | Data | Alterações |
 |---|---|---|
 | 1.0 | 2026-10-25 | Primeira versão, a partir de entrevista com o gestor da copa. |
+| 1.1 | 2026-10-26 | Decidida a questão do gasto por tipo (#73): o resumo do mês é a leitura *Caixinha do mês*. |

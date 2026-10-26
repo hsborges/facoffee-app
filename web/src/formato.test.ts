@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dataEmCampoGrande, emCentavos, emReais, mesPorExtenso } from './formato';
+import { dataEmCampoGrande, emCentavos, emReais, mesEmCampoGrande, mesPorExtenso } from './formato';
 
 describe('emReais', () => {
   it('shows centavos as reais', () => {
@@ -28,5 +28,12 @@ describe('mesPorExtenso', () => {
 describe('dataEmCampoGrande', () => {
   it('shows the day in Campo Grande, where the copa is', () => {
     expect(dataEmCampoGrande('2026-11-21T02:00:00.000Z')).toBe('20/11/2026');
+  });
+});
+
+describe('mesEmCampoGrande', () => {
+  it('turns the month at midnight in Campo Grande, not in UTC', () => {
+    expect(mesEmCampoGrande(new Date('2026-11-01T03:59:59Z'))).toBe('2026-10');
+    expect(mesEmCampoGrande(new Date('2026-11-01T04:00:00Z'))).toBe('2026-11');
   });
 });

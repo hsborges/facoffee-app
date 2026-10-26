@@ -4,6 +4,20 @@ export const ORIGENS = ['caixinha', 'proprio-bolso'] as const;
 /** Origem do dinheiro of a gasto. */
 export type Origem = (typeof ORIGENS)[number];
 
+/**
+ * What the gasto was for: café, outros itens da copa (açúcar, leite, bolachas, chás, filtros,
+ * copos), conserto e manutenção da máquina, or reposição de itens quebrados.
+ */
+export const TIPOS_DE_GASTO = [
+  'cafe',
+  'outros-itens',
+  'conserto-e-manutencao',
+  'reposicao',
+] as const;
+
+/** Tipo de gasto. */
+export type TipoDeGasto = (typeof TIPOS_DE_GASTO)[number];
+
 /** A compra, conserto, manutenção or reposição; only the valor total and the nota are kept. */
 export type Gasto = {
   readonly id: string;
@@ -11,13 +25,14 @@ export type Gasto = {
   readonly participanteId: string;
   readonly valorEmCentavos: number;
   readonly origem: Origem;
+  readonly tipo: TipoDeGasto;
   /** The nota guardada with `/guardar-nota`. */
   readonly notaId: string;
   readonly feitoEm: Date;
 };
 
 /** What a participante informs when registering a gasto. */
-export type PedidoDeGasto = Pick<Gasto, 'valorEmCentavos' | 'origem' | 'notaId'>;
+export type PedidoDeGasto = Pick<Gasto, 'valorEmCentavos' | 'origem' | 'tipo' | 'notaId'>;
 
 /**
  * How much the gasto takes out of the caixinha. A gasto pago do próprio bolso takes nothing: its

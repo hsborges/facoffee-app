@@ -12,6 +12,7 @@ const gasto = (id: string, origem: Gasto['origem']): Gasto => ({
   participanteId: '7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d',
   valorEmCentavos: 4590,
   origem,
+  tipo: 'cafe',
   notaId: `nota-${id}`,
   feitoEm: now,
 });

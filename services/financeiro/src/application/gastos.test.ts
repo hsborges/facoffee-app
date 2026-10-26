@@ -6,7 +6,12 @@ import { type Gastos, registrarGasto } from './gastos.js';
 const p1 = '7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d';
 const p2 = '8b7c6d5e-4f3a-4b2c-8d9e-0f1a2b3c4d5e';
 const now = new Date('2026-11-10T15:00:00Z');
-const doBolso: PedidoDeGasto = { valorEmCentavos: 4590, origem: 'proprio-bolso', notaId: 'nota-1' };
+const doBolso: PedidoDeGasto = {
+  valorEmCentavos: 4590,
+  origem: 'proprio-bolso',
+  tipo: 'reposicao',
+  notaId: 'nota-1',
+};
 
 const inMemory = (conhecidos = [p1]) => {
   const salvos: Gasto[] = [];

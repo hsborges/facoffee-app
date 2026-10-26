@@ -5,10 +5,16 @@ import type { GastoListado, RegistrarGastoErro } from '../application/gastos.js'
 import type { ReceberPagamentoErro } from '../application/pagamentos.js';
 import type { ReembolsarGastoErro } from '../application/reembolsos.js';
 import { type ArquivoInvalido, type Solicitante, TAMANHO_MAXIMO } from '../domain/arquivo.js';
-import type { Caixinha } from '../domain/caixinha.js';
+import type { Caixinha, CaixinhaDoMes, Mes } from '../domain/caixinha.js';
 import type { SolicitarErro } from '../domain/complemento.js';
 import type { MinhaSituacao, Situacao } from '../domain/credito.js';
-import { ORIGENS, type Origem, type PedidoDeGasto } from '../domain/gasto.js';
+import {
+  ORIGENS,
+  type Origem,
+  type PedidoDeGasto,
+  TIPOS_DE_GASTO,
+  type TipoDeGasto,
+} from '../domain/gasto.js';
 import { FORMAS, type Forma, type PedidoDePagamento } from '../domain/pagamento.js';
 import type { Result } from '../domain/result.js';
 import type { Logger } from '../infra/logger.js';
@@ -46,6 +52,7 @@ export type ApiDependencies = {
     valorTotalEmCentavos: number,
   ) => Promise<Result<string, SolicitarErro>>;
   readonly consultarCaixinha: () => Promise<Caixinha>;
+  readonly consultarCaixinhaDoMes: (mes: Mes) => Promise<CaixinhaDoMes>;
   readonly listarGastos: (
     solicitante: Pick<Solicitante, 'perfis'>,
   ) => Promise<Result<readonly GastoListado[], 'sem-permissao'>>;
@@ -60,6 +67,7 @@ export type ApiDependencies = {
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const MES = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 // Identity comes from the gateway in X-User-Id and X-User-Roles (ADR 0007).
 const solicitante = (c: Context): Solicitante | undefined => {
@@ -112,14 +120,20 @@ const pedidoDePagamento = async (c: Context): Promise<PedidoDePagamento | undefi
 
 const pedidoDeGasto = async (c: Context): Promise<PedidoDeGasto | undefined> => {
   const corpo = (await c.req.json().catch(() => undefined)) as Record<string, unknown> | undefined;
-  const { valorEmCentavos, origem, notaId } = corpo ?? {};
+  const { valorEmCentavos, origem, tipo, notaId } = corpo ?? {};
   const valido =
     inteiroPositivo(valorEmCentavos) &&
     ORIGENS.includes(origem as Origem) &&
+    TIPOS_DE_GASTO.includes(tipo as TipoDeGasto) &&
     typeof notaId === 'string' &&
     UUID.test(notaId);
   return valido
-    ? { valorEmCentavos, origem: origem as Origem, notaId: notaId.toLowerCase() }
+    ? {
+        valorEmCentavos,
+        origem: origem as Origem,
+        tipo: tipo as TipoDeGasto,
+        notaId: notaId.toLowerCase(),
+      }
     : undefined;
 };
 
@@ -163,10 +177,12 @@ const baixado = (c: Context, result: Result<Arquivo, NaoEncontrado>) =>
  * (multipart, up to 5 MB, PDF, JPEG or PNG); `GET /comprovante/:id` serves only the participante
  * and the gestor, and `GET /nota/:id` any participante. The gestor receives pagamentos with
  * `POST /receber-pagamento` (JSON; a pagamento por PIX references its comprovante). Any
- * participante registers a gasto with `POST /registrar-gasto` (JSON, referencing a nota they guardaram).
+ * participante registers a gasto with `POST /registrar-gasto` (JSON, with its tipo and referencing a
+ * nota they guardaram).
  * The gestor reembolsa a gasto pago do próprio bolso with `POST /gasto/:id/reembolsar` and
  * solicita a complemento with `POST /solicitar-complemento` (JSON, the valor total).
  * Leituras *Saldo da caixinha* and *Gastos do ano anterior*: `GET /caixinha`, for any participante.
+ * Leitura *Caixinha do mês*: `GET /caixinha/:mes` (`AAAA-MM`), for any participante.
  * Leitura *Gastos*: `GET /gasto`, every gasto with whether it was reembolsado, only for the gestor.
  * Leitura *Crédito e pendentes*: `GET /participante` lists every participante, only for the
  * gestor; `GET /participante/eu` gives the logged-in participante their own, with their cotas and
@@ -184,6 +200,7 @@ export const createApp = ({
   reembolsarGasto,
   solicitarComplemento,
   consultarCaixinha,
+  consultarCaixinhaDoMes,
   listarGastos,
   listarCreditoEPendentes,
   consultarCreditoEPendente,
@@ -272,6 +289,12 @@ export const createApp = ({
     .get('/caixinha', async (c) => {
       if (!solicitante(c)) return c.json({ error: 'unauthorized' }, 401);
       return c.json(await consultarCaixinha());
+    })
+    .get('/caixinha/:mes', async (c) => {
+      if (!solicitante(c)) return c.json({ error: 'unauthorized' }, 401);
+      const mes = c.req.param('mes');
+      if (!MES.test(mes)) return c.json({ error: 'not-found' }, 404);
+      return c.json(await consultarCaixinhaDoMes(mes));
     })
     .get('/gasto', async (c) => {
       const quem = solicitante(c);

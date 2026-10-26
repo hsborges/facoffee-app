@@ -1,4 +1,4 @@
-import type { TipoDeCota } from './api';
+import type { TipoDeCota, TipoDeGasto } from './api';
 
 const reais = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -13,6 +13,15 @@ const meses = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric',
 
 /** A month `AAAA-MM` by name: `novembro de 2026`. */
 export const mesPorExtenso = (mes: string) => meses.format(new Date(`${mes}-01T00:00:00Z`));
+
+const mesesEmCampoGrande = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/Campo_Grande',
+  year: 'numeric',
+  month: '2-digit',
+});
+
+/** The month `AAAA-MM` of an instant in Campo Grande, where the copa is (ADR 0015). */
+export const mesEmCampoGrande = (instante: Date) => mesesEmCampoGrande.format(instante);
 
 // Days turn at midnight in Campo Grande, where the copa is (ADR 0015).
 const datas = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Campo_Grande' });
@@ -30,4 +39,12 @@ export const NOME_DO_TIPO_DE_COTA: Readonly<Record<TipoDeCota, string>> = {
 export const ITENS_DO_TIPO_DE_COTA: Readonly<Record<TipoDeCota, string>> = {
   'so-cafe': 'Café.',
   completa: 'Café, bolachas, chás e os demais itens da copa.',
+};
+
+/** Name of each tipo de gasto, with what it covers. */
+export const NOME_DO_TIPO_DE_GASTO: Readonly<Record<TipoDeGasto, string>> = {
+  cafe: 'Café',
+  'outros-itens': 'Outros itens da copa',
+  'conserto-e-manutencao': 'Conserto e manutenção',
+  reposicao: 'Reposição de itens quebrados',
 };

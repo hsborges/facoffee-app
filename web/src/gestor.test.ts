@@ -80,7 +80,7 @@ describe('registrarGasto', () => {
       Response.json({ id: 'nota' }, { status: 201 }),
       Response.json({ id: 'gasto' }, { status: 201 }),
     );
-    const gasto = { valorEmCentavos: 4590, origem: 'proprio-bolso' } as const;
+    const gasto = { valorEmCentavos: 4590, origem: 'proprio-bolso', tipo: 'cafe' } as const;
 
     expect(await registrarGasto('token', { ...gasto, nota: arquivo })).toEqual({
       feito: true,
@@ -97,7 +97,12 @@ describe('registrarGasto', () => {
   it('does not register the gasto when the nota is not guardada', async () => {
     const chamadas = responde(Response.json({ error: 'arquivo-grande-demais' }, { status: 413 }));
     expect(
-      await registrarGasto('token', { valorEmCentavos: 4590, origem: 'caixinha', nota: arquivo }),
+      await registrarGasto('token', {
+        valorEmCentavos: 4590,
+        origem: 'caixinha',
+        tipo: 'reposicao',
+        nota: arquivo,
+      }),
     ).toEqual({ feito: false, erro: 'arquivo-grande-demais' });
     expect(chamadas()).toHaveLength(1);
   });

@@ -21,6 +21,7 @@ const doBolso: Gasto = {
   participanteId: contrato.payload.participantId,
   valorEmCentavos: contrato.payload.amountInCents,
   origem: 'proprio-bolso',
+  tipo: 'conserto-e-manutencao',
   notaId: '11111111-1111-4111-8111-111111111111',
   feitoEm: new Date('2026-10-30T12:00:00Z'),
 };

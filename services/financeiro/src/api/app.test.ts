@@ -40,6 +40,7 @@ const gastoDoBolso: Gasto = {
   participanteId: participante,
   valorEmCentavos: 4590,
   origem: 'proprio-bolso',
+  tipo: 'cafe',
   notaId: outro,
   feitoEm: new Date(),
 };
@@ -98,6 +99,18 @@ const app = (deps: Partial<ApiDependencies> = {}) => {
     consultarCaixinha: async () => ({
       saldoEmCentavos: -1500,
       gastosDoAnoAnteriorEmCentavos: 90000,
+    }),
+    consultarCaixinhaDoMes: async (mes) => ({
+      mes,
+      saldoNoInicioEmCentavos: 1000,
+      recebidoEmCentavos: 500,
+      gastosPorTipoEmCentavos: {
+        cafe: 300,
+        'outros-itens': 0,
+        'conserto-e-manutencao': 0,
+        reposicao: 0,
+      },
+      saldoNoFimEmCentavos: 1200,
     }),
     listarGastos: listarGastos(async () => []),
     listarCreditoEPendentes: listarCreditoEPendentes(buscarTotais),
@@ -343,6 +356,7 @@ describe('POST /registrar-gasto', () => {
       const response = await registrar(api, doParticipante, {
         valorEmCentavos: 4590,
         origem,
+        tipo: 'outros-itens',
         notaId: notaId.toUpperCase(),
       });
       expect(response.status).toBe(201);
@@ -354,7 +368,7 @@ describe('POST /registrar-gasto', () => {
     const api = app();
     const notaDoOutro = await comNota(api, doOutro);
     for (const notaId of [outro, notaDoOutro]) {
-      const body = { valorEmCentavos: 4590, origem: 'caixinha', notaId };
+      const body = { valorEmCentavos: 4590, origem: 'caixinha', tipo: 'cafe', notaId };
       const response = await registrar(api, doParticipante, body);
       expect(response.status).toBe(404);
       expect(await response.json()).toEqual({ error: 'nota-nao-encontrada' });
@@ -362,13 +376,15 @@ describe('POST /registrar-gasto', () => {
   });
 
   it('400 for an invalid pedido and 401 without the logged-in person', async () => {
-    const valido = { valorEmCentavos: 4590, origem: 'caixinha', notaId: outro };
+    const valido = { valorEmCentavos: 4590, origem: 'caixinha', tipo: 'cafe', notaId: outro };
     for (const body of [
       { ...valido, valorEmCentavos: 0 },
       { ...valido, valorEmCentavos: 10.5 },
       { ...valido, origem: 'cartao' },
+      { ...valido, tipo: 'bolacha' },
+      { valorEmCentavos: 4590, origem: 'caixinha', notaId: outro },
       { ...valido, notaId: 'abc' },
-      { valorEmCentavos: 4590, origem: 'caixinha' },
+      { valorEmCentavos: 4590, origem: 'caixinha', tipo: 'cafe' },
       'nao-e-objeto',
       { ...valido, observacao: 'x'.repeat(5000) },
     ]) {
@@ -479,6 +495,23 @@ describe('GET /caixinha', () => {
       gastosDoAnoAnteriorEmCentavos: 90000,
     });
     expect((await app().request('/caixinha')).status).toBe(401);
+  });
+});
+
+describe('GET /caixinha/:mes', () => {
+  it('gives any participante the caixinha of the month', async () => {
+    const response = await app().request('/caixinha/2026-10', { headers: doParticipante });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ mes: '2026-10', saldoNoFimEmCentavos: 1200 });
+  });
+
+  it('404 for a month not in AAAA-MM and 401 without the logged-in person', async () => {
+    for (const mes of ['2026-13', '2026-1', 'outubro']) {
+      const response = await app().request(`/caixinha/${mes}`, { headers: doParticipante });
+      expect(response.status).toBe(404);
+      expect(await response.json()).toEqual({ error: 'not-found' });
+    }
+    expect((await app().request('/caixinha/2026-10')).status).toBe(401);
   });
 });
 

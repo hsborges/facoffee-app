@@ -3,7 +3,7 @@
 Contexto de negócio. Pagamentos, crédito, pendências, complementos, gastos, reembolsos e caixinha.
 
 - **Agregados:** Participante, Caixinha, Complemento
-- **Leituras:** Crédito e pendentes, Saldo da caixinha, Gastos do ano anterior, Participantes ativos
+- **Leituras:** Crédito e pendentes, Saldo da caixinha, Caixinha do mês, Gastos do ano anterior, Participantes ativos
 - **Publica:** Pagamento recebido, Complemento solicitado, Reembolso feito
 - **Consome:** Cota devida, Participante entrou, Participante saiu
 - **Arquivos:** Comprovante, Nota
@@ -35,7 +35,7 @@ Guardados num bucket S3 ([ADR 0018](../../docs/adr/0018-armazenamento-de-comprov
 
 ## Registrar gasto
 
-`POST /registrar-gasto` (qualquer participante), em JSON: `valorEmCentavos` (o valor total), `origem` (`caixinha` ou `proprio-bolso`) e `notaId` (o `id` de `/guardar-nota`, guardada por quem registra). Quem registra é quem pagou, e é quem recebe o reembolso no gasto do próprio bolso. Responde `201 { id }`. *Gasto feito* é interno: fica só na tabela `gastos`, sem publicar nada. O gasto do próprio bolso não sai da caixinha; só o reembolso sai (`saidaDaCaixinha` em `src/domain/gasto.ts`).
+`POST /registrar-gasto` (qualquer participante), em JSON: `valorEmCentavos` (o valor total), `origem` (`caixinha` ou `proprio-bolso`), `tipo` (`cafe`, `outros-itens`, `conserto-e-manutencao` ou `reposicao`; sem ele, 400) e `notaId` (o `id` de `/guardar-nota`, guardada por quem registra). Quem registra é quem pagou, e é quem recebe o reembolso no gasto do próprio bolso. Responde `201 { id }`. *Gasto feito* é interno: fica só na tabela `gastos`, sem publicar nada. O gasto do próprio bolso não sai da caixinha; só o reembolso sai (`saidaDaCaixinha` em `src/domain/gasto.ts`).
 
 | Recusa | Status |
 |---|---|
@@ -56,7 +56,7 @@ Guardados num bucket S3 ([ADR 0018](../../docs/adr/0018-armazenamento-de-comprov
 
 ## Gastos
 
-`GET /gasto` (só o gestor; os demais, 403) → `200 [{ id, participanteId, valorEmCentavos, origem, notaId, feitoEm, reembolsado }]`, do mais recente ao mais antigo. É de onde o gestor escolhe o gasto a reembolsar; `reembolsado` é sempre `false` no gasto pago pela caixinha.
+`GET /gasto` (só o gestor; os demais, 403) → `200 [{ id, participanteId, valorEmCentavos, origem, tipo, notaId, feitoEm, reembolsado }]`, do mais recente ao mais antigo. É de onde o gestor escolhe o gasto a reembolsar; `reembolsado` é sempre `false` no gasto pago pela caixinha.
 
 ## Solicitar complemento
 
@@ -74,6 +74,8 @@ Guardados num bucket S3 ([ADR 0018](../../docs/adr/0018-armazenamento-de-comprov
 
 - *Saldo da caixinha*: pagamentos recebidos − gastos pagos pela caixinha − reembolsos. O gasto do próprio bolso só sai no reembolso. Fica negativo quando os gastos passam do que entrou.
 - *Gastos do ano anterior*: soma de todos os gastos, de qualquer origem, feitos no ano anterior pelo horário de Campo Grande ([ADR 0015](../../docs/adr/0015-fuso-horario-do-dominio.md)).
+
+`GET /caixinha/:mes` (qualquer participante; `mes` em `AAAA-MM`, senão 404) → `200 { mes, saldoNoInicioEmCentavos, recebidoEmCentavos, gastosPorTipoEmCentavos: { cafe, outros-itens, conserto-e-manutencao, reposicao }, saldoNoFimEmCentavos }`, a leitura *Caixinha do mês*. O que saiu por tipo são os gastos pagos pela caixinha e os reembolsos feitos no mês, cada um pelo tipo do seu gasto; assim saldo no fim = saldo no início + recebido − gastos, e no mês atual é o saldo da caixinha. O mês vira pelo horário de Campo Grande. Só totais: não mostra a situação de ninguém.
 
 ## Crédito e pendentes
 

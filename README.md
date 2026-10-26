@@ -23,8 +23,8 @@ Os termos seguem o [glossário](docs/dominio/GLOSSARIO.md).
 
 - Entrar, trocar de tipo de cota (vale a partir do mês seguinte) e sair.
 - Ver se está em dia, pendente ou com crédito, sem perguntar ao gestor.
-- Ver o saldo da caixinha e o total gasto no ano anterior.
-- Registrar um gasto com a nota e, se pagou do próprio bolso, receber o reembolso.
+- Ver o saldo da caixinha, o total gasto no ano anterior e o resumo do mês: o que entrou, o que saiu com cada tipo de gasto e quanto sobrou.
+- Registrar um gasto com o tipo e a nota e, se pagou do próprio bolso, receber o reembolso.
 - Receber avisos por e-mail: valor da cota definido, pagamento recebido, complemento solicitado e reembolso feito.
 
 **Para o gestor**
@@ -63,7 +63,7 @@ Em desenvolvimento ao longo da disciplina. O backlog está nas [issues](../../is
 | M2 Financeiro | Pagamentos, crédito e pendentes, gastos, reembolsos, caixinha, complemento |
 | M3 Notificação + Web | Avisos, telas do participante e do gestor, teste ponta a ponta |
 
-Próximos passos do produto: lembrar os pendentes sem o gestor cobrar ([#72](../../issues/72)), resumo do mês com gasto por tipo ([#73](../../issues/73)), pagamento feito por outra pessoa ([#74](../../issues/74)) e explicar o valor de cada tipo de cota a partir dos gastos do ano anterior ([#77](../../issues/77)).
+Próximos passos do produto: lembrar os pendentes sem o gestor cobrar ([#72](../../issues/72)), pagamento feito por outra pessoa ([#74](../../issues/74)) e explicar o valor de cada tipo de cota a partir dos gastos do ano anterior ([#77](../../issues/77)).
 
 ## Documentação
 

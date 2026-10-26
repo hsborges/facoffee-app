@@ -5,10 +5,10 @@
 | **Escopo** | Divisão de custos da copa da FACOM |
 | **Sistema** | FACOFFEE |
 | **Disciplina** | Técnicas Avançadas de Desenvolvimento de Software (2026/2) |
-| **Versão** | 2.6 |
-| **Data** | 2026-10-25 |
+| **Versão** | 2.7 |
+| **Data** | 2026-10-26 |
 | **Status** | Aprovado |
-| **Base** | [Glossário da Linguagem Ubíqua](GLOSSARIO.md) (versão 2.4) e arquitetura do FACOFFEE ([arquitetura/visao-geral.png](../arquitetura/visao-geral.png)) |
+| **Base** | [Glossário da Linguagem Ubíqua](GLOSSARIO.md) (versão 2.5) e arquitetura do FACOFFEE ([arquitetura/visao-geral.png](../arquitetura/visao-geral.png)) |
 
 ## Propósito
 
@@ -57,6 +57,7 @@ flowchart TB
     Participante -- "paga" --> Gasto(["Gasto"])
     Compra(["Compra"]) -- "é um tipo de" --> Gasto
     Gasto -- "tem" --> Nota(["Nota"])
+    Gasto -- "tem um" --> TipoDeGasto(["Tipo de gasto"])
     Gasto -- "sai da" --> Caixinha
     Gasto -- "pago do próprio bolso gera" --> Reembolso(["Reembolso"])
     Reembolso -- "sai da" --> Caixinha
@@ -67,7 +68,7 @@ flowchart TB
 | Contexto | Conceitos |
 |---|---|
 | **Participação** | Participante (situação e tipo de cota), Gestor, Tipo de cota, Valor da cota, Cota (quando passa a ser devida) |
-| **Financeiro** | Participante (o que deve, pagou e tem de crédito), Cota (quando é quitada), Pagamento, Comprovante, Crédito, Pendente, Complemento, Caixinha, Saldo da caixinha, Gasto, Compra, Nota, Reembolso |
+| **Financeiro** | Participante (o que deve, pagou e tem de crédito), Cota (quando é quitada), Pagamento, Comprovante, Crédito, Pendente, Complemento, Caixinha, Saldo da caixinha, Gasto, Tipo de gasto, Compra, Nota, Reembolso |
 | **Fora do sistema** | Consumo e Copa, que não são registrados |
 
 ### Decisões de modelagem
@@ -78,6 +79,7 @@ flowchart TB
 | **Pendente**, **Saldo da caixinha** e **Consumo** aparecem como conceitos. | São termos do glossário. Pendente e Saldo da caixinha são calculados a partir de outros conceitos; o Consumo não é medido nem anotado. |
 | **Nota** e **Reembolso** ligam-se a **Gasto**, não só a Compra. | O reembolso cobre qualquer gasto pago do próprio bolso: compra, conserto, manutenção ou reposição. |
 | **Compra** é um tipo de **Gasto**. | O gasto inclui compras de itens, além de conserto, manutenção e reposição. |
+| **Gasto** tem um **Tipo de gasto**, não uma lista de itens. | Basta o valor total da nota; o tipo permite mostrar quanto saiu com cada coisa. |
 | Um gasto pago do próprio bolso só sai da caixinha no **Reembolso**. | Assim o mesmo dinheiro não sai da caixinha duas vezes: uma no gasto e outra no reembolso. |
 | **Cota** e **Complemento** são quitados por pagamento ou abatidos do **Crédito**. | O crédito é abatido automaticamente; para o participante deixar de estar pendente, basta a cota ou o complemento ser pago ou abatido. |
 | **Participante** e **Cota** são tratados em dois contextos. | Em Participação importa se a pessoa participa e com qual tipo de cota; em Financeiro importa o que ela deve, pagou e tem de crédito. |
@@ -126,6 +128,7 @@ flowchart LR
     E1 --> R1["👁 Crédito e pendentes (Financeiro)"]
     E2 --> R1
     E2 --> R2["👁 Saldo da caixinha (Financeiro)"]
+    E2 --> R3["👁 Caixinha do mês (Financeiro)"]
 ```
 
 A cota passa a ser devida em Participação, que sabe o tipo de cota do participante naquele mês. Quem entra durante o mês também deve a cota daquele mês. Financeiro recebe o evento *Cota devida* com o valor e passa a cobrá-la.
@@ -144,7 +147,11 @@ flowchart LR
     E1 --> P1["⚙ Se foi pago do próprio bolso, reembolsar quem pagou"] --> A2["👤 Gestor"] --> C2["▶ Reembolsar"] --> G2["▣ Caixinha (Financeiro)"] --> E2["⚡ Reembolso feito"]
     E1 -- "se pago pela caixinha" --> R1["👁 Saldo da caixinha (Financeiro)"]
     E2 --> R1
+    E1 -- "se pago pela caixinha" --> R2["👁 Caixinha do mês (Financeiro)"]
+    E2 --> R2
 ```
+
+Quem registra o gasto informa o tipo de gasto. Na leitura *Caixinha do mês*, o gasto pago do próprio bolso conta no mês do reembolso, com o tipo do gasto reembolsado, porque é quando o dinheiro sai da caixinha.
 
 ### 2.4 Complemento
 
@@ -186,7 +193,7 @@ A coluna **Publicado para** indica quais contextos recebem o evento. Os eventos 
 | 5 | **Cota devida** | O participante passou a dever a cota do mês, com o valor do seu tipo de cota. | Participação: Participante | Início do mês | Financeiro |
 | 6 | **Pagamento recebido** | O gestor recebeu dinheiro de um participante, por PIX com comprovante ou em mãos. | Financeiro: Participante | *Receber pagamento por PIX ou em dinheiro* | Notificação |
 | 7 | **Complemento solicitado** | O gestor pediu um complemento; cada participante ativo passou a dever uma parte igual. | Financeiro: Complemento | Saldo da caixinha insuficiente | Notificação |
-| 8 | **Gasto feito** | Alguém pagou uma compra, um conserto, uma manutenção ou uma reposição, com dinheiro da caixinha ou do próprio bolso, e guardou a nota. | Financeiro: Caixinha | *Pagar compra, conserto, manutenção ou reposição* | *interno* |
+| 8 | **Gasto feito** | Alguém pagou uma compra, um conserto, uma manutenção ou uma reposição, com dinheiro da caixinha ou do próprio bolso, e guardou a nota, com o tipo de gasto. | Financeiro: Caixinha | *Pagar compra, conserto, manutenção ou reposição* | *interno* |
 | 9 | **Reembolso feito** | O gestor devolveu o valor a quem pagou um gasto do próprio bolso. | Financeiro: Caixinha | Gasto pago do próprio bolso | Notificação |
 
 O contexto Participação também recebe um evento do contexto Usuário:
@@ -201,6 +208,7 @@ O contexto Participação também recebe um evento do contexto Usuário:
 |---|---|---|---|
 | **Crédito e pendentes** | Financeiro | Para cada participante: pagamentos recebidos menos cotas devidas e partes de complementos. Se o resultado é positivo, é crédito; se é negativo, o participante está pendente. | O gestor, para lembrar quem deve; o participante, para saber a própria situação. |
 | **Saldo da caixinha** | Financeiro | Pagamentos recebidos menos gastos pagos pela caixinha e reembolsos feitos. | O gestor, para decidir se precisa pedir complemento; os participantes, para acompanhar. |
+| **Caixinha do mês** | Financeiro | Saldo da caixinha no início do mês, pagamentos recebidos no mês, o que saiu no mês por tipo de gasto (gastos pagos pela caixinha e reembolsos feitos) e o saldo no fim do mês, que é o do início mais o que entrou menos o que saiu. | Todos os participantes, para acompanhar quanto entrou, quanto saiu com cada coisa e quanto sobrou. Mostra só totais, sem a situação de ninguém. |
 | **Gastos do ano anterior** | Financeiro | Soma dos gastos feitos no ano anterior. | O gestor, para definir o valor da cota. |
 | **Participantes ativos** | Financeiro | Quem entrou e ainda não saiu, segundo os eventos de Participação. | O complemento, para ser dividido em partes iguais. |
 
@@ -211,7 +219,7 @@ O contexto Participação também recebe um evento do contexto Usuário:
 | **Participante** | Participação | Situação, tipo de cota e cotas devidas | A troca de tipo vale a partir do mês seguinte. A cota é devida enquanto a pessoa participa, com o valor do tipo de cota naquele mês. A participação termina quando a pessoa pede a saída ou tem o acesso desativado. |
 | **Tipo de cota** | Participação | Valor de cada ano | O valor não muda durante o ano. |
 | **Participante** | Financeiro | Cotas devidas, pagamentos, partes de complementos e crédito | O que for pago a mais fica como crédito e abate automaticamente o que vier depois. Na saída, o que foi pago adiantado fica como crédito, e o crédito ou a pendência continuam valendo quando a pessoa retornar. |
-| **Caixinha** | Financeiro | Gastos e reembolsos | Um gasto pago do próprio bolso gera reembolso. O dinheiro desse gasto só sai da caixinha no reembolso. |
+| **Caixinha** | Financeiro | Gastos e reembolsos | Todo gasto tem um tipo de gasto. Um gasto pago do próprio bolso gera reembolso. O dinheiro desse gasto só sai da caixinha no reembolso. |
 | **Complemento** | Financeiro | Valor total e valor por participante | É dividido em partes iguais entre todos os participantes ativos no momento da solicitação. |
 
 ### Decisões do modelo enxuto
@@ -236,7 +244,7 @@ O FACOFFEE divide o domínio em três contextos de negócio e usa um contexto de
 | Contexto | Tipo | Responsabilidade | Termos do glossário |
 |---|---|---|---|
 | **Participação** | Negócio | Quem participa, com qual tipo de cota, quanto vale cada tipo e quais cotas são devidas a cada mês. | Participante, Gestor, Tipo de cota, Valor da cota, Cota |
-| **Financeiro** | Negócio | O dinheiro: pagamentos, crédito, pendências, complementos, gastos, reembolsos e caixinha. | Pagamento, Comprovante, Crédito, Pendente, Complemento, Caixinha, Saldo da caixinha, Gasto, Compra, Nota, Reembolso |
+| **Financeiro** | Negócio | O dinheiro: pagamentos, crédito, pendências, complementos, gastos, reembolsos e caixinha. | Pagamento, Comprovante, Crédito, Pendente, Complemento, Caixinha, Saldo da caixinha, Gasto, Tipo de gasto, Compra, Nota, Reembolso |
 | **Usuário** | Negócio | O acesso das pessoas ao FACOFFEE, autenticadas pelo Passaporte UFMS (Keycloak). | — |
 | **Notificação** | Apoio | Os avisos aos participantes, por e-mail e WhatsApp. | — |
 
@@ -283,3 +291,4 @@ As setas vão de quem publica para quem consome. A seta tracejada é uma consult
 | 2.4 | 2026-10-25 | Quem entra durante o mês também deve a cota daquele mês. Sem definição do gestor até o início do ano, o valor da cota repete o do ano anterior ([ADR 0017](../adr/0017-gatilhos-de-tempo-do-agendador.md)). |
 | 2.5 | 2026-10-25 | Notificação consulta os contatos em Usuário para enviar os avisos por e-mail ([ADR 0020](../adr/0020-envio-de-e-mails-da-notificacao.md)). |
 | 2.6 | 2026-10-25 | Abertos os pontos críticos 1 (avisar o início da cobrança e lembrar os pendentes, #72) e 2 (pagamento feito por outra pessoa, #74), levantados na [Visão de produto](../produto/VISAO.md). Base atualizada para o glossário 2.4. |
+| 2.7 | 2026-10-26 | Todo gasto tem um tipo de gasto (#73). Nova leitura *Caixinha do mês*, com o que entrou, o que saiu por tipo de gasto e o saldo no início e no fim do mês. Base atualizada para o glossário 2.5. |

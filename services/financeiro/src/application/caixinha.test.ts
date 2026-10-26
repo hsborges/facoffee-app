@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { consultarCaixinha } from './caixinha.js';
+import { consultarCaixinha, consultarCaixinhaDoMes } from './caixinha.js';
 
 describe('consultarCaixinha', () => {
   it('gives the saldo and the gastos of the year before the current one in Campo Grande', async () => {
@@ -18,6 +18,7 @@ describe('consultarCaixinha', () => {
           anos.push(ano);
           return 123456;
         },
+        movimento: async () => ({ recebidoEmCentavos: 0, saidas: [] }),
       },
       { now: () => new Date('2027-01-01T03:00:00Z') },
     );
@@ -26,5 +27,25 @@ describe('consultarCaixinha', () => {
       gastosDoAnoAnteriorEmCentavos: 123456,
     });
     expect(anos).toEqual([2025]);
+  });
+});
+
+describe('consultarCaixinhaDoMes', () => {
+  it('gives the caixinha of the month from the movimento before it and in it', async () => {
+    const consultar = consultarCaixinhaDoMes({
+      totais: async () => ({ recebidoEmCentavos: 0, gastos: [], reembolsadoEmCentavos: 0 }),
+      gastosDoAno: async () => 0,
+      movimento: async (mes, periodo) =>
+        mes !== '2026-10'
+          ? { recebidoEmCentavos: 0, saidas: [] }
+          : periodo === 'antes'
+            ? { recebidoEmCentavos: 5000, saidas: [] }
+            : { recebidoEmCentavos: 1000, saidas: [{ tipo: 'reposicao', valorEmCentavos: 700 }] },
+    });
+    expect(await consultar('2026-10')).toMatchObject({
+      saldoNoInicioEmCentavos: 5000,
+      recebidoEmCentavos: 1000,
+      saldoNoFimEmCentavos: 5300,
+    });
   });
 });
