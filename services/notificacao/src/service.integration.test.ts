@@ -115,28 +115,50 @@ describe('envio', () => {
 describe('service', () => {
   const ana = contato('Ana');
   const bia = contato('Bia');
+  const cia = contato('Cia');
   const usuario = serve({
     fetch: new Hono().get('/contato/:id', (c) => {
-      const encontrado = [ana, bia].find((x) => x.id === c.req.param('id'));
+      const encontrado = [ana, bia, cia].find((x) => x.id === c.req.param('id'));
       return encontrado ? c.json(encontrado) : c.json({ error: 'not-found' }, 404);
     }).fetch,
     port: 0,
   });
+  // 10 de novembro, 9h em Campo Grande: the cota devida of the month and the lembrete are due.
+  const agora = new Date('2026-11-10T13:00:00Z');
+  const cota = { mes: '2026-11', valorEmCentavos: 3000 };
+  const financeiro = serve({
+    fetch: new Hono().get('/pendente', (c) =>
+      c.json([{ id: cia.id, pendenteEmCentavos: 3000, cota }]),
+    ).fetch,
+    port: 0,
+  });
+  const urlDe = async (server: typeof usuario) => {
+    if (!server.listening) await new Promise((resolve) => server.once('listening', resolve));
+    return `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  };
   const amqp = amqplib.connect(config.rabbitmqUrl);
   const channel = amqp.then((c) => c.createChannel());
   // Started in beforeAll: the envio tests run first and their migration must finish before.
   let running: Awaited<ReturnType<typeof startService>>;
 
   beforeAll(async () => {
-    if (!usuario.listening) await new Promise((resolve) => usuario.once('listening', resolve));
-    const { port } = usuario.address() as AddressInfo;
-    running = await startService({ ...config, usuarioUrl: `http://127.0.0.1:${port}` }, logger);
+    running = await startService(
+      {
+        ...config,
+        usuarioUrl: await urlDe(usuario),
+        financeiroUrl: await urlDe(financeiro),
+        horaDosLembretes: 8,
+      },
+      logger,
+      () => agora,
+    );
     await running.ready();
   });
 
   afterAll(async () => {
     await running.stop();
     usuario.close();
+    financeiro.close();
     const queue = queues(config.service);
     for (const name of [queue.events, queue.deadLetter]) await (await channel).deleteQueue(name);
     await (await amqp).close();
@@ -164,5 +186,21 @@ describe('service', () => {
 
     await eventually(async () => ((await caixaDe(bia.email)).length > 0 ? true : undefined));
     expect((await caixaDe(ana.email)).map((m) => m.Subject)).toEqual(['Pagamento recebido']);
+  });
+
+  it('avisa a cota devida uma vez só, mesmo com disparos simultâneos do agendador', async () => {
+    const lembrar = () =>
+      fetch(`http://127.0.0.1:${running.port}/lembrar-pendentes`, { method: 'POST' }).then((r) =>
+        r.json(),
+      );
+    const respostas = await Promise.all([lembrar(), lembrar()]);
+    // The cota devida from the dia 10 on is already the lembrete: two registered, one e-mail.
+    expect(respostas.map((r) => r.lembretes).sort()).toEqual([0, 2]);
+
+    const assuntos = await eventually(async () => {
+      const caixa = await caixaDe(cia.email);
+      return caixa.length > 0 ? caixa.map((m) => m.Subject) : undefined;
+    });
+    expect(assuntos).toEqual([expect.stringMatching(/^Cota de /)]);
   });
 });

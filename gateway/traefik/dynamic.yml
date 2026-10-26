@@ -10,8 +10,9 @@ http:
       rule: (Path(`/api/participacao`) || PathPrefix(`/api/participacao/`)) && !Path(`/api/participacao/iniciar-ano`) && !Path(`/api/participacao/iniciar-mes`)
       middlewares: [auth, acesso, strip-api-prefix]
       service: participacao
+    # The pendentes are internal to Notificação (ADR 0027): without a router it answers 404.
     financeiro:
-      rule: Path(`/api/financeiro`) || PathPrefix(`/api/financeiro/`)
+      rule: (Path(`/api/financeiro`) || PathPrefix(`/api/financeiro/`)) && !Path(`/api/financeiro/pendente`) && !PathPrefix(`/api/financeiro/pendente/`)
       middlewares: [auth, acesso, strip-api-prefix]
       service: financeiro
     # Public on purpose: the browser loads the page before having a token (ADR 0009).

@@ -150,6 +150,15 @@ test('entrar, cota devida e pagamento recebido: crédito correto e e-mail enviad
   await test.step(`${pessoa.usuario} vê o pendente: R$ 20,00`, () =>
     expect(participante.getByText(/Pendente: R\$\s20,00/)).toBeVisible());
 
+  await test.step(`Lembrar os pendentes: e-mail da cota devida chega a ${pessoa.email}`, async () => {
+    // The agendador asks Notificação right after *Todo início de mês*, before Financeiro has the
+    // cota; the next run avisa it (ADR 0027).
+    execFileSync('docker', ['restart', E2E_AGENDADOR]);
+    await expect
+      .poll(() => assuntosDosEmails(pessoa.email), ESPERA)
+      .toEqual(expect.arrayContaining([expect.stringMatching(/^Cota de /)]));
+  });
+
   await participarNaTelaDoGestor(gestor, pessoa.nome);
   await test.step(`Gestor recebe R$ 25,00 em dinheiro de ${pessoa.nome}`, async () => {
     await gestor.getByRole('combobox').selectOption({ label: pessoa.nome });

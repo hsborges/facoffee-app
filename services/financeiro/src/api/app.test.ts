@@ -10,7 +10,11 @@ import {
   notaDoParticipante,
 } from '../application/arquivos.js';
 import { solicitarComplemento } from '../application/complementos.js';
-import { consultarCreditoEPendente, listarCreditoEPendentes } from '../application/credito.js';
+import {
+  consultarCreditoEPendente,
+  listarCreditoEPendentes,
+  listarPendentes,
+} from '../application/credito.js';
 import { listarGastos, registrarGasto } from '../application/gastos.js';
 import { receberPagamento } from '../application/pagamentos.js';
 import { reembolsarGasto } from '../application/reembolsos.js';
@@ -121,6 +125,7 @@ const app = (deps: Partial<ApiDependencies> = {}) => {
     listarGastos: listarGastos(async () => []),
     listarCreditoEPendentes: listarCreditoEPendentes(buscarTotais),
     consultarCreditoEPendente: consultarCreditoEPendente(buscarTotais, async () => devido),
+    listarPendentes: listarPendentes(buscarTotais, async () => devido),
     health: async () => ({ database: true, rabbitmq: true, armazenamento: true }),
     logger: createLogger('test', () => {}),
     ...deps,
@@ -560,5 +565,17 @@ describe('Crédito e pendentes', () => {
   it('401 without the logged-in person', async () => {
     expect((await app().request('/participante')).status).toBe(401);
     expect((await app().request('/participante/eu')).status).toBe(401);
+  });
+
+  it('GET /pendente is internal: gives Notificação the pendentes, without identity', async () => {
+    const pendentes = [{ id: participante, pendenteEmCentavos: 3000, cota: devido.cotas[0] }];
+    const response = await app({ listarPendentes: async () => pendentes }).request('/pendente');
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual(pendentes);
+  });
+
+  it('GET /pendente is 404 with the identity the gateway always sends', async () => {
+    const response = await app().request('/pendente', { headers: gestor });
+    expect(response.status).toBe(404);
   });
 });

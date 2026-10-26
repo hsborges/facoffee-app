@@ -6,7 +6,7 @@ Ponto de entrada HTTPS e, no ambiente local, HTTP (rede pública, [ADR 0022](../
 |---|---|
 | `/api/usuario/*` | `http://usuario:3000/*`, exceto a rota interna `contato` (404, [ADR 0020](../docs/adr/0020-envio-de-e-mails-da-notificacao.md)) |
 | `/api/participacao/*` | `http://participacao:3000/*`, exceto os gatilhos internos `iniciar-ano` e `iniciar-mes` (404, [ADR 0017](../docs/adr/0017-gatilhos-de-tempo-do-agendador.md)) |
-| `/api/financeiro/*` | `http://financeiro:3000/*` |
+| `/api/financeiro/*` | `http://financeiro:3000/*`, exceto a rota interna `pendente` (404, [ADR 0027](../docs/adr/0027-lembrete-aos-pendentes.md)) |
 | `/docs/*` | `http://docs:8080/docs/*` (Swagger UI, sem token) |
 | Qualquer outro caminho fora de `/api` | `http://web:80` (FACOFFEE web, sem token, [ADR 0021](../docs/adr/0021-front-end-servido-pelo-gateway.md)) |
 

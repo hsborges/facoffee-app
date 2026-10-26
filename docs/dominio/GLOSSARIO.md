@@ -5,7 +5,7 @@
 | **Escopo** | Divisão de custos da copa da FACOM |
 | **Sistema** | FACOFFEE |
 | **Disciplina** | Técnicas Avançadas de Desenvolvimento de Software (2026/2) |
-| **Versão** | 2.6 |
+| **Versão** | 2.7 |
 | **Data** | 2026-10-26 |
 | **Status** | Aprovado |
 
@@ -220,7 +220,7 @@ Dois termos aparecem em mais de um contexto:
 - As cotas não pagas se acumulam, mês a mês, até a saída do participante.
 - Na saída, as cotas e os complementos não pagos ficam registrados como devidos.
 - Pode continuar usando a copa e quitar depois.
-- Não há multa nem juros; o gestor acompanha e lembra a pessoa até ela acertar.
+- Não há multa nem juros; o gestor acompanha, e o FACOFFEE lembra o participante ativo pendente uma vez por mês, só da própria situação, até ele acertar.
 
 **O gestor também diz:** "devendo", "em atraso".
 
@@ -378,3 +378,4 @@ Nenhuma.
 | 2.4 | 2026-10-25 | Abertas as questões 1 (tipo do gasto, #73) e 2 (pagamento feito por outra pessoa, #74), levantadas na [Visão de produto](../produto/VISAO.md). |
 | 2.5 | 2026-10-26 | Novo termo [Tipo de gasto](#tipo-de-gasto) (café, outros itens da copa, conserto e manutenção, reposição), validado com o gestor, com o nome nos contratos. Todo [gasto](#gasto) tem um tipo. Questão 1 fechada (#73). |
 | 2.6 | 2026-10-26 | Validado com o gestor: o [pagamento](#pagamento) e o [comprovante](#comprovante) pertencem ao participante cujas cotas são quitadas, mesmo quando outra pessoa paga; quem pagou não é guardado; cada pagamento quita as cotas de um participante só. Questão 2 fechada (#74). |
+| 2.7 | 2026-10-26 | [Pendente](#pendente): o FACOFFEE lembra o participante ativo pendente uma vez por mês, e o gestor só acompanha ([ADR 0027](../adr/0027-lembrete-aos-pendentes.md), #72). |

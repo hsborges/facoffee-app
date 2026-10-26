@@ -85,6 +85,7 @@ Pagamentos recebidos − cotas devidas − partes de complementos: positivo é c
 |---|---|
 | `GET /participante` → `200 [{ id, ativo, creditoEmCentavos, pendenteEmCentavos }]` | só o gestor (os demais, 403) |
 | `GET /participante/eu` → `200 { id, ativo, creditoEmCentavos, pendenteEmCentavos, cotas: [{ mes, tipoDeCota, valorEmCentavos }], complementos: [{ id, solicitadoEm, parteEmCentavos }] }`, cotas e partes da mais recente à mais antiga | o próprio participante; 404 se Financeiro não o conhece |
+| `GET /pendente` → `200 [{ id, pendenteEmCentavos, cota: { mes, tipoDeCota, valorEmCentavos } \| null }]`, só os participantes ativos pendentes, com a cota mais recente | rota interna, para Notificação lembrar os pendentes; fora do gateway e 404 com `X-User-Id` ([ADR 0027](../../docs/adr/0027-lembrete-aos-pendentes.md)) |
 
 ## Eventos consumidos
 

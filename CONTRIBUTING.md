@@ -12,7 +12,7 @@ Um serviço por contexto delimitado, cada um com o próprio banco ([ADR 0001](do
 | `services/participacao/` | Contexto Participação: Participante, Tipo de cota, Cota |
 | `services/financeiro/` | Contexto Financeiro: Pagamento, Gasto, Caixinha, Complemento |
 | `services/notificacao/` | Avisos por e-mail |
-| `services/agendador/` | Gatilhos de início do mês e do ano |
+| `services/agendador/` | Gatilhos de início do mês e do ano e lembrete aos pendentes |
 | `contracts/events/` | Contratos dos eventos de domínio (JSON Schema e AsyncAPI) |
 | `templates/service/` | Template de serviço (camadas, outbox, consumidor idempotente) |
 | `gateway/` | API Gateway e OpenAPI da API pública |

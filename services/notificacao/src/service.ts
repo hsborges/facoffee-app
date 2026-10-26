@@ -3,10 +3,13 @@ import { serve } from '@hono/node-server';
 import nodemailer from 'nodemailer';
 import { createApp } from './api/app.js';
 import { avisar, type BuscarContato } from './application/avisos.js';
+import { type BuscarPendentes, lembrarPendentes } from './application/lembretes.js';
+import { pendentesDe } from './domain/lembrete.js';
 import type { Config } from './infra/config.js';
 import { type Handler, startConsumer } from './infra/consumer.js';
 import { connectDatabase } from './infra/db/database.js';
 import { type Enviar, guardar, startEnvio } from './infra/envio.js';
+import { buscarRegistrados, registrar } from './infra/lembretes.js';
 import type { Logger } from './infra/logger.js';
 import { connectRabbitmq } from './infra/rabbitmq.js';
 
@@ -22,13 +25,31 @@ const buscarContato =
     return response.json();
   };
 
+// Internal route of Financeiro, kept out of the gateway (ADR 0027).
+const buscarPendentes =
+  (financeiroUrl: string): BuscarPendentes =>
+  async () => {
+    const response = await fetch(new URL('/pendente', financeiroUrl), {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) throw new Error(`financeiro answered ${response.status}`);
+    const pendentes = pendentesDe(await response.json());
+    if (!pendentes) throw new Error('financeiro answered invalid pendentes');
+    return pendentes;
+  };
+
 /**
  * Composition root: consumes *Pagamento recebido*, *Complemento solicitado* and *Reembolso
  * feito*, stores their e-mails in the event's transaction, and sends them by SMTP apart, retrying
- * failures (ADR 0020). *Valor da cota definido* is consumed but sends nothing yet.
- * `stop` closes the server first, then the consumer, the sending and the connections.
+ * failures (ADR 0020). *Valor da cota definido* is consumed but sends nothing yet. The agendador's
+ * `POST /lembrar-pendentes` avisa the cota devida and lembra the pendentes (ADR 0027), at `agora`;
+ * tests pass a fixed clock. `stop` closes the server first, then the consumer, the sending and the connections.
  */
-export const startService = async (config: Config, logger: Logger) => {
+export const startService = async (
+  config: Config,
+  logger: Logger,
+  agora: () => Date = () => new Date(),
+) => {
   const database = await connectDatabase(config.databaseUrl);
   const connection = connectRabbitmq(config.rabbitmqUrl, logger);
   // Nodemailer waits up to 10 minutes by default, holding the e-mail's row lock meanwhile.
@@ -67,11 +88,24 @@ export const startService = async (config: Config, logger: Logger) => {
     },
   });
 
+  const lembrar = lembrarPendentes(
+    buscarPendentes(config.financeiroUrl),
+    buscarRegistrados(database.db),
+    buscarContato(config.usuarioUrl),
+    registrar(database.db),
+    config.horaDosLembretes,
+  );
   const app = createApp({
     health: async () => ({
       database: await database.isHealthy(),
       rabbitmq: connection.isConnected(),
     }),
+    lembrarPendentes: async () => {
+      const { lembretes, semContato } = await lembrar(agora());
+      if (semContato.length > 0)
+        logger.warn('participantes without contato get no lembrete', { participantes: semContato });
+      return { lembretes };
+    },
     logger,
   });
   const server = serve({ fetch: app.fetch, port: config.port });
