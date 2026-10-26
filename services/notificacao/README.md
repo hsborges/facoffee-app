@@ -2,9 +2,9 @@
 
 Serviço de suporte. Avisos aos participantes por e-mail (Gmail) e WhatsApp.
 
-- **Consome:** Valor da cota definido, Pagamento recebido, Complemento solicitado, Reembolso feito
+- **Consome:** Valor da cota definido, Pagamento recebido, Complemento solicitado, Reembolso feito, Comprovante enviado, Comprovante recusado
 
-Banco e consumidor vêm do [template de serviço](../../templates/service/); sem outbox, porque não publica eventos. Decisões em [ADR 0020](../../docs/adr/0020-envio-de-e-mails-da-notificacao.md) e [ADR 0027](../../docs/adr/0027-lembrete-aos-pendentes.md).
+Banco e consumidor vêm do [template de serviço](../../templates/service/); sem outbox, porque não publica eventos. Decisões em [ADR 0020](../../docs/adr/0020-envio-de-e-mails-da-notificacao.md), [ADR 0027](../../docs/adr/0027-lembrete-aos-pendentes.md) e [ADR 0031](../../docs/adr/0031-avisos-do-comprovante-enviado.md).
 
 ## Avisos por e-mail
 
@@ -16,8 +16,10 @@ Fila `notification.events`. Para cada evento com payload válido, Notificação 
 | *Pagamento recebido* (`finance.payment-received.v1`) | O participante cujas cotas o pagamento quita |
 | *Complemento solicitado* (`finance.top-up-requested.v1`) | Cada participante da divisão, com a sua parte |
 | *Reembolso feito* (`finance.reimbursement-made.v1`) | Quem pagou o gasto do próprio bolso |
+| *Comprovante enviado* (`finance.receipt-sent.v1`) | Cada gestor (`GET /contato/gestor`, rota interna de Usuário), com o nome de quem enviou e o valor |
+| *Comprovante recusado* (`finance.receipt-rejected.v1`) | Quem enviou o comprovante, com o valor e o motivo |
 
-Participante sem contato fica sem e-mail, com um aviso no log. Payload inválido ou Usuário fora do ar: o evento é tentado de novo e vai para a fila de mensagens mortas, como no template.
+Participante sem contato fica sem e-mail, com um aviso no log; sem gestor conhecido, o aviso do comprovante enviado também. Payload inválido ou Usuário fora do ar: o evento é tentado de novo e vai para a fila de mensagens mortas, como no template.
 
 ## Cota devida e lembretes aos pendentes
 

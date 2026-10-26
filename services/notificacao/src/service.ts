@@ -2,7 +2,7 @@ import type { AddressInfo } from 'node:net';
 import { serve } from '@hono/node-server';
 import nodemailer from 'nodemailer';
 import { createApp } from './api/app.js';
-import { avisar, type BuscarContato } from './application/avisos.js';
+import { avisar, type BuscarContato, type BuscarGestores } from './application/avisos.js';
 import { type BuscarPendentes, lembrarPendentes } from './application/lembretes.js';
 import { pendentesDe } from './domain/lembrete.js';
 import type { Config } from './infra/config.js';
@@ -25,6 +25,17 @@ const buscarContato =
     return response.json();
   };
 
+// Internal route of Usuário, kept out of the gateway (ADR 0031).
+const buscarGestores =
+  (usuarioUrl: string): BuscarGestores =>
+  async () => {
+    const response = await fetch(new URL('/contato/gestor', usuarioUrl), {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) throw new Error(`usuario answered ${response.status}`);
+    return response.json();
+  };
+
 // Internal route of Financeiro, kept out of the gateway (ADR 0027).
 const buscarPendentes =
   (financeiroUrl: string): BuscarPendentes =>
@@ -39,10 +50,10 @@ const buscarPendentes =
   };
 
 /**
- * Composition root: consumes *Pagamento recebido*, *Complemento solicitado* and *Reembolso
- * feito*, stores their e-mails in the event's transaction, and sends them by SMTP apart, retrying
- * failures (ADR 0020). *Valor da cota definido* is consumed but sends nothing yet. The agendador's
- * `POST /lembrar-pendentes` avisa the cota devida and lembra the pendentes (ADR 0027), at `agora`;
+ * Composition root: consumes *Pagamento recebido*, *Complemento solicitado*, *Reembolso feito*,
+ * *Comprovante enviado* and *Comprovante recusado* (ADR 0031), stores their e-mails in the event's
+ * transaction, and sends them by SMTP apart, retrying failures (ADR 0020). *Valor da cota
+ * definido* is consumed but sends nothing yet. The agendador's `POST /lembrar-pendentes` avisa the cota devida and lembra the pendentes (ADR 0027), at `agora`;
  * tests pass a fixed clock. `stop` closes the server first, then the consumer, the sending and the connections.
  */
 export const startService = async (
@@ -65,15 +76,19 @@ export const startService = async (
   const stopEnvio = startEnvio(database.db, enviar, logger);
 
   const handler: Handler = async (event, tx) => {
-    const result = await avisar(buscarContato(config.usuarioUrl), (eventoId, emails) =>
-      guardar(tx, eventoId, emails),
+    const result = await avisar(
+      buscarContato(config.usuarioUrl),
+      buscarGestores(config.usuarioUrl),
+      (eventoId, emails) => guardar(tx, eventoId, emails),
     )(event);
     if (!result.ok) throw new Error(result.error);
-    if (result.value.length > 0)
+    const { semContato, semGestor } = result.value;
+    if (semContato.length > 0)
       logger.warn('participantes without contato get no e-mail', {
         eventId: event.id,
-        participantes: result.value,
+        participantes: semContato,
       });
+    if (semGestor) logger.warn('no gestor known to get the e-mail', { eventId: event.id });
   };
   const consumer = startConsumer({
     connection,
@@ -85,6 +100,8 @@ export const startService = async (
       'finance.payment-received.v1': handler,
       'finance.top-up-requested.v1': handler,
       'finance.reimbursement-made.v1': handler,
+      'finance.receipt-sent.v1': handler,
+      'finance.receipt-rejected.v1': handler,
     },
   });
 
