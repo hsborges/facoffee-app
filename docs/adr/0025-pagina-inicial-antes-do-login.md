@@ -11,7 +11,7 @@ Pelo [ADR 0019](0019-base-do-front-end.md), quem abre o FACOFFEE web sem estar l
 
 Substitui, no ADR 0019, só a entrada de quem não está logado; o resto continua valendo.
 
-Quem não está logado vê a página inicial, no layout de aviso: logo, uma frase do que é o FACOFFEE e o botão **Entrar**. O login só começa no botão. A página pedida continua no `state` do OIDC e é aberta depois do login. Quem já está logado não vê a página inicial.
+Quem não está logado vê a página inicial, com o botão **Entrar** e o que é o FACOFFEE: tipos de cota, como funciona, o que o participante e o gestor fazem e os princípios do combinado. O conteúdo é fixo e vem da [visão de produto](../produto/VISAO.md), sem chamar a API, que exige login. O login só começa no botão. A página pedida continua no `state` do OIDC e é aberta depois do login. Quem já está logado não vê a página inicial.
 
 ## Consequências
 
@@ -23,3 +23,4 @@ Ganhos:
 Custos:
 
 - Um clique a mais para entrar.
+- O texto da página inicial precisa acompanhar as mudanças do produto.
