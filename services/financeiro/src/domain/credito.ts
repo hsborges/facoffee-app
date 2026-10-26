@@ -1,6 +1,6 @@
 import type { Cota } from './participante.js';
 
-/** What a participante owes and paid since entering for the first time, leaving included. */
+/** What a participante owes and had quitado since entering for the first time, leaving included. */
 export type Totais = {
   readonly id: string;
   readonly ativo: boolean;

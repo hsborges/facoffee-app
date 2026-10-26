@@ -8,7 +8,10 @@ export const FORMAS = ['pix', 'dinheiro'] as const;
 /** Forma do pagamento. */
 export type Forma = (typeof FORMAS)[number];
 
-/** Money a participante gave the gestor; it goes into the caixinha. */
+/**
+ * Money the gestor received for the cotas of a participante, even when someone else paid; who
+ * paid is not kept. It goes into the caixinha.
+ */
 export type Pagamento = {
   readonly id: string;
   readonly participanteId: string;
