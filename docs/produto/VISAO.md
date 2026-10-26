@@ -8,7 +8,7 @@
 | **Versão** | 1.0 |
 | **Data** | 2026-10-25 |
 | **Status** | Proposto |
-| **Base** | [Glossário](../dominio/GLOSSARIO.md) (versão 2.3) e [Modelos de Domínio](../dominio/MODELOS.md) (versão 2.5) |
+| **Base** | [Glossário](../dominio/GLOSSARIO.md) (versão 2.4) e [Modelos de Domínio](../dominio/MODELOS.md) (versão 2.6) |
 
 ## Propósito
 
@@ -111,7 +111,7 @@ O que não pode mudar, mesmo com o FACOFFEE:
 1. **Continua um combinado entre colegas.** Voluntário, sem multa, sem juros, sem cara de cobrança formal.
 2. **Leve.** Não pode dar mais trabalho ao gestor nem ao pessoal do que dá hoje. Se pesar, o gestor desiste.
 3. **Ninguém é exposto.** Cada participante vê só a própria situação. A lista de quem está pendente é só do gestor.
-4. **Só o gestor confirma pagamento.** É ele quem recebe, inclusive o dinheiro em mãos; nenhum colega declara que outro pagou.
+4. **Só o gestor registra pagamento.** É ele quem recebe, inclusive o dinheiro em mãos; nenhum colega declara que outro pagou.
 5. **Transparência no agregado.** A caixinha é de todos: total que entrou, gastos por tipo e saldo ficam visíveis a todos. Notas, só a pedido.
 6. **Lembrar sem pressionar.** Lembretes devem tirar o peso da cobrança do gestor sem constranger o colega.
 7. **Confiança no consumo.** O consumo não é medido nem controlado.
@@ -124,16 +124,16 @@ Cada necessidade aponta para onde o domínio já a trata.
 |---|---|---|
 | Saber quem participa e com qual tipo de cota | Gestor | Contexto Participação: [Participante](../dominio/GLOSSARIO.md#participante), [Tipo de cota](../dominio/GLOSSARIO.md#tipo-de-cota) |
 | Saber quem está pendente, sem caçar comprovante | Gestor | Leitura *Crédito e pendentes* (Financeiro) |
-| Registrar pagamento por PIX (com comprovante) ou em dinheiro | Gestor | Comando *Receber pagamento*; [Comprovante](../dominio/GLOSSARIO.md#comprovante) |
+| Registrar pagamento por PIX (com comprovante) ou em dinheiro | Gestor | Comando *Receber pagamento por PIX ou em dinheiro*; [Comprovante](../dominio/GLOSSARIO.md#comprovante) |
 | Aceitar pagamento adiantado de semestre ou ano | Gestor | [Crédito](../dominio/GLOSSARIO.md#crédito) abatido automaticamente |
 | Ver a própria situação (em dia, pendente, crédito) | Participante | Leitura *Crédito e pendentes*, só a do próprio participante |
-| Lembrar quem está pendente sem o gestor cobrar | Participante | **Lacuna:** Notificação não recebe nenhum evento que indique cota pendente ([#72](../../../../issues/72)) |
+| Lembrar quem está pendente sem o gestor cobrar | Gestor | **Lacuna:** Notificação não recebe nenhum evento que indique cota ou complemento pendente ([#72](../../../../issues/72)) |
 | Avisar o valor da cota do ano | Todos | Evento *Valor da cota definido* → Notificação |
 | Avisar o início da cobrança do mês | Todos | **Lacuna:** *Cota devida* vai só para Financeiro, não para Notificação ([#72](../../../../issues/72)) |
 | Registrar gastos com nota e reembolsar quem pagou | Gestor | [Gasto](../dominio/GLOSSARIO.md#gasto), [Nota](../dominio/GLOSSARIO.md#nota), [Reembolso](../dominio/GLOSSARIO.md#reembolso) |
 | Resumo do mês: entrou, saiu e sobrou | Todos | Leitura *Saldo da caixinha*. **Lacuna:** ela dá só o saldo; o total que entrou no mês e o gasto por tipo não existem ([#73](../../../../issues/73)) |
 | Pedir complemento quando a caixinha não dá conta | Gestor | [Complemento](../dominio/GLOSSARIO.md#complemento) |
-| Embasar o valor da cota do ano | Gestor e participantes | Leitura *Gastos do ano anterior*, hoje só para o gestor |
+| Embasar o valor da cota do ano | Gestor e participantes | Leitura *Gastos do ano anterior*. **Lacuna:** hoje só o gestor a usa ([#77](../../../../issues/77)) |
 
 ## Fora do escopo
 
@@ -148,7 +148,7 @@ Cada necessidade aponta para onde o domínio já a trata.
 
 ## Questões em aberto
 
-1. **Lembretes** ([#72](../../../../issues/72)). É a prioridade 1, mas o modelo atual não tem como disparar: Notificação não recebe *Cota devida* nem nada sobre cota pendente. O gestor também nunca pensou em lembretes vindos de outro lugar; só não quer que o pessoal se sinta pressionado. Gatilho, frequência e canal (e-mail, WhatsApp) precisam ser decididos e validados com ele.
+1. **Lembretes** ([#72](../../../../issues/72)). É a prioridade 1, mas o modelo atual não tem como disparar: Notificação não recebe *Cota devida* nem nada sobre cota ou complemento pendente. O gestor também nunca pensou em lembretes vindos de outro lugar; só não quer que o pessoal se sinta pressionado. Gatilho, frequência e canal (e-mail, WhatsApp) precisam ser decididos e validados com ele.
 2. **Gasto por tipo** ([#73](../../../../issues/73)). O gestor quer mostrar o total gasto por tipo de coisa (café, bolacha, conserto), mas o [Gasto](../dominio/GLOSSARIO.md#gasto) hoje não tem tipo. Exige um termo novo no glossário e mudança no Financeiro.
 3. **Pagamento feito por outra pessoa** ([#74](../../../../issues/74)). Às vezes alguém paga pelo outro. Falta definir no domínio a quem o pagamento é atribuído.
 4. **Desequilíbrio entre os tipos de cota.** Alguns participantes do tipo de cota só café consomem bolacha e chá. O gestor quer mais equilíbrio, mas não quer controlar consumo. O produto pode, no máximo, deixar claro o que cada tipo de cota inclui.

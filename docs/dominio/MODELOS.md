@@ -5,10 +5,10 @@
 | **Escopo** | Divisão de custos da copa da FACOM |
 | **Sistema** | FACOFFEE |
 | **Disciplina** | Técnicas Avançadas de Desenvolvimento de Software (2026/2) |
-| **Versão** | 2.5 |
+| **Versão** | 2.6 |
 | **Data** | 2026-10-25 |
 | **Status** | Aprovado |
-| **Base** | [Glossário da Linguagem Ubíqua](GLOSSARIO.md) (versão 2.3) e arquitetura do FACOFFEE ([arquitetura/visao-geral.png](../arquitetura/visao-geral.png)) |
+| **Base** | [Glossário da Linguagem Ubíqua](GLOSSARIO.md) (versão 2.4) e arquitetura do FACOFFEE ([arquitetura/visao-geral.png](../arquitetura/visao-geral.png)) |
 
 ## Propósito
 
@@ -267,7 +267,8 @@ As setas vão de quem publica para quem consome. A seta tracejada é uma consult
 
 ### Pontos críticos para validar
 
-Nenhum ponto crítico em aberto nesta versão.
+1. **Avisar o início da cobrança e lembrar os pendentes** ([#72](../../../../issues/72)). Notificação não consome *Cota devida* nem recebe nada sobre quem está pendente. Falta decidir o gatilho (consumir *Cota devida* e/ou uma política do agendador sobre a leitura *Crédito e pendentes*) e validar frequência e canal com o gestor.
+2. **Pagamento feito por outra pessoa** ([#74](../../../../issues/74)). *Receber pagamento por PIX ou em dinheiro* chega ao agregado Participante (Financeiro) de quem paga. Falta definir o que acontece quando quem entrega o dinheiro não é o participante cujas cotas são quitadas.
 
 ## Histórico de revisões
 
@@ -281,3 +282,4 @@ Nenhum ponto crítico em aberto nesta versão.
 | 2.3 | 2026-10-24 | Usuário passa a ser contexto de negócio, alinhado à arquitetura e ao [ADR 0001](../adr/0001-arquitetura-servicos.md). O agendador é um processo agendado na rede interna que chama Participação. |
 | 2.4 | 2026-10-25 | Quem entra durante o mês também deve a cota daquele mês. Sem definição do gestor até o início do ano, o valor da cota repete o do ano anterior ([ADR 0017](../adr/0017-gatilhos-de-tempo-do-agendador.md)). |
 | 2.5 | 2026-10-25 | Notificação consulta os contatos em Usuário para enviar os avisos por e-mail ([ADR 0020](../adr/0020-envio-de-e-mails-da-notificacao.md)). |
+| 2.6 | 2026-10-25 | Abertos os pontos críticos 1 (avisar o início da cobrança e lembrar os pendentes, #72) e 2 (pagamento feito por outra pessoa, #74), levantados na [Visão de produto](../produto/VISAO.md). Base atualizada para o glossário 2.4. |
