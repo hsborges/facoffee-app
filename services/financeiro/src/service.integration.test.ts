@@ -9,7 +9,7 @@ import {
   registrarCotaDevida,
   registrarSaida,
 } from './application/participantes.js';
-import { anoAnterior } from './domain/caixinha.js';
+import { anoAnterior, type CaixinhaDoMes, FUSO } from './domain/caixinha.js';
 import type { Event } from './domain/event.js';
 import { queues } from './infra/consumer.js';
 import { connectDatabase } from './infra/db/database.js';
@@ -347,7 +347,12 @@ it('registers a gasto do próprio bolso with its own nota, once per nota, by a k
     fetch(`${url}/registrar-gasto`, {
       method: 'POST',
       headers: { 'x-user-id': quem, 'content-type': 'application/json' },
-      body: JSON.stringify({ valorEmCentavos: 4590, origem: 'proprio-bolso', notaId: nota }),
+      body: JSON.stringify({
+        valorEmCentavos: 4590,
+        origem: 'proprio-bolso',
+        tipo: 'cafe',
+        notaId: nota,
+      }),
     });
   const outro = randomUUID();
   const comNotaAlheia = await registrar(outro);
@@ -368,6 +373,7 @@ it('registers a gasto do próprio bolso with its own nota, once per nota, by a k
       participanteId: participante,
       valorEmCentavos: 4590,
       origem: 'proprio-bolso',
+      tipo: 'cafe',
       notaId,
       feitoEm: expect.any(Date),
     },
@@ -404,7 +410,7 @@ it('reembolsa a gasto do próprio bolso once and publishes Reembolso feito', asy
     const gasto = await fetch(`${url}/registrar-gasto`, {
       method: 'POST',
       headers: { 'x-user-id': participante, 'content-type': 'application/json' },
-      body: JSON.stringify({ valorEmCentavos: 4590, origem, notaId }),
+      body: JSON.stringify({ valorEmCentavos: 4590, origem, tipo: 'reposicao', notaId }),
     });
     return ((await gasto.json()) as { id: string }).id;
   };
@@ -474,7 +480,7 @@ it('keeps Saldo da caixinha and Gastos do ano anterior, with gastos pela caixinh
     const gasto = await fetch(`${url}/registrar-gasto`, {
       method: 'POST',
       headers: { 'x-user-id': participante, 'content-type': 'application/json' },
-      body: JSON.stringify({ valorEmCentavos, origem, notaId }),
+      body: JSON.stringify({ valorEmCentavos, origem, tipo: 'outros-itens', notaId }),
     });
     return ((await gasto.json()) as { id: string }).id;
   };
@@ -509,6 +515,7 @@ it('keeps Saldo da caixinha and Gastos do ano anterior, with gastos pela caixinh
     participanteId: participante,
     valorEmCentavos,
     origem,
+    tipo: 'cafe' as const,
     notaId: randomUUID(),
     feitoEm: new Date(feitoEm),
   });
@@ -520,6 +527,85 @@ it('keeps Saldo da caixinha and Gastos do ano anterior, with gastos pela caixinh
   expect(
     (await caixinha()).gastosDoAnoAnteriorEmCentavos - antes.gastosDoAnoAnteriorEmCentavos,
   ).toBe(750);
+});
+
+it('sums the Caixinha do mês per tipo de gasto, matching the Saldo da caixinha', async () => {
+  const participante = randomUUID();
+  publicar(entrou(participante));
+  expect(await eventually(async () => (await repository.buscar(participante)) !== undefined)).toBe(
+    true,
+  );
+  const url = `http://localhost:${running.port}`;
+  const gestor = { 'x-user-id': randomUUID(), 'x-user-roles': 'gestor' };
+  const ler = async <T>(caminho: string) =>
+    (await (
+      await fetch(`${url}${caminho}`, { headers: { 'x-user-id': participante } })
+    ).json()) as T;
+  const mes = new Intl.DateTimeFormat('en-CA', {
+    timeZone: FUSO,
+    year: 'numeric',
+    month: '2-digit',
+  }).format(new Date());
+  const doMes = () => ler<CaixinhaDoMes>(`/caixinha/${mes}`);
+  const registrar = async (origem: string, tipo: string, valorEmCentavos: number) => {
+    const form = new FormData();
+    form.append('arquivo', new Blob([new TextEncoder().encode('%PDF-1.7 nota')]), 'nota.pdf');
+    const nota = await fetch(`${url}/guardar-nota`, {
+      method: 'POST',
+      headers: { 'x-user-id': participante },
+      body: form,
+    });
+    const { id: notaId } = (await nota.json()) as { id: string };
+    const gasto = await fetch(`${url}/registrar-gasto`, {
+      method: 'POST',
+      headers: { 'x-user-id': participante, 'content-type': 'application/json' },
+      body: JSON.stringify({ valorEmCentavos, origem, tipo, notaId }),
+    });
+    return ((await gasto.json()) as { id: string }).id;
+  };
+  const antes = await doMes();
+
+  await fetch(`${url}/receber-pagamento`, {
+    method: 'POST',
+    headers: { ...gestor, 'content-type': 'application/json' },
+    body: JSON.stringify({
+      participanteId: participante,
+      valorEmCentavos: 10000,
+      forma: 'dinheiro',
+    }),
+  });
+  await registrar('caixinha', 'cafe', 3000);
+  const doBolso = await registrar('proprio-bolso', 'reposicao', 2500);
+  expect((await doMes()).gastosPorTipoEmCentavos.reposicao).toBe(
+    antes.gastosPorTipoEmCentavos.reposicao,
+  );
+  await fetch(`${url}/gasto/${doBolso}/reembolsar`, { method: 'POST', headers: gestor });
+  // 23:59 of the last day of the month before, in Campo Grande: it only changes the saldo no início.
+  await database.db.insert(gastos).values({
+    id: randomUUID(),
+    participanteId: participante,
+    valorEmCentavos: 9,
+    origem: 'caixinha',
+    tipo: 'cafe',
+    notaId: randomUUID(),
+    feitoEm: new Date(`${mes}-01T03:59:00Z`),
+  });
+
+  const depois = await doMes();
+  expect(depois.saldoNoInicioEmCentavos - antes.saldoNoInicioEmCentavos).toBe(-9);
+  expect(depois.recebidoEmCentavos - antes.recebidoEmCentavos).toBe(10000);
+  expect(depois.gastosPorTipoEmCentavos.cafe - antes.gastosPorTipoEmCentavos.cafe).toBe(3000);
+  expect(depois.gastosPorTipoEmCentavos.reposicao - antes.gastosPorTipoEmCentavos.reposicao).toBe(
+    2500,
+  );
+  expect(depois.saldoNoFimEmCentavos).toBe(
+    depois.saldoNoInicioEmCentavos +
+      depois.recebidoEmCentavos -
+      Object.values(depois.gastosPorTipoEmCentavos).reduce((a, b) => a + b, 0),
+  );
+  expect(depois.saldoNoFimEmCentavos).toBe(
+    (await ler<{ saldoEmCentavos: number }>('/caixinha')).saldoEmCentavos,
+  );
 });
 
 it('divides a complemento among the participantes ativos and abate the crédito of each one', async () => {

@@ -36,6 +36,13 @@
       "when": 1792955126825,
       "tag": "0004_complementos",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793034973629,
+      "tag": "0005_tipo_do_gasto",
+      "breakpoints": true
     }
   ]
 }

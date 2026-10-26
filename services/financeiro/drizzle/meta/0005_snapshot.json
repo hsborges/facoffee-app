@@ -1,0 +1,496 @@
+{
+  "id": "b47f6eaf-f644-4823-b263-479943f81867",
+  "prevId": "8321d09e-19c5-43da-a0af-c56ddf62ee2a",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.complementos": {
+      "name": "complementos",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "valor_total_em_centavos": {
+          "name": "valor_total_em_centavos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "solicitado_em": {
+          "name": "solicitado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.cotas": {
+      "name": "cotas",
+      "schema": "",
+      "columns": {
+        "participante_id": {
+          "name": "participante_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mes": {
+          "name": "mes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo_de_cota": {
+          "name": "tipo_de_cota",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valor_em_centavos": {
+          "name": "valor_em_centavos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "cotas_participante_id_participantes_id_fk": {
+          "name": "cotas_participante_id_participantes_id_fk",
+          "tableFrom": "cotas",
+          "tableTo": "participantes",
+          "columnsFrom": [
+            "participante_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "cotas_participante_id_mes_pk": {
+          "name": "cotas_participante_id_mes_pk",
+          "columns": [
+            "participante_id",
+            "mes"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.gastos": {
+      "name": "gastos",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "participante_id": {
+          "name": "participante_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valor_em_centavos": {
+          "name": "valor_em_centavos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "origem": {
+          "name": "origem",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nota_id": {
+          "name": "nota_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "feito_em": {
+          "name": "feito_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "gastos_participante_id_participantes_id_fk": {
+          "name": "gastos_participante_id_participantes_id_fk",
+          "tableFrom": "gastos",
+          "tableTo": "participantes",
+          "columnsFrom": [
+            "participante_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "gastos_nota_id_unique": {
+          "name": "gastos_nota_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "nota_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.outbox": {
+      "name": "outbox",
+      "schema": "",
+      "columns": {
+        "seq": {
+          "name": "seq",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "outbox_seq_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "routing_key": {
+          "name": "routing_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event": {
+          "name": "event",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "published_at": {
+          "name": "published_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "outbox_id_unique": {
+          "name": "outbox_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.pagamentos": {
+      "name": "pagamentos",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "participante_id": {
+          "name": "participante_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valor_em_centavos": {
+          "name": "valor_em_centavos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "forma": {
+          "name": "forma",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "comprovante_id": {
+          "name": "comprovante_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recebido_em": {
+          "name": "recebido_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "pagamentos_participante_id_participantes_id_fk": {
+          "name": "pagamentos_participante_id_participantes_id_fk",
+          "tableFrom": "pagamentos",
+          "tableTo": "participantes",
+          "columnsFrom": [
+            "participante_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "pagamentos_comprovante_id_unique": {
+          "name": "pagamentos_comprovante_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "comprovante_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.partes": {
+      "name": "partes",
+      "schema": "",
+      "columns": {
+        "complemento_id": {
+          "name": "complemento_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "participante_id": {
+          "name": "participante_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valor_em_centavos": {
+          "name": "valor_em_centavos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "partes_complemento_id_complementos_id_fk": {
+          "name": "partes_complemento_id_complementos_id_fk",
+          "tableFrom": "partes",
+          "tableTo": "complementos",
+          "columnsFrom": [
+            "complemento_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "partes_participante_id_participantes_id_fk": {
+          "name": "partes_participante_id_participantes_id_fk",
+          "tableFrom": "partes",
+          "tableTo": "participantes",
+          "columnsFrom": [
+            "participante_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "partes_complemento_id_participante_id_pk": {
+          "name": "partes_complemento_id_participante_id_pk",
+          "columns": [
+            "complemento_id",
+            "participante_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.participantes": {
+      "name": "participantes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "ativo": {
+          "name": "ativo",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.processed_events": {
+      "name": "processed_events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "processed_at": {
+          "name": "processed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.reembolsos": {
+      "name": "reembolsos",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "gasto_id": {
+          "name": "gasto_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "feito_em": {
+          "name": "feito_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "reembolsos_gasto_id_gastos_id_fk": {
+          "name": "reembolsos_gasto_id_gastos_id_fk",
+          "tableFrom": "reembolsos",
+          "tableTo": "gastos",
+          "columnsFrom": [
+            "gasto_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "reembolsos_gasto_id_unique": {
+          "name": "reembolsos_gasto_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "gasto_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

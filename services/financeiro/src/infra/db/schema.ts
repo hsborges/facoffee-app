@@ -9,7 +9,7 @@ import {
   timestamp,
   uuid,
 } from 'drizzle-orm/pg-core';
-import type { Origem } from '../../domain/gasto.js';
+import type { Origem, TipoDeGasto } from '../../domain/gasto.js';
 import type { Forma } from '../../domain/pagamento.js';
 import type { TipoDeCota } from '../../domain/participante.js';
 
@@ -55,6 +55,7 @@ export const gastos = pgTable('gastos', {
     .references(() => participantes.id),
   valorEmCentavos: integer('valor_em_centavos').notNull(),
   origem: text('origem').$type<Origem>().notNull(),
+  tipo: text('tipo').$type<TipoDeGasto>().notNull(),
   notaId: uuid('nota_id').notNull().unique(),
   feitoEm: instant('feito_em').notNull(),
 });

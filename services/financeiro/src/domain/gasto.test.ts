@@ -6,6 +6,7 @@ const gasto: Gasto = {
   participanteId: '2b3c4d5e-6f70-4a81-9b2c-3d4e5f6a7b8c',
   valorEmCentavos: 4590,
   origem: 'caixinha',
+  tipo: 'cafe',
   notaId: '11111111-1111-4111-8111-111111111111',
   feitoEm: new Date('2026-11-01T03:00:00Z'),
 };
