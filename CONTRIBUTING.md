@@ -18,6 +18,7 @@ pnpm install
 | `pnpm lint` | Lint e formatação (Biome) e TSDoc nos exports (`scripts/check-tsdoc.ts`), sem alterar arquivos |
 | `pnpm format` | Corrige lint e formatação |
 | `pnpm test` | Testes (Vitest) de todos os workspaces |
+| `pnpm test:e2e` | Teste ponta a ponta do fluxo de eventos com Playwright ([`e2e/`](e2e/), [ADR 0023](docs/adr/0023-teste-ponta-a-ponta-com-playwright.md)). Sobe uma stack própria com Testcontainers ([`infra/docker-compose.test.yml`](infra/docker-compose.test.yml), em portas aleatórias, ao lado da stack local) e a remove no fim; os logs ficam em `test-results/compose.log`. Precisa do Docker; na primeira vez, `pnpm exec playwright install chromium` |
 | `pnpm build` | Build (TypeScript) de todos os workspaces |
 
 Num workspace só: `pnpm --filter @facoffee/financeiro test`.

@@ -1,0 +1,21 @@
+# Stack of the e2e test (ADR 0023), over docker-compose.yml:
+#   docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --wait --build
+# The business services stay behind the gateway; the gateway, Keycloak and Mailpit, which the test
+# uses, are published on random ports of 127.0.0.1, so it runs beside the local stack. The rest
+# of the infra is not published.
+services:
+  gateway:
+    ports: !override
+      - "127.0.0.1::80"
+  keycloak:
+    ports: !override
+      - "127.0.0.1::8080"
+  mailpit:
+    ports: !override
+      - "127.0.0.1::8025"
+  rabbitmq:
+    ports: !reset []
+  postgres:
+    ports: !reset []
+  seaweedfs:
+    ports: !reset []
