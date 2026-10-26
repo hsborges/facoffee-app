@@ -36,9 +36,10 @@ const inMemory = () => {
     buscar: async (id) => salvos.get(id),
     aConfirmar: async () => [...salvos.values()].filter((c) => c.situacao === 'a-confirmar'),
     doParticipante: async (id) => [...salvos.values()].filter((c) => c.participanteId === id),
-    salvar: async (comprovante) => {
+    salvar: async (comprovante, newEvents) => {
       if (usado(comprovante)) return fail('comprovante-ja-usado');
       salvos.set(comprovante.id, comprovante);
+      events.push(...newEvents);
       return ok(undefined);
     },
     editar: async (comprovante) => {
@@ -47,9 +48,10 @@ const inMemory = () => {
       salvos.set(comprovante.id, comprovante);
       return ok(undefined);
     },
-    recusar: async (comprovante) => {
+    recusar: async (comprovante, newEvents) => {
       if (!aConfirmar(comprovante.id)) return fail('comprovante-ja-analisado');
       salvos.set(comprovante.id, comprovante);
+      events.push(...newEvents);
       return ok(undefined);
     },
     remover: async (id) => {
@@ -81,7 +83,7 @@ const inMemory = () => {
     editar: editarComprovante(repositorio, doParticipante),
     cancelar: cancelarComprovante(repositorio),
     confirmar: confirmarComprovante(repositorio, clock),
-    recusar: recusarComprovante(repositorio),
+    recusar: recusarComprovante(repositorio, clock),
   };
 };
 
@@ -92,8 +94,8 @@ const confirmacao = (valorConfirmadoEmCentavos: number) => ({
 });
 
 describe('enviarComprovante', () => {
-  it('saves the comprovante a confirmar, without any pagamento', async () => {
-    const { salvos, pagamentos, enviar } = inMemory();
+  it('saves the comprovante a confirmar and stores Comprovante enviado, without any pagamento', async () => {
+    const { salvos, pagamentos, events, enviar } = inMemory();
     expect(await enviar(participante, pedido)).toEqual({ ok: true, value: 'id-1' });
     expect(salvos.get('id-1')).toEqual({
       id: 'id-1',
@@ -103,6 +105,9 @@ describe('enviarComprovante', () => {
       situacao: 'a-confirmar',
     });
     expect(pagamentos).toEqual([]);
+    expect(events).toMatchObject([
+      { id: 'id-2', type: 'finance.receipt-sent', payload: { receiptId: 'id-1' } },
+    ]);
   });
 
   it('refuses an arquivo not guardado for the participante', async () => {
@@ -116,13 +121,14 @@ describe('enviarComprovante', () => {
     expect(salvos.size).toBe(0);
   });
 
-  it('refuses an arquivo already sent', async () => {
-    const { enviar } = inMemory();
+  it('refuses an arquivo already sent, without a second Comprovante enviado', async () => {
+    const { events, enviar } = inMemory();
     await enviar(participante, pedido);
     expect(await enviar(participante, pedido)).toEqual({
       ok: false,
       error: 'comprovante-ja-usado',
     });
+    expect(events).toHaveLength(1);
   });
 });
 
@@ -163,8 +169,8 @@ describe('editarComprovante and cancelarComprovante', () => {
     await enviar(participante, pedido);
     await enviar(participante, { ...pedido, comprovanteId: 'arquivo-2' });
     await confirmar(gestor, 'id-1', confirmacao(3000));
-    await recusar(gestor, 'id-2', 'Ilegível');
-    for (const id of ['id-1', 'id-2']) {
+    await recusar(gestor, 'id-3', 'Ilegível');
+    for (const id of ['id-1', 'id-3']) {
       expect(await editar(participante, id, pedido)).toEqual({
         ok: false,
         error: 'comprovante-ja-analisado',
@@ -181,14 +187,14 @@ describe('confirmarComprovante', () => {
   it('receives the pagamento with the valor confirmado and stores Pagamento recebido', async () => {
     const { salvos, pagamentos, events, enviar, confirmar } = inMemory();
     await enviar(participante, pedido);
-    expect(await confirmar(gestor, 'id-1', confirmacao(2000))).toEqual({ ok: true, value: 'id-2' });
+    expect(await confirmar(gestor, 'id-1', confirmacao(2000))).toEqual({ ok: true, value: 'id-3' });
     expect(salvos.get('id-1')).toMatchObject({
       situacao: 'confirmado',
       valorConfirmadoEmCentavos: 2000,
     });
     expect(pagamentos).toEqual([
       {
-        id: 'id-2',
+        id: 'id-3',
         participanteId: participante.id,
         valorEmCentavos: 2000,
         forma: 'pix',
@@ -196,8 +202,8 @@ describe('confirmarComprovante', () => {
         recebidoEm: now,
       },
     ]);
-    expect(events).toMatchObject([
-      { id: 'id-3', type: 'finance.payment-received', payload: { amountInCents: 2000 } },
+    expect(events.slice(1)).toMatchObject([
+      { id: 'id-4', type: 'finance.payment-received', payload: { amountInCents: 2000 } },
     ]);
   });
 
@@ -248,13 +254,27 @@ describe('confirmarComprovante', () => {
 });
 
 describe('recusarComprovante', () => {
-  it('keeps the motivo and receives no pagamento', async () => {
-    const { salvos, pagamentos, enviar, recusar } = inMemory();
+  it('keeps the motivo, stores Comprovante recusado and receives no pagamento', async () => {
+    const { salvos, pagamentos, events, enviar, recusar } = inMemory();
     await enviar(participante, pedido);
     expect(await recusar(gestor, 'id-1', '')).toEqual({ ok: false, error: 'recusa-sem-motivo' });
     expect(await recusar(gestor, 'id-1', 'Ilegível')).toEqual({ ok: true, value: undefined });
     expect(salvos.get('id-1')).toMatchObject({ situacao: 'recusado', motivo: 'Ilegível' });
     expect(pagamentos).toEqual([]);
+    expect(events.slice(1)).toMatchObject([
+      {
+        type: 'finance.receipt-rejected',
+        payload: { receiptId: 'id-1', amountInCents: 3000, reason: 'Ilegível' },
+      },
+    ]);
+  });
+
+  it('stores no Comprovante recusado when the comprovante was already analisado', async () => {
+    const { events, enviar, confirmar, recusar } = inMemory();
+    await enviar(participante, pedido);
+    await confirmar(gestor, 'id-1', confirmacao(3000));
+    await recusar(gestor, 'id-1', 'Ilegível');
+    expect(events.map((e) => e.type)).toEqual(['finance.receipt-sent', 'finance.payment-received']);
   });
 });
 
@@ -267,7 +287,7 @@ describe('leituras', () => {
 
     expect(await listarComprovantesAConfirmar(repositorio.aConfirmar)(gestor)).toMatchObject({
       ok: true,
-      value: [{ id: 'id-2' }],
+      value: [{ id: 'id-3' }],
     });
     expect(await listarComprovantesAConfirmar(repositorio.aConfirmar)(participante)).toEqual({
       ok: false,

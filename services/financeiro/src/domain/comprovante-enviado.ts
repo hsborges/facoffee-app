@@ -1,4 +1,5 @@
 import type { Solicitante } from './arquivo.js';
+import type { Event } from './event.js';
 import { type Pagamento, type PagamentoRecebido, type ReceberErro, receber } from './pagamento.js';
 import { fail, ok, type Result } from './result.js';
 
@@ -21,6 +22,23 @@ export type ComprovanteEnviado = {
   readonly enviadoEm: Date;
 } & Analise;
 
+/** *Comprovante enviado*, per `contracts/events/finance.receipt-sent.v1.json`. */
+export type ComprovanteEnviadoEvento = Event<
+  'finance.receipt-sent',
+  { readonly receiptId: string; readonly participantId: string; readonly amountInCents: number }
+>;
+
+/** *Comprovante recusado*, per `contracts/events/finance.receipt-rejected.v1.json`. */
+export type ComprovanteRecusado = Event<
+  'finance.receipt-rejected',
+  {
+    readonly receiptId: string;
+    readonly participantId: string;
+    readonly amountInCents: number;
+    readonly reason: string;
+  }
+>;
+
 /** What the participante informs when sending or editing a comprovante. */
 export type PedidoDeComprovante = Pick<ComprovanteEnviado, 'comprovanteId' | 'valorEmCentavos'>;
 
@@ -38,17 +56,33 @@ const aConfirmarDo = (
   return comprovante.situacao === 'a-confirmar' ? ok(undefined) : fail('comprovante-ja-analisado');
 };
 
-/** *Enviar comprovante*: the participante sends their own comprovante, which stays a confirmar. */
+/**
+ * *Enviar comprovante*: the participante sends their own comprovante, which stays a confirmar.
+ * Produces *Comprovante enviado*, for the gestor to be avisado.
+ */
 export const enviar = (
   solicitante: Pick<Solicitante, 'id'>,
   pedido: PedidoDeComprovante,
-  contexto: { readonly id: string; readonly agora: Date },
-): ComprovanteEnviado => ({
-  ...pedido,
-  id: contexto.id,
-  participanteId: solicitante.id,
-  enviadoEm: contexto.agora,
-  situacao: 'a-confirmar',
+  { id, eventId, agora }: { readonly id: string; readonly eventId: string; readonly agora: Date },
+): { readonly comprovante: ComprovanteEnviado; readonly evento: ComprovanteEnviadoEvento } => ({
+  comprovante: {
+    ...pedido,
+    id,
+    participanteId: solicitante.id,
+    enviadoEm: agora,
+    situacao: 'a-confirmar',
+  },
+  evento: {
+    id: eventId,
+    type: 'finance.receipt-sent',
+    version: 1,
+    occurredAt: agora.toISOString(),
+    payload: {
+      receiptId: id,
+      participantId: solicitante.id,
+      amountInCents: pedido.valorEmCentavos,
+    },
+  },
 });
 
 /** *Editar comprovante*: valor and arquivo, only by its participante and while a confirmar. */
@@ -113,15 +147,36 @@ export const confirmar = (
 /** Why the gestor could not recusar a comprovante enviado. */
 export type RecusarErro = 'sem-permissao' | 'comprovante-ja-analisado' | 'recusa-sem-motivo';
 
-/** *Recusar comprovante*: only the gestor, once, telling the participante the motivo. */
+/**
+ * *Recusar comprovante*: only the gestor, once, telling the participante the motivo. Produces
+ * *Comprovante recusado*, for the participante to be avisado.
+ */
 export const recusar = (
   solicitante: Pick<Solicitante, 'perfis'>,
   comprovante: ComprovanteEnviado,
   motivo: string,
-): Result<ComprovanteEnviado, RecusarErro> => {
+  { eventId, agora }: { readonly eventId: string; readonly agora: Date },
+): Result<
+  { readonly comprovante: ComprovanteEnviado; readonly evento: ComprovanteRecusado },
+  RecusarErro
+> => {
   if (!solicitante.perfis.includes('gestor')) return fail('sem-permissao');
   if (comprovante.situacao !== 'a-confirmar') return fail('comprovante-ja-analisado');
   const informado = motivo.trim();
   if (!informado) return fail('recusa-sem-motivo');
-  return ok({ ...comprovante, situacao: 'recusado', motivo: informado });
+  return ok({
+    comprovante: { ...comprovante, situacao: 'recusado', motivo: informado },
+    evento: {
+      id: eventId,
+      type: 'finance.receipt-rejected',
+      version: 1,
+      occurredAt: agora.toISOString(),
+      payload: {
+        receiptId: comprovante.id,
+        participantId: comprovante.participanteId,
+        amountInCents: comprovante.valorEmCentavos,
+        reason: informado,
+      },
+    },
+  });
 };

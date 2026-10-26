@@ -17,11 +17,12 @@ const pedido = (valorConfirmadoEmCentavos: number, comprovanteId = 'arquivo-1') 
   comprovanteId,
 });
 
-const aConfirmar = enviar(
+const envio = enviar(
   participante,
   { comprovanteId: 'arquivo-1', valorEmCentavos: 3000 },
-  { id: 'comprovante-1', agora },
+  { id: 'comprovante-1', eventId: 'evento-0', agora },
 );
+const aConfirmar = envio.comprovante;
 const recusado: ComprovanteEnviado = { ...aConfirmar, situacao: 'recusado', motivo: 'Ilegível' };
 const confirmado: ComprovanteEnviado = {
   ...aConfirmar,
@@ -30,14 +31,27 @@ const confirmado: ComprovanteEnviado = {
 };
 
 describe('enviar', () => {
-  it('leaves the comprovante of the participante a confirmar', () => {
-    expect(aConfirmar).toEqual({
-      id: 'comprovante-1',
-      participanteId: 'participante-1',
-      comprovanteId: 'arquivo-1',
-      valorEmCentavos: 3000,
-      enviadoEm: agora,
-      situacao: 'a-confirmar',
+  it('leaves the comprovante of the participante a confirmar, producing Comprovante enviado', () => {
+    expect(envio).toEqual({
+      comprovante: {
+        id: 'comprovante-1',
+        participanteId: 'participante-1',
+        comprovanteId: 'arquivo-1',
+        valorEmCentavos: 3000,
+        enviadoEm: agora,
+        situacao: 'a-confirmar',
+      },
+      evento: {
+        id: 'evento-0',
+        type: 'finance.receipt-sent',
+        version: 1,
+        occurredAt: agora.toISOString(),
+        payload: {
+          receiptId: 'comprovante-1',
+          participantId: 'participante-1',
+          amountInCents: 3000,
+        },
+      },
     });
   });
 });
@@ -145,16 +159,32 @@ describe('confirmar', () => {
 });
 
 describe('recusar', () => {
-  it('keeps the motivo for the participante to see', () => {
-    expect(recusar(gestor, aConfirmar, '  Valor diferente do PIX ')).toEqual({
+  const contexto = { eventId: 'evento-2', agora };
+
+  it('keeps the motivo for the participante to see, producing Comprovante recusado', () => {
+    expect(recusar(gestor, aConfirmar, '  Valor diferente do PIX ', contexto)).toEqual({
       ok: true,
-      value: { ...aConfirmar, situacao: 'recusado', motivo: 'Valor diferente do PIX' },
+      value: {
+        comprovante: { ...aConfirmar, situacao: 'recusado', motivo: 'Valor diferente do PIX' },
+        evento: {
+          id: 'evento-2',
+          type: 'finance.receipt-rejected',
+          version: 1,
+          occurredAt: agora.toISOString(),
+          payload: {
+            receiptId: 'comprovante-1',
+            participantId: 'participante-1',
+            amountInCents: 3000,
+            reason: 'Valor diferente do PIX',
+          },
+        },
+      },
     });
   });
 
   it('refuses a recusa without motivo', () => {
     for (const motivo of ['', '   ']) {
-      expect(recusar(gestor, aConfirmar, motivo)).toEqual({
+      expect(recusar(gestor, aConfirmar, motivo, contexto)).toEqual({
         ok: false,
         error: 'recusa-sem-motivo',
       });
@@ -162,12 +192,12 @@ describe('recusar', () => {
   });
 
   it('only the gestor recusa, and only once', () => {
-    expect(recusar(participante, aConfirmar, 'Ilegível')).toEqual({
+    expect(recusar(participante, aConfirmar, 'Ilegível', contexto)).toEqual({
       ok: false,
       error: 'sem-permissao',
     });
     for (const analisado of [confirmado, recusado]) {
-      expect(recusar(gestor, analisado, 'Ilegível')).toEqual({
+      expect(recusar(gestor, analisado, 'Ilegível', contexto)).toEqual({
         ok: false,
         error: 'comprovante-ja-analisado',
       });

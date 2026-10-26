@@ -26,15 +26,23 @@ export type ComprovantesEnviados = {
   readonly aConfirmar: () => Promise<readonly ComprovanteEnviado[]>;
   /** Leitura for the participante: their comprovantes, newest first. */
   readonly doParticipante: (participanteId: string) => Promise<readonly ComprovanteEnviado[]>;
-  /** Saves nothing for a participante Financeiro does not know or an arquivo already sent. */
+  /**
+   * Saves the comprovante and its events (outbox) in the same transaction; nothing for a
+   * participante Financeiro does not know or an arquivo already sent.
+   */
   readonly salvar: (
     comprovante: ComprovanteEnviado,
+    events: readonly Event[],
   ) => Promise<Result<void, 'participante-nao-encontrado' | 'comprovante-ja-usado'>>;
   /** Saves the edição; nothing for an arquivo of another comprovante. */
   readonly editar: (
     comprovante: ComprovanteEnviado,
   ) => Promise<Result<void, JaAnalisado | 'comprovante-ja-usado'>>;
-  readonly recusar: (comprovante: ComprovanteEnviado) => Promise<Result<void, JaAnalisado>>;
+  /** Saves the recusa and its events (outbox) in the same transaction. */
+  readonly recusar: (
+    comprovante: ComprovanteEnviado,
+    events: readonly Event[],
+  ) => Promise<Result<void, JaAnalisado>>;
   readonly remover: (id: string) => Promise<Result<void, JaAnalisado>>;
   /**
    * Saves the confirmação, the pagamento and its events (outbox) in the same transaction; nothing
@@ -59,7 +67,8 @@ export type EnviarComprovanteErro =
 
 /**
  * Use case: *Enviar comprovante*. The participante sends the valor pago with an arquivo they
- * guardaram for themself; it stays a confirmar and does not count as a pagamento. Gives its id.
+ * guardaram for themself; it stays a confirmar and does not count as a pagamento. Stores
+ * *Comprovante enviado* in the outbox and gives its id.
  */
 export const enviarComprovante =
   (
@@ -74,8 +83,12 @@ export const enviarComprovante =
     if (!(await comprovanteDoParticipante(solicitante.id, pedido.comprovanteId))) {
       return fail('comprovante-nao-encontrado');
     }
-    const comprovante = enviar(solicitante, pedido, { id: clock.newId(), agora: clock.now() });
-    const salvo = await comprovantes.salvar(comprovante);
+    const { comprovante, evento } = enviar(solicitante, pedido, {
+      id: clock.newId(),
+      eventId: clock.newId(),
+      agora: clock.now(),
+    });
+    const salvo = await comprovantes.salvar(comprovante, [evento]);
     return salvo.ok ? ok(comprovante.id) : salvo;
   };
 
@@ -149,9 +162,12 @@ export const confirmarComprovante =
 /** Why the gestor could not recusar a comprovante enviado. */
 export type RecusarComprovanteErro = RecusarErro | NaoEncontrado;
 
-/** Use case: *Recusar comprovante*, once, with the motivo the participante sees. */
+/**
+ * Use case: *Recusar comprovante*, once, with the motivo the participante sees. Stores
+ * *Comprovante recusado* in the outbox.
+ */
 export const recusarComprovante =
-  (comprovantes: ComprovantesEnviados) =>
+  (comprovantes: ComprovantesEnviados, clock: Clock) =>
   async (
     solicitante: Pick<Solicitante, 'perfis'>,
     id: string,
@@ -160,8 +176,12 @@ export const recusarComprovante =
     if (!solicitante.perfis.includes('gestor')) return fail('sem-permissao');
     const atual = await comprovantes.buscar(id);
     if (!atual) return fail('comprovante-enviado-nao-encontrado');
-    const recusado = recusar(solicitante, atual, motivo);
-    return recusado.ok ? comprovantes.recusar(recusado.value) : recusado;
+    const recusado = recusar(solicitante, atual, motivo, {
+      eventId: clock.newId(),
+      agora: clock.now(),
+    });
+    if (!recusado.ok) return recusado;
+    return comprovantes.recusar(recusado.value.comprovante, [recusado.value.evento]);
   };
 
 /** Leitura *Comprovantes a confirmar*, oldest first; only the gestor sees it. */
