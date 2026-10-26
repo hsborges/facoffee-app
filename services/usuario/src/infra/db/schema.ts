@@ -1,12 +1,18 @@
+import { sql } from 'drizzle-orm';
 import { bigint, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import type { Perfil } from '../../domain/usuario.js';
 
 const instant = (name: string) => timestamp(name, { withTimezone: true });
 
-/** Usuários registered on their first access; nome and email follow the Passaporte UFMS (ADR 0012). */
+/**
+ * Usuários registered on their first access; nome, email and perfis follow the Passaporte UFMS as
+ * of the latest access (ADR 0012, 0031).
+ */
 export const usuarios = pgTable('usuarios', {
   id: uuid('id').primaryKey(),
   nome: text('nome').notNull(),
   email: text('email').notNull(),
+  perfis: text('perfis').array().$type<Perfil[]>().notNull().default(sql`'{}'`),
 });
 
 /** Deactivated accesses; the gateway refuses every request from these ids (ADR 0011). */

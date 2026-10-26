@@ -1,4 +1,4 @@
-import { asc, eq, isNotNull, sql } from 'drizzle-orm';
+import { and, arrayContains, asc, eq, isNotNull, isNull, sql } from 'drizzle-orm';
 import type { Repository } from '../../application/usuarios.js';
 import { enqueue } from '../outbox.js';
 import type { Executor } from './database.js';
@@ -24,14 +24,14 @@ export const usuarioRepository = (db: Executor): Repository => ({
       if (inserted.length > 0) await enqueue(tx, events);
     }),
   // Runs on every request: the where skips the row write when nothing changed.
-  registrar: async ({ id, nome, email }) => {
+  registrar: async ({ id, nome, email, perfis }) => {
     await db
       .insert(usuarios)
-      .values({ id, nome, email })
+      .values({ id, nome, email, perfis: [...perfis] })
       .onConflictDoUpdate({
         target: usuarios.id,
-        set: { nome, email },
-        setWhere: sql`(${usuarios.nome}, ${usuarios.email}) is distinct from (excluded.nome, excluded.email)`,
+        set: { nome, email, perfis: [...perfis] },
+        setWhere: sql`(${usuarios.nome}, ${usuarios.email}, ${usuarios.perfis}) is distinct from (excluded.nome, excluded.email, excluded.perfis)`,
       });
   },
   // shortcut: no pagination, the copa has a few dozen usuários; paginate if it grows to thousands.
@@ -53,6 +53,13 @@ export const usuarioRepository = (db: Executor): Repository => ({
       .where(eq(usuarios.id, id));
     return row;
   },
+  gestores: () =>
+    db
+      .select({ id: usuarios.id, nome: usuarios.nome, email: usuarios.email })
+      .from(usuarios)
+      .leftJoin(usuariosDesativados, eq(usuariosDesativados.id, usuarios.id))
+      .where(and(arrayContains(usuarios.perfis, ['gestor']), isNull(usuariosDesativados.id)))
+      .orderBy(asc(usuarios.nome), asc(usuarios.id)),
   reativar: async (id) => {
     await db.delete(usuariosDesativados).where(eq(usuariosDesativados.id, id));
   },

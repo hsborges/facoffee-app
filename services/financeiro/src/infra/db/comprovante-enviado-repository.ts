@@ -2,6 +2,7 @@ import { and, asc, desc, eq, ne } from 'drizzle-orm';
 import type { ComprovantesEnviados } from '../../application/comprovantes-enviados.js';
 import type { ComprovanteEnviado } from '../../domain/comprovante-enviado.js';
 import { fail, ok } from '../../domain/result.js';
+import { enqueue } from '../outbox.js';
 import type { Executor } from './database.js';
 import { pagamentoRepository } from './pagamento-repository.js';
 import { pagamentos, participantes, comprovantesEnviados as tabela } from './schema.js';
@@ -63,7 +64,7 @@ export const comprovanteEnviadoRepository = (db: Executor): ComprovantesEnviados
     ).map(doBanco),
   // The unique comprovante_id makes an arquivo sent twice save nothing; nor does an arquivo already
   // used in a pagamento, which could never be confirmado.
-  salvar: (comprovante) =>
+  salvar: (comprovante, events) =>
     db.transaction(async (tx) => {
       const [conhecido] = await tx
         .select({ id: participantes.id })
@@ -78,7 +79,9 @@ export const comprovanteEnviadoRepository = (db: Executor): ComprovantesEnviados
         .values(comprovante)
         .onConflictDoNothing({ target: tabela.comprovanteId })
         .returning({ id: tabela.id });
-      return saved.length === 0 ? fail('comprovante-ja-usado' as const) : ok(undefined);
+      if (saved.length === 0) return fail('comprovante-ja-usado' as const);
+      await enqueue(tx, events);
+      return ok(undefined);
     }),
   editar: ({ id, comprovanteId, valorEmCentavos }) =>
     db.transaction(async (tx) => {
@@ -96,15 +99,18 @@ export const comprovanteEnviadoRepository = (db: Executor): ComprovantesEnviados
         .returning({ id: tabela.id });
       return saved.length === 0 ? fail('comprovante-ja-analisado' as const) : ok(undefined);
     }),
-  recusar: async (comprovante) => {
-    const motivo = comprovante.situacao === 'recusado' ? comprovante.motivo : null;
-    const saved = await db
-      .update(tabela)
-      .set({ situacao: comprovante.situacao, motivo })
-      .where(aConfirmar(comprovante.id))
-      .returning({ id: tabela.id });
-    return saved.length === 0 ? fail('comprovante-ja-analisado') : ok(undefined);
-  },
+  recusar: (comprovante, events) =>
+    db.transaction(async (tx) => {
+      const motivo = comprovante.situacao === 'recusado' ? comprovante.motivo : null;
+      const saved = await tx
+        .update(tabela)
+        .set({ situacao: comprovante.situacao, motivo })
+        .where(aConfirmar(comprovante.id))
+        .returning({ id: tabela.id });
+      if (saved.length === 0) return fail('comprovante-ja-analisado' as const);
+      await enqueue(tx, events);
+      return ok(undefined);
+    }),
   remover: async (id) => {
     const removed = await db.delete(tabela).where(aConfirmar(id)).returning({ id: tabela.id });
     return removed.length === 0 ? fail('comprovante-ja-analisado') : ok(undefined);

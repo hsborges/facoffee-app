@@ -26,12 +26,12 @@ Os termos seguem o [glossário](docs/dominio/GLOSSARIO.md).
 - Ver o saldo da caixinha, o valor de cada tipo de cota do ano ao lado dos gastos do ano anterior por tipo de gasto, e o resumo do mês: o que entrou, o que saiu com cada tipo de gasto e quanto sobrou.
 - Registrar um gasto com o tipo e a nota e, se pagou do próprio bolso, receber o reembolso.
 - Enviar o comprovante do PIX ao gestor e acompanhar se foi confirmado ou recusado.
-- Receber avisos por e-mail: valor da cota definido, pagamento recebido, complemento solicitado e reembolso feito.
+- Receber avisos por e-mail: valor da cota definido, pagamento recebido, complemento solicitado, reembolso feito e comprovante recusado, com o motivo.
 
 **Para o gestor**
 
 - Ver todos os participantes, com crédito e pendências.
-- Receber pagamentos por PIX (com comprovante) ou em dinheiro, ou confirmar o comprovante enviado pelo participante, corrigindo o valor se preciso. O que for pago a mais vira crédito e abate as próximas cotas sozinho.
+- Receber pagamentos por PIX (com comprovante) ou em dinheiro, ou confirmar o comprovante enviado pelo participante, corrigindo o valor se preciso, avisado por e-mail de cada comprovante enviado. O que for pago a mais vira crédito e abate as próximas cotas sozinho.
 - Reembolsar gastos, solicitar complemento e definir o valor da cota.
 - Desativar e reativar o acesso de um participante.
 

@@ -15,6 +15,13 @@
       "when": 1792940042144,
       "tag": "0001_usuarios",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793047435715,
+      "tag": "0002_perfis",
+      "breakpoints": true
     }
   ]
 }

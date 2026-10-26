@@ -45,6 +45,8 @@ Os testes em `contracts/src/eventos.test.ts` validam os schemas e os exemplos e 
 | Pagamento recebido | `finance.payment-received.v1` | Financeiro | `notification.events` |
 | Complemento solicitado | `finance.top-up-requested.v1` | Financeiro | `notification.events` |
 | Reembolso feito | `finance.reimbursement-made.v1` | Financeiro | `notification.events` |
+| Comprovante enviado | `finance.receipt-sent.v1` | Financeiro | `notification.events` |
+| Comprovante recusado | `finance.receipt-rejected.v1` | Financeiro | `notification.events` |
 
 ## Versionamento
 

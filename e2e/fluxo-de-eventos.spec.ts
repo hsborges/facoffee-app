@@ -169,10 +169,10 @@ const creditoEPendentes = async (gestor: Page) =>
 
 const saldo = (s?: Situacao) => (s ? s.creditoEmCentavos - s.pendenteEmCentavos : Number.NaN);
 
-const assuntosDosEmails = async (email: string): Promise<readonly string[]> => {
-  const r = await fetch(
-    `${MAILPIT}/api/v1/search?${new URLSearchParams({ query: `to:${email}` })}`,
-  );
+// Subjects of the e-mails to `email`, only those mentioning `texto` when given.
+const assuntosDosEmails = async (email: string, texto?: string): Promise<readonly string[]> => {
+  const query = texto ? `to:${email} "${texto}"` : `to:${email}`;
+  const r = await fetch(`${MAILPIT}/api/v1/search?${new URLSearchParams({ query })}`);
   return (await r.json()).messages.map((m: { Subject: string }) => m.Subject);
 };
 
@@ -412,6 +412,11 @@ test('comprovante enviado: o gestor confirma com outro valor ou recusa com o mot
       ).toContainText('A confirmar');
     });
 
+  await test.step(`E-mail "Comprovante enviado" chega ao gestor com o nome de ${pessoa.nome}`, () =>
+    expect
+      .poll(() => assuntosDosEmails('gestor@facoffee.local', pessoa.nome), ESPERA)
+      .toEqual(['Comprovante enviado', 'Comprovante enviado']));
+
   await test.step(`${pessoa.usuario} corrige o de R$ 30,00 para R$ 25,00`, async () => {
     await enviados.getByLabel(/^Editar comprovante de R\$\s30,00/).click();
     const edicao = enviados
@@ -474,6 +479,12 @@ test('comprovante enviado: o gestor confirma com outro valor ou recusa com o mot
     expect(await situacao()).toBe(antes + 2000);
     await semRolagemHorizontal(participante);
   });
-  await test.step(`E-mail "Pagamento recebido" chega a ${pessoa.email}`, () =>
-    expect.poll(() => assuntosDosEmails(pessoa.email), ESPERA).toContain('Pagamento recebido'));
+  await test.step(`E-mails "Pagamento recebido" e "Comprovante recusado" chegam a ${pessoa.email}`, () =>
+    expect
+      .poll(() => assuntosDosEmails(pessoa.email), ESPERA)
+      .toEqual(expect.arrayContaining(['Comprovante recusado', 'Pagamento recebido'])));
+  await test.step('O e-mail da recusa traz o motivo', () =>
+    expect
+      .poll(() => assuntosDosEmails(pessoa.email, 'Não achei o PIX'), ESPERA)
+      .toEqual(['Comprovante recusado']));
 });

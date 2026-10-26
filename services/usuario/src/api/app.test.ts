@@ -24,6 +24,7 @@ const app = (deps: Partial<ApiDependencies> = {}) =>
         : fail('sem-permissao'),
     contato: async (id) =>
       id === ativo ? { id: ativo, nome: 'João', email: 'joao@ufms.br' } : undefined,
+    gestores: async () => [{ id: ativo, nome: 'João', email: 'joao@ufms.br' }],
     reativar: async (solicitante) =>
       solicitante.perfis.includes('gestor') ? ok(undefined) : fail('sem-permissao'),
     health: async () => ({ database: true, rabbitmq: true }),
@@ -101,12 +102,19 @@ describe('GET /acesso', () => {
     );
   });
 
-  it('registers the usuário with the nome and email from the gateway headers', async () => {
+  it('registers the usuário with the nome, email and perfis from the gateway headers', async () => {
     registrados.length = 0;
     await app().request('/acesso', {
-      headers: { 'x-user-id': ativo, 'x-user-name': 'Jo%C3%A3o', 'x-user-email': 'joao%40ufms.br' },
+      headers: {
+        'x-user-id': ativo,
+        'x-user-name': 'Jo%C3%A3o',
+        'x-user-email': 'joao%40ufms.br',
+        'x-user-roles': 'default-roles-facoffee,gestor',
+      },
     });
-    expect(registrados).toMatchObject([{ id: ativo, nome: 'João', email: 'joao@ufms.br' }]);
+    expect(registrados).toEqual([
+      { id: ativo, nome: 'João', email: 'joao@ufms.br', perfis: ['gestor'] },
+    ]);
   });
 
   it('204 without registering for an id that is not a uuid', async () => {
@@ -140,6 +148,21 @@ describe('GET /', () => {
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({ error: 'sem-permissao' });
     expect((await app().request('/')).status).toBe(401);
+  });
+});
+
+describe('GET /contato/gestor', () => {
+  it('nome and e-mail of the gestores, without identity: internal to Notificação', async () => {
+    const response = await app().request('/contato/gestor');
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual([{ id: ativo, nome: 'João', email: 'joao@ufms.br' }]);
+  });
+
+  it('404 for a request through the gateway, which always sends X-User-Id', async () => {
+    const response = await app().request('/contato/gestor', {
+      headers: { 'x-user-id': 'gestor-1', 'x-user-roles': 'gestor' },
+    });
+    expect(response.status).toBe(404);
   });
 });
 

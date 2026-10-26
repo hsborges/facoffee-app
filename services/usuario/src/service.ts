@@ -34,6 +34,7 @@ export const startService = async (config: Config, logger: Logger) => {
     registrarAcesso: registrarAcesso(repository),
     listar: listarUsuarios(repository),
     contato: repository.buscar,
+    gestores: repository.gestores,
     reativar: reativarAcesso(repository),
     health: async () => ({
       database: await database.isHealthy(),

@@ -703,7 +703,12 @@ it('divides a complemento among the participantes ativos and abate the crédito 
 
 it('counts a comprovante enviado as pagamento only once confirmado, for the valor confirmado', async () => {
   const { queue } = await channel.assertQueue('', { exclusive: true });
-  await channel.bindQueue(queue, EXCHANGE, 'finance.payment-received.v1');
+  for (const rk of [
+    'finance.payment-received.v1',
+    'finance.receipt-sent.v1',
+    'finance.receipt-rejected.v1',
+  ])
+    await channel.bindQueue(queue, EXCHANGE, rk);
   const publicados: Event[] = [];
   await channel.consume(
     queue,
@@ -814,13 +819,40 @@ it('counts a comprovante enviado as pagamento only once confirmado, for the valo
     (await fetch(`${url}/comprovante/${confirmado.comprovanteId}`, { headers: gestor })).status,
   ).toBe(200);
 
-  expect(await eventually(async () => publicados.length > 0)).toBe(true);
+  const doTipo = (type: string) => publicados.filter((e) => e.type === type);
+  expect(await eventually(async () => doTipo('finance.receipt-rejected').length > 0)).toBe(true);
   await sleep(1000);
-  expect(publicados).toHaveLength(extra ? 2 : 1);
-  expect(publicados[0]).toMatchObject({
-    type: 'finance.payment-received',
+  const pagamentos = doTipo('finance.payment-received');
+  expect(pagamentos).toHaveLength(extra ? 2 : 1);
+  expect(pagamentos[0]).toMatchObject({
     payload: { paymentId: pagamentoId, participantId: participante, amountInCents: 5000 },
   });
+  // Edição and cancelamento publish nothing; the repeated envio was not saved.
+  expect(doTipo('finance.receipt-sent').map((e) => e.payload)).toEqual(
+    [confirmado, recusado, cancelado, disputado].map(({ id }, i) => ({
+      receiptId: id,
+      participantId: participante,
+      amountInCents: [9000, 3000, 1000, 1000][i],
+    })),
+  );
+  expect(doTipo('finance.receipt-rejected').map((e) => e.payload)).toEqual([
+    {
+      receiptId: recusado.id,
+      participantId: participante,
+      amountInCents: 3000,
+      reason: 'Valor diferente do PIX',
+    },
+    ...(extra
+      ? []
+      : [
+          {
+            receiptId: disputado.id,
+            participantId: participante,
+            amountInCents: 1000,
+            reason: 'Repetido',
+          },
+        ]),
+  ]);
 });
 
 it('keeps a comprovante enviado to an arquivo no pagamento used and to the version the gestor saw', async () => {

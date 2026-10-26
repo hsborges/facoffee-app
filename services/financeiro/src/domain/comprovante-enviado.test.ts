@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   type ComprovanteEnviado,
@@ -8,20 +9,27 @@ import {
   recusar,
 } from './comprovante-enviado.js';
 
-const participante = { id: 'participante-1', perfis: ['participante'] };
+const contrato = (type: string) =>
+  JSON.parse(
+    readFileSync(new URL(`../../../../contracts/events/${type}.v1.json`, import.meta.url), 'utf8'),
+  ).examples[0];
+const enviado = contrato('finance.receipt-sent');
+
+const participante = { id: enviado.payload.participantId, perfis: ['participante'] };
 const gestor = { id: 'gestor-1', perfis: ['participante', 'gestor'] };
-const agora = new Date('2026-11-10T15:00:00Z');
+const agora = new Date(enviado.occurredAt);
 const contexto = { pagamentoId: 'pagamento-1', eventId: 'evento-1', agora };
 const pedido = (valorConfirmadoEmCentavos: number, comprovanteId = 'arquivo-1') => ({
   valorConfirmadoEmCentavos,
   comprovanteId,
 });
 
-const aConfirmar = enviar(
+const envio = enviar(
   participante,
-  { comprovanteId: 'arquivo-1', valorEmCentavos: 3000 },
-  { id: 'comprovante-1', agora },
+  { comprovanteId: 'arquivo-1', valorEmCentavos: enviado.payload.amountInCents },
+  { id: enviado.payload.receiptId, eventId: enviado.id, agora },
 );
+const aConfirmar = envio.comprovante;
 const recusado: ComprovanteEnviado = { ...aConfirmar, situacao: 'recusado', motivo: 'Ilegível' };
 const confirmado: ComprovanteEnviado = {
   ...aConfirmar,
@@ -30,14 +38,17 @@ const confirmado: ComprovanteEnviado = {
 };
 
 describe('enviar', () => {
-  it('leaves the comprovante of the participante a confirmar', () => {
-    expect(aConfirmar).toEqual({
-      id: 'comprovante-1',
-      participanteId: 'participante-1',
-      comprovanteId: 'arquivo-1',
-      valorEmCentavos: 3000,
-      enviadoEm: agora,
-      situacao: 'a-confirmar',
+  it('leaves the comprovante of the participante a confirmar, producing Comprovante enviado as in the contract', () => {
+    expect(envio).toEqual({
+      comprovante: {
+        id: enviado.payload.receiptId,
+        participanteId: participante.id,
+        comprovanteId: 'arquivo-1',
+        valorEmCentavos: 3000,
+        enviadoEm: agora,
+        situacao: 'a-confirmar',
+      },
+      evento: { ...enviado, occurredAt: agora.toISOString() },
     });
   });
 });
@@ -90,7 +101,7 @@ describe('confirmar', () => {
         comprovante: confirmado,
         pagamento: {
           id: 'pagamento-1',
-          participanteId: 'participante-1',
+          participanteId: participante.id,
           valorEmCentavos: 3000,
           forma: 'pix',
           comprovanteId: 'arquivo-1',
@@ -103,7 +114,7 @@ describe('confirmar', () => {
           occurredAt: agora.toISOString(),
           payload: {
             paymentId: 'pagamento-1',
-            participantId: 'participante-1',
+            participantId: participante.id,
             amountInCents: 3000,
             method: 'pix',
           },
@@ -145,16 +156,23 @@ describe('confirmar', () => {
 });
 
 describe('recusar', () => {
-  it('keeps the motivo for the participante to see', () => {
-    expect(recusar(gestor, aConfirmar, '  Valor diferente do PIX ')).toEqual({
+  const recusadoNoContrato = contrato('finance.receipt-rejected');
+  const contexto = { eventId: recusadoNoContrato.id, agora };
+
+  it('keeps the motivo for the participante to see, producing Comprovante recusado as in the contract', () => {
+    const { reason } = recusadoNoContrato.payload;
+    expect(recusar(gestor, aConfirmar, `  ${reason} `, contexto)).toEqual({
       ok: true,
-      value: { ...aConfirmar, situacao: 'recusado', motivo: 'Valor diferente do PIX' },
+      value: {
+        comprovante: { ...aConfirmar, situacao: 'recusado', motivo: reason },
+        evento: { ...recusadoNoContrato, occurredAt: agora.toISOString() },
+      },
     });
   });
 
   it('refuses a recusa without motivo', () => {
     for (const motivo of ['', '   ']) {
-      expect(recusar(gestor, aConfirmar, motivo)).toEqual({
+      expect(recusar(gestor, aConfirmar, motivo, contexto)).toEqual({
         ok: false,
         error: 'recusa-sem-motivo',
       });
@@ -162,12 +180,12 @@ describe('recusar', () => {
   });
 
   it('only the gestor recusa, and only once', () => {
-    expect(recusar(participante, aConfirmar, 'Ilegível')).toEqual({
+    expect(recusar(participante, aConfirmar, 'Ilegível', contexto)).toEqual({
       ok: false,
       error: 'sem-permissao',
     });
     for (const analisado of [confirmado, recusado]) {
-      expect(recusar(gestor, analisado, 'Ilegível')).toEqual({
+      expect(recusar(gestor, analisado, 'Ilegível', contexto)).toEqual({
         ok: false,
         error: 'comprovante-ja-analisado',
       });

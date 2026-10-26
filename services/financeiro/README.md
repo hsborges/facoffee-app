@@ -4,7 +4,7 @@ Contexto de negócio. Pagamentos, comprovantes enviados, crédito, pendências, 
 
 - **Agregados:** Participante, Comprovante enviado, Caixinha, Complemento
 - **Leituras:** Crédito e pendentes, Saldo da caixinha, Caixinha do mês, Gastos do ano anterior, Participantes ativos, Comprovantes enviados
-- **Publica:** Pagamento recebido, Complemento solicitado, Reembolso feito
+- **Publica:** Pagamento recebido, Complemento solicitado, Reembolso feito, Comprovante enviado, Comprovante recusado
 - **Consome:** Cota devida, Participante entrou, Participante saiu
 - **Arquivos:** Comprovante, Nota
 
@@ -39,11 +39,11 @@ O participante envia o próprio comprovante, que fica a confirmar até o gestor 
 
 | Rota | Quem | Resposta |
 |---|---|---|
-| `POST /enviar-comprovante`, JSON `{ valorEmCentavos, comprovanteId }` (o `id` de `/guardar-comprovante`, guardado para si) | o participante | `201 { id }` |
+| `POST /enviar-comprovante`, JSON `{ valorEmCentavos, comprovanteId }` (o `id` de `/guardar-comprovante`, guardado para si) | o participante | `201 { id }`; publica *Comprovante enviado* pela outbox ([ADR 0031](../../docs/adr/0031-avisos-do-comprovante-enviado.md)) |
 | `POST /comprovante-enviado/:id/editar`, JSON `{ valorEmCentavos, comprovanteId }` (o mesmo ou outro arquivo guardado para si) | o participante do comprovante | `204` |
 | `POST /comprovante-enviado/:id/cancelar` | o participante do comprovante | `204` |
 | `POST /comprovante-enviado/:id/confirmar`, JSON `{ valorEmCentavos, comprovanteId }` (o valor confirmado, que pode corrigir o informado, e o arquivo conferido) | só o gestor | `201 { id }` do pagamento; publica *Pagamento recebido* pela outbox |
-| `POST /comprovante-enviado/:id/recusar`, JSON `{ motivo }` (até 500 caracteres) | só o gestor | `204` |
+| `POST /comprovante-enviado/:id/recusar`, JSON `{ motivo }` (até 500 caracteres) | só o gestor | `204`; publica *Comprovante recusado* pela outbox |
 | `GET /comprovante-enviado` → `200 [{ id, participanteId, comprovanteId, valorEmCentavos, enviadoEm, situacao }]`, os a confirmar, do mais antigo ao mais recente | só o gestor (os demais, 403) | |
 | `GET /comprovante-enviado/eu` → `200 [...]`, os próprios, do mais recente ao mais antigo, com `valorConfirmadoEmCentavos` no confirmado e `motivo` no recusado | o participante | |
 

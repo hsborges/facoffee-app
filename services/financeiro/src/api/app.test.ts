@@ -140,7 +140,7 @@ const app = (deps: Partial<ApiDependencies> = {}) => {
       now: () => new Date(),
       newId,
     }),
-    recusarComprovante: recusarComprovante(comprovantesEnviados),
+    recusarComprovante: recusarComprovante(comprovantesEnviados, { now: () => new Date(), newId }),
     listarComprovantesAConfirmar: listarComprovantesAConfirmar(comprovantesEnviados.aConfirmar),
     listarMeusComprovantes: listarMeusComprovantes(comprovantesEnviados.doParticipante),
     solicitarComplemento: solicitarComplemento(

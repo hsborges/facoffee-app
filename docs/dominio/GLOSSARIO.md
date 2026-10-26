@@ -5,7 +5,7 @@
 | **Escopo** | Divisão de custos da copa da FACOM |
 | **Sistema** | FACOFFEE |
 | **Disciplina** | Técnicas Avançadas de Desenvolvimento de Software (2026/2) |
-| **Versão** | 2.8 |
+| **Versão** | 2.9 |
 | **Data** | 2026-10-26 |
 | **Status** | Aprovado |
 
@@ -98,6 +98,7 @@ Dois termos aparecem em mais de um contexto:
 - O participante pode enviar o próprio comprovante ao gestor, com o valor pago. O comprovante enviado fica **a confirmar** até o gestor analisá-lo, e enquanto isso não conta como pagamento.
 - O gestor **confirma** ou **recusa** o comprovante enviado, uma vez só. Ao confirmar, recebe o pagamento e pode corrigir o valor; vale o valor confirmado. Ao recusar, informa o motivo.
 - Enquanto está a confirmar, o participante pode editar o valor e o arquivo ou cancelar o envio. Depois de confirmado ou recusado, não pode mais. O comprovante recusado ou cancelado não conta como pagamento.
+- O FACOFFEE avisa o gestor de cada comprovante enviado, com quem enviou e o valor, e avisa o participante da confirmação, com o valor confirmado, ou da recusa, com o motivo.
 
 **Relacionados:** [Pagamento](#pagamento), [Nota](#nota).
 
@@ -324,6 +325,8 @@ Estas tabelas são a única fonte das traduções: cada termo tem um só nome no
 | [Pagamento](#pagamento) | `payment` | |
 | Forma do pagamento | `method` | |
 | PIX, dinheiro | `pix`, `cash` | "Dinheiro" é o pagamento em mãos, não *money*. |
+| [Comprovante](#comprovante) | `receipt` | Inclusive o comprovante enviado pelo participante. Não `proof`. |
+| Motivo (da recusa) | `reason` | |
 | [Complemento](#complemento) | `top-up` | O valor extra que repõe a caixinha. Não `complement` (falso cognato) nem `supplement`. |
 | Parte (do complemento) | `share` | |
 | [Reembolso](#reembolso) | `reimbursement` | Devolve a quem pagou um gasto do próprio bolso. Não `refund`, que é a devolução do valor de uma compra. |
@@ -345,6 +348,8 @@ O tipo do evento nos contratos é `<contexto>.<evento>`, com o contexto de orige
 | Pagamento recebido | `payment-received` |
 | Complemento solicitado | `top-up-requested` |
 | Reembolso feito | `reimbursement-made` |
+| Comprovante enviado | `receipt-sent` |
+| Comprovante recusado | `receipt-rejected` |
 
 ## Termos a evitar
 
@@ -385,3 +390,4 @@ Nenhuma.
 | 2.6 | 2026-10-26 | Validado com o gestor: o [pagamento](#pagamento) e o [comprovante](#comprovante) pertencem ao participante cujas cotas são quitadas, mesmo quando outra pessoa paga; quem pagou não é guardado; cada pagamento quita as cotas de um participante só. Questão 2 fechada (#74). |
 | 2.7 | 2026-10-26 | [Pendente](#pendente): o FACOFFEE lembra o participante ativo pendente uma vez por mês, e o gestor só acompanha ([ADR 0027](../adr/0027-lembrete-aos-pendentes.md), #72). |
 | 2.8 | 2026-10-26 | Validado com o gestor: o participante envia o próprio [comprovante](#comprovante), que fica a confirmar até o gestor confirmar, com o valor corrigido se preciso, ou recusar, com o motivo; enquanto a confirmar, o participante edita ou cancela o envio. [Pagamento](#pagamento) e [Gestor](#gestor) ganham a confirmação do comprovante. "Aprovar" e "rejeitar" comprovante entram nos termos a evitar ([ADR 0030](../adr/0030-pagamento-iniciado-pelo-participante.md), #87). |
+| 2.9 | 2026-10-26 | [Comprovante](#comprovante): o FACOFFEE avisa o gestor de cada comprovante enviado e o participante da confirmação ou da recusa. Novos nomes nos contratos: comprovante (`receipt`), motivo (`reason`) e os eventos *Comprovante enviado* e *Comprovante recusado* ([ADR 0031](../adr/0031-avisos-do-comprovante-enviado.md), #88). |

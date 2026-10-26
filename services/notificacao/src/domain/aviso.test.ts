@@ -14,6 +14,11 @@ const bia: Contato = {
   email: 'bia@ufms.br',
 };
 const contatos = [ana, bia];
+const gestor: Contato = {
+  id: '9e8d7c6b-5a49-4382-a716-151413121110',
+  nome: 'Gestor',
+  email: 'gestor@ufms.br',
+};
 
 const evento = (type: string, payload: unknown): Event => ({
   id: '0b6f2f0e-6a1c-4c55-9a43-6f1f1b0c9e14',
@@ -23,9 +28,9 @@ const evento = (type: string, payload: unknown): Event => ({
   payload,
 });
 
-const avisos = (event: Event, lista: readonly Contato[]) => {
+const avisos = (event: Event, lista: readonly Contato[], gestores = [gestor]) => {
   const result = avisosDoEvento(event);
-  return result.ok ? ok(enderecar(result.value, lista)) : result;
+  return result.ok ? ok(enderecar(result.value, lista, gestores)) : result;
 };
 
 // Intl puts a non-breaking space after R$.
@@ -38,7 +43,10 @@ describe('avisos', () => {
       year: 2027,
       amountInCents: 2500,
     });
-    expect(avisos(event, contatos)).toEqual({ ok: true, value: { emails: [], semContato: [] } });
+    expect(avisos(event, contatos)).toEqual({
+      ok: true,
+      value: { emails: [], semContato: [], semGestor: false },
+    });
   });
 
   it('cumprimenta o participante pelo nome', () => {
@@ -112,6 +120,55 @@ describe('avisos', () => {
     );
   });
 
+  it('Comprovante enviado avisa cada gestor, com o nome de quem enviou e o valor', () => {
+    const outro = { ...bia, id: gestor.id.replace('9e', '8e'), email: 'outro@ufms.br' };
+    const enviado = evento('finance.receipt-sent', {
+      receiptId: bia.id,
+      participantId: ana.id,
+      amountInCents: 3000,
+    });
+    const result = avisos(enviado, contatos, [gestor, outro]);
+    expect(result.ok && result.value.emails.map((e) => [e.para, e.assunto])).toEqual([
+      ['gestor@ufms.br', 'Comprovante enviado'],
+      ['outro@ufms.br', 'Comprovante enviado'],
+    ]);
+    expect(reais(result.ok ? (result.value.emails[0]?.texto ?? '') : '')).toBe(
+      'Olá, Gestor.\n\nAna enviou um comprovante de R$ 30,00 para você confirmar ou recusar no FACOFFEE.\n\nFACOFFEE\n',
+    );
+    const semNome = avisos(enviado, []);
+    expect(semNome.ok && semNome.value.emails[0]?.texto).toContain('Um participante enviou');
+  });
+
+  it('Comprovante enviado sem gestor conhecido não envia e-mail e avisa a falta', () => {
+    const enviado = evento('finance.receipt-sent', {
+      receiptId: bia.id,
+      participantId: ana.id,
+      amountInCents: 3000,
+    });
+    expect(avisos(enviado, contatos, [])).toEqual({
+      ok: true,
+      value: { emails: [], semContato: [], semGestor: true },
+    });
+  });
+
+  it('Comprovante recusado avisa o participante do valor e do motivo', () => {
+    const result = avisos(
+      evento('finance.receipt-rejected', {
+        receiptId: bia.id,
+        participantId: ana.id,
+        amountInCents: 3000,
+        reason: 'Não achei o PIX.',
+      }),
+      contatos,
+    );
+    expect(result.ok && result.value.emails).toEqual([
+      expect.objectContaining({ para: 'ana@ufms.br', assunto: 'Comprovante recusado' }),
+    ]);
+    expect(reais(result.ok ? (result.value.emails[0]?.texto ?? '') : '')).toContain(
+      'O gestor recusou o comprovante de R$ 30,00 que você enviou, e ele não conta como pagamento.\n\nMotivo: Não achei o PIX.',
+    );
+  });
+
   it('separa quem não tem contato, sem e-mail', () => {
     const semCadastro = '4d5e6f70-8192-4a3b-9d4e-5f6a7b8c9d0e';
     const result = avisos(
@@ -123,7 +180,10 @@ describe('avisos', () => {
       }),
       contatos,
     );
-    expect(result).toEqual({ ok: true, value: { emails: [], semContato: [semCadastro] } });
+    expect(result).toEqual({
+      ok: true,
+      value: { emails: [], semContato: [semCadastro], semGestor: false },
+    });
   });
 
   it('cumprimenta sem nome quando o contato não tem nome', () => {
@@ -160,6 +220,16 @@ describe('avisos', () => {
       'parte inválida',
       'finance.top-up-requested',
       { totalAmountInCents: 1, shares: [{ participantId: ana.id }] },
+    ],
+    [
+      'comprovante enviado sem valor',
+      'finance.receipt-sent',
+      { receiptId: ana.id, participantId: ana.id, amountInCents: 0 },
+    ],
+    [
+      'recusa sem motivo',
+      'finance.receipt-rejected',
+      { receiptId: ana.id, participantId: ana.id, amountInCents: 1, reason: '  ' },
     ],
     ['evento desconhecido', 'finance.unknown', {}],
   ])('recusa payload inválido: %s', (_, type, payload) => {

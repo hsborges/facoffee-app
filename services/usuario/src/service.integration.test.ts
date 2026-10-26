@@ -98,3 +98,32 @@ it('registers the usuário on the first access and the gestor reactivates them',
   expect((await acesso('João Café')).status).toBe(204);
   expect(await listar()).toMatchObject({ desativado: false });
 });
+
+it('answers the contatos of the gestores ativos, with the perfis of their latest access', async () => {
+  const acesso = (id: string, roles: string) =>
+    fetch(`${url}/acesso`, {
+      headers: {
+        'x-user-id': id,
+        'x-user-name': 'Gestora',
+        'x-user-email': 'gestora%40ufms.br',
+        'x-user-roles': roles,
+      },
+    });
+  const gestora = randomUUID();
+  const deixouDeSer = randomUUID();
+  const desativada = randomUUID();
+  await acesso(gestora, 'default-roles-facoffee,gestor,participante');
+  await acesso(deixouDeSer, 'gestor');
+  await acesso(deixouDeSer, 'participante');
+  await acesso(desativada, 'gestor');
+  const desativou = await fetch(`${url}/${desativada}/desativar`, {
+    method: 'POST',
+    headers: { 'x-user-id': desativada, 'x-user-roles': 'gestor' },
+  });
+  expect(desativou.status).toBe(204);
+
+  const gestores = (await (await fetch(`${url}/contato/gestor`)).json()) as { id: string }[];
+  expect(gestores).toContainEqual({ id: gestora, nome: 'Gestora', email: 'gestora@ufms.br' });
+  expect(gestores.map((g) => g.id)).not.toContain(deixouDeSer);
+  expect(gestores.map((g) => g.id)).not.toContain(desativada);
+});

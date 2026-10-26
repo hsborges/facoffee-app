@@ -108,7 +108,7 @@ export const startService = async (config: Config, logger: Logger) => {
     editarComprovante: editarComprovante(comprovantesEnviados, comprovanteDoParticipante(armazem)),
     cancelarComprovante: cancelarComprovante(comprovantesEnviados),
     confirmarComprovante: confirmarComprovante(comprovantesEnviados, clock),
-    recusarComprovante: recusarComprovante(comprovantesEnviados),
+    recusarComprovante: recusarComprovante(comprovantesEnviados, clock),
     listarComprovantesAConfirmar: listarComprovantesAConfirmar(comprovantesEnviados.aConfirmar),
     listarMeusComprovantes: listarMeusComprovantes(comprovantesEnviados.doParticipante),
     registrarGasto: registrarGasto(gastoRepository(database.db), notaDoParticipante(armazem), {

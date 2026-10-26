@@ -116,11 +116,15 @@ describe('service', () => {
   const ana = contato('Ana');
   const bia = contato('Bia');
   const cia = contato('Cia');
+  const dani = contato('Dani');
+  const gestor = contato('Gestor');
   const usuario = serve({
-    fetch: new Hono().get('/contato/:id', (c) => {
-      const encontrado = [ana, bia, cia].find((x) => x.id === c.req.param('id'));
-      return encontrado ? c.json(encontrado) : c.json({ error: 'not-found' }, 404);
-    }).fetch,
+    fetch: new Hono()
+      .get('/contato/gestor', (c) => c.json([gestor]))
+      .get('/contato/:id', (c) => {
+        const encontrado = [ana, bia, cia, dani].find((x) => x.id === c.req.param('id'));
+        return encontrado ? c.json(encontrado) : c.json({ error: 'not-found' }, 404);
+      }).fetch,
     port: 0,
   });
   // 10 de novembro, 9h em Campo Grande: the cota devida of the month and the lembrete are due.
@@ -171,12 +175,8 @@ describe('service', () => {
     occurredAt: new Date().toISOString(),
     payload: { paymentId: randomUUID(), participantId, amountInCents: 18000, method: 'pix' },
   });
-  const publicar = async (event: unknown) =>
-    (await channel).publish(
-      EXCHANGE,
-      'finance.payment-received.v1',
-      Buffer.from(JSON.stringify(event)),
-    );
+  const publicar = async (event: { type: string }) =>
+    (await channel).publish(EXCHANGE, `${event.type}.v1`, Buffer.from(JSON.stringify(event)));
 
   it('envia um e-mail só, mesmo com o evento repetido', async () => {
     const event = pagamento(ana.id);
@@ -186,6 +186,25 @@ describe('service', () => {
 
     await eventually(async () => ((await caixaDe(bia.email)).length > 0 ? true : undefined));
     expect((await caixaDe(ana.email)).map((m) => m.Subject)).toEqual(['Pagamento recebido']);
+  });
+
+  it('avisa o gestor do comprovante enviado e o participante da recusa', async () => {
+    const comprovante = (type: string, payload: Record<string, unknown>) => ({
+      id: randomUUID(),
+      type,
+      version: 1,
+      occurredAt: new Date().toISOString(),
+      payload: { receiptId: randomUUID(), participantId: dani.id, amountInCents: 3000, ...payload },
+    });
+    const enviado = comprovante('finance.receipt-sent', {});
+    await publicar(enviado);
+    await publicar(enviado);
+    await publicar(comprovante('finance.receipt-rejected', { reason: 'Não achei o PIX.' }));
+
+    for (const quem of [dani, gestor])
+      await eventually(async () => ((await caixaDe(quem.email)).length > 0 ? true : undefined));
+    expect((await caixaDe(dani.email)).map((m) => m.Subject)).toEqual(['Comprovante recusado']);
+    expect((await caixaDe(gestor.email)).map((m) => m.Subject)).toEqual(['Comprovante enviado']);
   });
 
   it('avisa a cota devida uma vez só, mesmo com disparos simultâneos do agendador', async () => {

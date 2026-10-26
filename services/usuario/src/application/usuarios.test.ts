@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Event } from '../domain/event.js';
-import type { UsuarioRegistrado } from '../domain/usuario.js';
+import type { Perfil, UsuarioRegistrado } from '../domain/usuario.js';
 import {
   desativarAcesso,
   listarUsuarios,
@@ -15,6 +15,7 @@ const participante = { id: 'user-2', perfis: ['participante'] as const };
 
 const inMemory = () => {
   const usuarios = new Map<string, Omit<UsuarioRegistrado, 'desativado'>>();
+  const perfis = new Map<string, readonly Perfil[]>();
   const desativados = new Map<string, Date>();
   const events: Event[] = [];
   const repository: Repository = {
@@ -23,12 +24,14 @@ const inMemory = () => {
       desativados.set(desativacao.id, desativacao.desativadoEm);
       events.push(...newEvents);
     },
-    registrar: async (usuario) => {
+    registrar: async ({ perfis: doUsuario, ...usuario }) => {
       usuarios.set(usuario.id, usuario);
+      perfis.set(usuario.id, doUsuario);
     },
     listar: async () =>
       [...usuarios.values()].map((u) => ({ ...u, desativado: desativados.has(u.id) })),
     buscar: async (id) => usuarios.get(id),
+    gestores: async () => [],
     reativar: async (id) => {
       desativados.delete(id);
     },
@@ -38,6 +41,7 @@ const inMemory = () => {
   return {
     desativados,
     events,
+    perfis,
     desativar: desativarAcesso(repository, clock),
     registrar: registrarAcesso(repository),
     listar: listarUsuarios(repository),
@@ -77,30 +81,39 @@ describe('desativarAcesso', () => {
 
 describe('registrarAcesso and listarUsuarios', () => {
   const joao = { id: 'user-1', nome: 'João', email: 'joao@ufms.br' };
+  const comPerfis = { ...joao, perfis: ['participante'] as const };
 
   it('registers the usuário on the first access and lists them to the gestor', async () => {
     const { registrar, listar } = inMemory();
 
-    expect(await registrar(joao)).toBe('ativo');
+    expect(await registrar(comPerfis)).toBe('ativo');
     expect(await listar(gestor)).toEqual({ ok: true, value: [{ ...joao, desativado: false }] });
   });
 
   it('updates nome and email on the next access', async () => {
     const { registrar, listar } = inMemory();
 
-    await registrar(joao);
-    await registrar({ ...joao, nome: 'João Café', email: 'joao.cafe@ufms.br' });
+    await registrar(comPerfis);
+    await registrar({ ...comPerfis, nome: 'João Café', email: 'joao.cafe@ufms.br' });
     expect(await listar(gestor)).toEqual({
       ok: true,
       value: [{ id: 'user-1', nome: 'João Café', email: 'joao.cafe@ufms.br', desativado: false }],
     });
   });
 
+  it('keeps the perfis of the latest access', async () => {
+    const { registrar, perfis } = inMemory();
+
+    await registrar(comPerfis);
+    await registrar({ ...comPerfis, perfis: ['gestor', 'participante'] });
+    expect(perfis.get(joao.id)).toEqual(['gestor', 'participante']);
+  });
+
   it('tells a desativado access apart and shows it in the listing', async () => {
     const { registrar, listar, desativar } = inMemory();
 
     await desativar(gestor, joao.id);
-    expect(await registrar(joao)).toBe('desativado');
+    expect(await registrar(comPerfis)).toBe('desativado');
     expect(await listar(gestor)).toEqual({ ok: true, value: [{ ...joao, desativado: true }] });
   });
 
