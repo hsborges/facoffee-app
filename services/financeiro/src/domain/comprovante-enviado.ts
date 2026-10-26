@@ -29,7 +29,7 @@ export type ComprovanteEnviadoEvento = Event<
 >;
 
 /** *Comprovante recusado*, per `contracts/events/finance.receipt-rejected.v1.json`. */
-export type ComprovanteRecusado = Event<
+export type ComprovanteRecusadoEvento = Event<
   'finance.receipt-rejected',
   {
     readonly receiptId: string;
@@ -157,7 +157,7 @@ export const recusar = (
   motivo: string,
   { eventId, agora }: { readonly eventId: string; readonly agora: Date },
 ): Result<
-  { readonly comprovante: ComprovanteEnviado; readonly evento: ComprovanteRecusado },
+  { readonly comprovante: ComprovanteEnviado; readonly evento: ComprovanteRecusadoEvento },
   RecusarErro
 > => {
   if (!solicitante.perfis.includes('gestor')) return fail('sem-permissao');
