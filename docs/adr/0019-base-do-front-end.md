@@ -1,6 +1,6 @@
 # 0019. Base do front-end
 
-- Status: Aceito
+- Status: Aceito; entrada de quem não está logado substituída por 0025
 - Data: 2026-10-25
 
 ## Contexto

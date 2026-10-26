@@ -61,6 +61,7 @@ const entrarNoFacoffee = (browser: Browser, usuario: string, senha = usuario) =>
     const page = await (await browser.newContext()).newPage();
     page.on('dialog', (dialogo) => dialogo.accept());
     await page.goto('/');
+    await page.getByRole('button', { name: 'Entrar' }).click();
     await page.locator('#username').fill(usuario);
     await page.locator('#password').fill(senha);
     await page.locator('#kc-login').click();
