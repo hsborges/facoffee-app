@@ -4,6 +4,9 @@
 
 Divisão de custos da copa da FACOM (UFMS).
 
+> [!NOTE]
+> Aplicação educativa, desenvolvida na disciplina Técnicas Avançadas de Desenvolvimento de Software (2026/2) para aplicar as técnicas e ferramentas vistas em aula. O problema e as pessoas são reais, mas o FACOFFEE é antes de tudo um exercício de engenharia: Domain-Driven Design, arquitetura de serviços com eventos, TDD, ADRs, CI e teste ponta a ponta.
+
 Professores e técnicos administrativos da FACOM dividem, por vontade própria, o custo do café e dos demais itens da copa. Hoje um colega, o gestor, cobra, recebe, confere, compra, reembolsa e presta contas pelo WhatsApp, com anotações soltas e de memória. O FACOFFEE tira esse peso dele: organiza quem participa, quem pagou e quanto tem na caixinha, sem transformar o combinado entre colegas em cobrança formal.
 
 > "Eu só quero manter as cotas da copa organizadas, com uma divisão justa, uma reserva para eventualidades e sem precisar ficar cobrando todo mundo o tempo inteiro." — gestor da copa
@@ -51,7 +54,7 @@ Fora do escopo: controle de consumo ou de estoque, multa, bloqueio, lista públi
 
 ## Estágio
 
-Em desenvolvimento, na disciplina Técnicas Avançadas de Desenvolvimento de Software (2026/2). O backlog está nas [issues](../../issues), organizado nos [milestones](../../milestones):
+Em desenvolvimento ao longo da disciplina. O backlog está nas [issues](../../issues), organizado nos [milestones](../../milestones):
 
 | Milestone | Conteúdo |
 |---|---|
