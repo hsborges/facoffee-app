@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Devido, Totais } from '../domain/credito.js';
-import { consultarCreditoEPendente, listarCreditoEPendentes } from './credito.js';
+import { consultarCreditoEPendente, listarCreditoEPendentes, listarPendentes } from './credito.js';
 
 const adiantado: Totais = { id: 'p-1', ativo: true, devidoEmCentavos: 3000, pagoEmCentavos: 9000 };
 const saiuDevendo: Totais = { id: 'p-2', ativo: false, devidoEmCentavos: 6000, pagoEmCentavos: 0 };
@@ -31,6 +31,33 @@ describe('listarCreditoEPendentes', () => {
       ok: false,
       error: 'sem-permissao',
     });
+  });
+});
+
+describe('listarPendentes', () => {
+  const comCota: Totais = { id: 'p-3', ativo: true, devidoEmCentavos: 9000, pagoEmCentavos: 1000 };
+  const semCota: Totais = { id: 'p-4', ativo: true, devidoEmCentavos: 500, pagoEmCentavos: 0 };
+  const buscar = async () => [adiantado, saiuDevendo, comCota, semCota];
+  const cotas = async (id: string) =>
+    id === 'p-3'
+      ? {
+          cotas: [
+            { mes: '2026-11', tipoDeCota: 'completa' as const, valorEmCentavos: 3000 },
+            { mes: '2026-10', tipoDeCota: 'completa' as const, valorEmCentavos: 3000 },
+          ],
+          complementos: [],
+        }
+      : { cotas: [], complementos: [] };
+
+  it('lists only the ativos pendentes, with their most recent cota; crédito and who left are out', async () => {
+    expect(await listarPendentes(buscar, cotas)()).toEqual([
+      {
+        id: 'p-3',
+        pendenteEmCentavos: 8000,
+        cota: { mes: '2026-11', tipoDeCota: 'completa', valorEmCentavos: 3000 },
+      },
+      { id: 'p-4', pendenteEmCentavos: 500, cota: null },
+    ]);
   });
 });
 

@@ -1,6 +1,7 @@
 import { type Context, Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import type { Arquivo, GuardarComprovanteErro, NaoEncontrado } from '../application/arquivos.js';
+import type { Pendente } from '../application/credito.js';
 import type { GastoListado, RegistrarGastoErro } from '../application/gastos.js';
 import type { ReceberPagamentoErro } from '../application/pagamentos.js';
 import type { ReembolsarGastoErro } from '../application/reembolsos.js';
@@ -62,6 +63,7 @@ export type ApiDependencies = {
   readonly consultarCreditoEPendente: (
     solicitante: Pick<Solicitante, 'id'>,
   ) => Promise<Result<MinhaSituacao, 'participante-nao-encontrado'>>;
+  readonly listarPendentes: () => Promise<readonly Pendente[]>;
   readonly health: () => Promise<Readonly<Record<string, boolean>>>;
   readonly logger: Logger;
 };
@@ -187,7 +189,9 @@ const baixado = (c: Context, result: Result<Arquivo, NaoEncontrado>) =>
  * Leitura *Crédito e pendentes*: `GET /participante` lists every participante, only for the
  * gestor; `GET /participante/eu` gives the logged-in participante their own, with their cotas and
  * partes de complementos.
- * Without `X-User-Id`, 401.
+ * `GET /pendente` is internal, for Notificação to lembrar the pendentes, and kept out of the
+ * gateway (ADR 0027): it answers 404 to any request with `X-User-Id`, which the gateway always sends.
+ * Elsewhere, without `X-User-Id`, 401.
  * Logs every request except health probes; unhandled errors become 500.
  */
 export const createApp = ({
@@ -204,6 +208,7 @@ export const createApp = ({
   listarGastos,
   listarCreditoEPendentes,
   consultarCreditoEPendente,
+  listarPendentes,
   health,
   logger,
 }: ApiDependencies) =>
@@ -319,4 +324,9 @@ export const createApp = ({
       return result.ok
         ? c.json(result.value)
         : c.json({ error: result.error }, STATUS_DO_ERRO[result.error]);
-    });
+    })
+    .get('/pendente', async (c) =>
+      c.req.header('x-user-id')
+        ? c.json({ error: 'not-found' }, 404)
+        : c.json(await listarPendentes()),
+    );

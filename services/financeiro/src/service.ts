@@ -12,7 +12,11 @@ import {
 } from './application/arquivos.js';
 import { consultarCaixinha, consultarCaixinhaDoMes } from './application/caixinha.js';
 import { solicitarComplemento } from './application/complementos.js';
-import { consultarCreditoEPendente, listarCreditoEPendentes } from './application/credito.js';
+import {
+  consultarCreditoEPendente,
+  listarCreditoEPendentes,
+  listarPendentes,
+} from './application/credito.js';
 import { listarGastos, registrarGasto } from './application/gastos.js';
 import { receberPagamento } from './application/pagamentos.js';
 import {
@@ -106,6 +110,7 @@ export const startService = async (config: Config, logger: Logger) => {
       buscarTotais(database.db),
       buscarDevido(database.db),
     ),
+    listarPendentes: listarPendentes(buscarTotais(database.db), buscarDevido(database.db)),
     health: async () => ({
       database: await database.isHealthy(),
       rabbitmq: connection.isConnected(),
