@@ -13,7 +13,7 @@ Fila `notification.events`. Para cada evento com payload válido, Notificação 
 | Evento | Quem recebe |
 |---|---|
 | *Valor da cota definido* (`participation.contribution-amount-set.v1`) | Ninguém, por ora: o evento não cita participante e Notificação não sabe quem participa |
-| *Pagamento recebido* (`finance.payment-received.v1`) | O participante que pagou |
+| *Pagamento recebido* (`finance.payment-received.v1`) | O participante cujas cotas o pagamento quita |
 | *Complemento solicitado* (`finance.top-up-requested.v1`) | Cada participante da divisão, com a sua parte |
 | *Reembolso feito* (`finance.reimbursement-made.v1`) | Quem pagou o gasto do próprio bolso |
 

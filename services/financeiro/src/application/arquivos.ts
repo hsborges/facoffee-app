@@ -8,7 +8,7 @@ import {
 } from '../domain/arquivo.js';
 import { fail, ok, type Result } from '../domain/result.js';
 
-/** A guardado comprovante (with the participante who paid) or nota. */
+/** A guardado comprovante (with the participante whose cotas it quita) or nota. */
 export type Arquivo = {
   readonly tipo: TipoDeArquivo;
   readonly conteudo: Uint8Array;

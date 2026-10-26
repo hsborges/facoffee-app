@@ -5,7 +5,7 @@
 | **Escopo** | Divisão de custos da copa da FACOM |
 | **Sistema** | FACOFFEE |
 | **Disciplina** | Técnicas Avançadas de Desenvolvimento de Software (2026/2) |
-| **Versão** | 2.5 |
+| **Versão** | 2.6 |
 | **Data** | 2026-10-26 |
 | **Status** | Aprovado |
 
@@ -44,7 +44,7 @@ A coluna **Contexto** indica em qual contexto do FACOFFEE o termo é tratado. Os
 
 Dois termos aparecem em mais de um contexto:
 
-- **[Participante](#participante)**: em Participação, importa se a pessoa participa e com qual tipo de cota; em Financeiro, importa o que ela deve, pagou e tem de crédito.
+- **[Participante](#participante)**: em Participação, importa se a pessoa participa e com qual tipo de cota; em Financeiro, importa o que ela deve, o que foi quitado e o que tem de crédito.
 - **[Cota](#cota)**: nasce em Participação, todo mês, e é cobrada em Financeiro.
 
 ## Termos
@@ -89,11 +89,12 @@ Dois termos aparecem em mais de um contexto:
 
 ### Comprovante
 
-**Definição:** A prova de um pagamento por PIX, que o participante envia ao gestor.
+**Definição:** A prova de um pagamento por PIX, que o gestor guarda ao receber o pagamento.
 
 **Regras:**
 - Só se aplica a pagamentos. O documento de um gasto é a [Nota](#nota).
-- Fica guardado junto do pagamento a que se refere.
+- Fica guardado junto do pagamento a que se refere e vale para um pagamento só.
+- É do participante cujas cotas o pagamento quita, mesmo que o PIX tenha saído da conta de outra pessoa.
 
 **Relacionados:** [Pagamento](#pagamento), [Nota](#nota).
 
@@ -184,13 +185,15 @@ Dois termos aparecem em mais de um contexto:
 
 ### Pagamento
 
-**Definição:** O dinheiro que o participante entrega ao gestor, por PIX ou em mãos, para quitar cotas ou um complemento.
+**Definição:** O dinheiro que o gestor recebe, por PIX ou em mãos, para quitar as cotas ou um complemento de um participante.
 
 **Regras:**
 - Normalmente quita de uma vez as cotas de um semestre ou de um ano, no início do período.
 - O que for pago a mais vira [crédito](#crédito).
 - Todo pagamento entra na caixinha.
 - O pagamento por PIX é acompanhado de [comprovante](#comprovante).
+- Pertence ao participante cujas cotas ou complementos ele quita, mesmo quando outra pessoa entrega o dinheiro. Quem entregou não é guardado e não precisa ser participante; no PIX, o nome aparece no comprovante.
+- Quita as cotas de um participante só. Se alguém paga por mais de uma pessoa, o gestor registra um pagamento para cada uma.
 
 **O gestor também diz:** "acertar", "quitar", "acerto", "repasse".
 
@@ -360,7 +363,7 @@ O tipo do evento nos contratos é `<contexto>.<evento>`, com o contexto de orige
 
 ## Questões em aberto
 
-1. **Pagamento feito por outra pessoa** ([#74](../../../../issues/74)). Às vezes alguém paga pelo outro. [Pagamento](#pagamento) não diz a quem o pagamento é atribuído nem se importa guardar quem pagou.
+Nenhuma.
 
 ## Histórico de revisões
 
@@ -374,3 +377,4 @@ O tipo do evento nos contratos é `<contexto>.<evento>`, com o contexto de orige
 | 2.3 | 2026-10-25 | [Cota](#cota): quem entra durante o mês também deve a cota daquele mês. [Valor da cota](#valor-da-cota): sem definição do gestor até o início do ano, repete-se o valor do ano anterior. |
 | 2.4 | 2026-10-25 | Abertas as questões 1 (tipo do gasto, #73) e 2 (pagamento feito por outra pessoa, #74), levantadas na [Visão de produto](../produto/VISAO.md). |
 | 2.5 | 2026-10-26 | Novo termo [Tipo de gasto](#tipo-de-gasto) (café, outros itens da copa, conserto e manutenção, reposição), validado com o gestor, com o nome nos contratos. Todo [gasto](#gasto) tem um tipo. Questão 1 fechada (#73). |
+| 2.6 | 2026-10-26 | Validado com o gestor: o [pagamento](#pagamento) e o [comprovante](#comprovante) pertencem ao participante cujas cotas são quitadas, mesmo quando outra pessoa paga; quem pagou não é guardado; cada pagamento quita as cotas de um participante só. Questão 2 fechada (#74). |
