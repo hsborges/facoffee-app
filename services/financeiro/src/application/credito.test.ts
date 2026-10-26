@@ -16,7 +16,7 @@ const buscarDevido = async (id: string) =>
   id === 'p-2' ? devido : { cotas: [], complementos: [] };
 
 describe('listarCreditoEPendentes', () => {
-  it('gives the gestor every participante, including who left', async () => {
+  it('RN-FIN-19: gives the gestor every participante, including who left', async () => {
     expect(await listarCreditoEPendentes(buscarTotais)({ perfis: ['gestor'] })).toEqual({
       ok: true,
       value: [
@@ -26,7 +26,7 @@ describe('listarCreditoEPendentes', () => {
     });
   });
 
-  it('refuses whoever is not the gestor', async () => {
+  it('RN-FIN-19: refuses whoever is not the gestor', async () => {
     expect(await listarCreditoEPendentes(buscarTotais)({ perfis: ['participante'] })).toEqual({
       ok: false,
       error: 'sem-permissao',
@@ -49,7 +49,7 @@ describe('listarPendentes', () => {
         }
       : { cotas: [], complementos: [] };
 
-  it('lists only the ativos pendentes, with their most recent cota; crédito and who left are out', async () => {
+  it('RN-FIN-16, RN-NOT-07, RN-NOT-09: lists only the ativos pendentes, with their most recent cota; crédito and who left are out', async () => {
     expect(await listarPendentes(buscar, cotas)()).toEqual([
       {
         id: 'p-3',
@@ -62,7 +62,7 @@ describe('listarPendentes', () => {
 });
 
 describe('consultarCreditoEPendente', () => {
-  it('gives the participante only their own situação, with the cotas and complementos devidos', async () => {
+  it('RN-FIN-20: gives the participante only their own situação, with the cotas and complementos devidos', async () => {
     expect(await consultarCreditoEPendente(buscarTotais, buscarDevido)({ id: 'p-2' })).toEqual({
       ok: true,
       value: {

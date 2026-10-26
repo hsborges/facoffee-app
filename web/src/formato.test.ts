@@ -47,7 +47,7 @@ describe('dataEmCampoGrande', () => {
 });
 
 describe('mesEmCampoGrande', () => {
-  it('turns the month at midnight in Campo Grande, not in UTC', () => {
+  it('RNF-03: turns the month at midnight in Campo Grande, not in UTC', () => {
     expect(mesEmCampoGrande(new Date('2026-11-01T03:59:59Z'))).toBe('2026-10');
     expect(mesEmCampoGrande(new Date('2026-11-01T04:00:00Z'))).toBe('2026-11');
   });

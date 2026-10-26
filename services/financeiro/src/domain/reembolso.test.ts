@@ -27,7 +27,7 @@ const doBolso: Gasto = {
 };
 
 describe('reembolsar', () => {
-  it('reembolsa who paid the gasto do próprio bolso and produces Reembolso feito as in the contract', () => {
+  it('RN-FIN-24: reembolsa who paid the gasto do próprio bolso and produces Reembolso feito as in the contract', () => {
     expect(reembolsar(gestor, doBolso, contexto)).toEqual({
       ok: true,
       value: {
@@ -37,14 +37,14 @@ describe('reembolsar', () => {
     });
   });
 
-  it('refuses a gasto pago pela caixinha: its money already left the caixinha', () => {
+  it('RN-FIN-24: refuses a gasto pago pela caixinha: its money already left the caixinha', () => {
     expect(reembolsar(gestor, { ...doBolso, origem: 'caixinha' }, contexto)).toEqual({
       ok: false,
       error: 'gasto-pago-pela-caixinha',
     });
   });
 
-  it('only the gestor reembolsa', () => {
+  it('RN-FIN-25: only the gestor reembolsa', () => {
     expect(reembolsar({ perfis: ['participante'] }, doBolso, contexto)).toEqual({
       ok: false,
       error: 'sem-permissao',

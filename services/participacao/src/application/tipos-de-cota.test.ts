@@ -44,7 +44,7 @@ describe('definirValor', () => {
     expect(events).toMatchObject([{ id: 'id-1', type: 'participation.contribution-amount-set' }]);
   });
 
-  it('refuses a second definition for the same tipo de cota and year, but not another tipo', async () => {
+  it('RN-PAR-14: refuses a second definition for the same tipo de cota and year, but not another tipo', async () => {
     const { events, definir } = inMemory();
     await definir(gestor, valor);
 
@@ -67,7 +67,7 @@ describe('definirValor', () => {
     });
   });
 
-  it('refuses and saves nothing for a participante who is not the gestor', async () => {
+  it('RN-PAR-13: refuses and saves nothing for a participante who is not the gestor', async () => {
     const { salvos, definir } = inMemory();
     expect(await definir({ perfis: ['participante'] }, valor)).toEqual({
       ok: false,
@@ -78,7 +78,7 @@ describe('definirValor', () => {
 });
 
 describe('iniciarAno', () => {
-  it('repeats the previous year for each tipo de cota left without a valor, once', async () => {
+  it('RN-PAR-15, RNF-05: repeats the previous year for each tipo de cota left without a valor, once', async () => {
     const { salvos, events, definir, iniciar } = inMemory();
     salvos.push(
       { tipoDeCota: 'so-cafe', ano: 2026, valorEmCentavos: 2500 },
@@ -98,7 +98,7 @@ describe('iniciarAno', () => {
 });
 
 describe('consultarValoresDaCota', () => {
-  it('gives the valor of each tipo de cota defined for the current year, in Campo Grande', async () => {
+  it('RN-PAR-16: gives the valor of each tipo de cota defined for the current year, in Campo Grande', async () => {
     const { salvos, consultar } = inMemory();
     expect(await consultar()).toEqual([]);
     salvos.push(

@@ -5,10 +5,10 @@
 | **Escopo** | Divisão de custos da copa da FACOM |
 | **Sistema** | FACOFFEE |
 | **Disciplina** | Técnicas Avançadas de Desenvolvimento de Software (2026/2) |
-| **Versão** | 2.12 |
+| **Versão** | 2.13 |
 | **Data** | 2026-10-26 |
 | **Status** | Aprovado |
-| **Base** | [Glossário da Linguagem Ubíqua](GLOSSARIO.md) (versão 2.9) e arquitetura do FACOFFEE ([arquitetura/visao-geral.png](../arquitetura/visao-geral.png)) |
+| **Base** | [Glossário da Linguagem Ubíqua](GLOSSARIO.md) (versão 2.10) e arquitetura do FACOFFEE ([arquitetura/visao-geral.png](../arquitetura/visao-geral.png)) |
 
 ## Propósito
 
@@ -232,14 +232,14 @@ O contexto Participação também recebe um evento do contexto Usuário:
 
 ### Agregados
 
-| Agregado | Contexto | O que reúne | Regras que garante |
+| Agregado | Contexto | O que reúne | Regras que garante ([docs/requisitos/](../requisitos/README.md)) |
 |---|---|---|---|
-| **Participante** | Participação | Situação, tipo de cota e cotas devidas | A troca de tipo vale a partir do mês seguinte. A cota é devida enquanto a pessoa participa, com o valor do tipo de cota naquele mês. A participação termina quando a pessoa pede a saída ou tem o acesso desativado. |
-| **Tipo de cota** | Participação | Valor de cada ano | O valor não muda durante o ano. |
-| **Participante** | Financeiro | Cotas devidas, pagamentos, partes de complementos e crédito | O que for pago a mais fica como crédito e abate automaticamente o que vier depois. Na saída, o que foi pago adiantado fica como crédito, e o crédito ou a pendência continuam valendo quando a pessoa retornar. |
-| **Comprovante enviado** | Financeiro | Valor informado, arquivo e situação | Fica a confirmar até o gestor confirmar ou recusar, uma vez só. Só é editado ou cancelado pelo participante enquanto a confirmar. A recusa tem motivo. Confirmado, vira o pagamento, com o valor confirmado. |
-| **Caixinha** | Financeiro | Gastos e reembolsos | Todo gasto tem um tipo de gasto. Um gasto pago do próprio bolso gera reembolso. O dinheiro desse gasto só sai da caixinha no reembolso. |
-| **Complemento** | Financeiro | Valor total e valor por participante | É dividido em partes iguais entre todos os participantes ativos no momento da solicitação. |
+| **Participante** | Participação | Situação, tipo de cota e cotas devidas | [RN-PAR-05](../requisitos/participacao/trocar-tipo-de-cota.md#rn-par-05-a-troca-de-tipo-só-vale-a-partir-do-mês-seguinte), [RN-PAR-09](../requisitos/participacao/dever-a-cota-do-mes.md#rn-par-09-a-cota-é-devida-todo-início-de-mês-enquanto-a-pessoa-participa), [RN-PAR-11](../requisitos/participacao/dever-a-cota-do-mes.md#rn-par-11-o-valor-da-cota-é-o-do-tipo-de-cota-do-participante-naquele-mês-conforme-o-valor-do-ano), [RN-PAR-12](../requisitos/participacao/dever-a-cota-do-mes.md#rn-par-12-depois-de-devida-a-cota-não-muda), [RN-PAR-07](../requisitos/participacao/sair-da-copa.md#rn-par-07-deixa-de-participar-quem-pede-a-saída), [RN-PAR-08](../requisitos/participacao/sair-da-copa.md#rn-par-08-o-acesso-desativado-encerra-a-participação) |
+| **Tipo de cota** | Participação | Valor de cada ano | [RN-PAR-13](../requisitos/participacao/definir-o-valor-da-cota.md#rn-par-13-só-o-gestor-define-o-valor-da-cota), [RN-PAR-14](../requisitos/participacao/definir-o-valor-da-cota.md#rn-par-14-o-valor-da-cota-não-muda-durante-o-ano), [RN-PAR-15](../requisitos/participacao/definir-o-valor-da-cota.md#rn-par-15-sem-definição-até-o-início-do-ano-repete-se-o-valor-do-ano-anterior) |
+| **Participante** | Financeiro | Cotas devidas, pagamentos, partes de complementos e crédito | [RN-FIN-15](../requisitos/financeiro/credito-e-pendentes.md#rn-fin-15-o-que-for-pago-a-mais-vira-crédito), [RN-FIN-16](../requisitos/financeiro/credito-e-pendentes.md#rn-fin-16-o-crédito-abate-automaticamente-as-próximas-cotas-e-complementos), [RN-FIN-17](../requisitos/financeiro/credito-e-pendentes.md#rn-fin-17-pendente-é-quem-tem-cota-ou-complemento-não-pago-nem-abatido-sem-multa-nem-juros), [RN-FIN-18](../requisitos/financeiro/credito-e-pendentes.md#rn-fin-18-crédito-e-pendência-continuam-valendo-na-saída-e-no-retorno) |
+| **Comprovante enviado** | Financeiro | Valor informado, arquivo e situação | [RN-FIN-07](../requisitos/financeiro/enviar-comprovante.md#rn-fin-07-comprovante-a-confirmar-não-é-pagamento), [RN-FIN-08](../requisitos/financeiro/enviar-comprovante.md#rn-fin-08-o-gestor-confirma-ou-recusa-o-comprovante-enviado-uma-vez-só), [RN-FIN-09](../requisitos/financeiro/enviar-comprovante.md#rn-fin-09-ao-confirmar-o-gestor-recebe-o-pagamento-e-vale-o-valor-confirmado), [RN-FIN-10](../requisitos/financeiro/enviar-comprovante.md#rn-fin-10-a-recusa-tem-motivo-que-o-participante-vê), [RN-FIN-11](../requisitos/financeiro/enviar-comprovante.md#rn-fin-11-enquanto-a-confirmar-o-participante-edita-ou-cancela-o-envio-depois-não), [RN-FIN-12](../requisitos/financeiro/enviar-comprovante.md#rn-fin-12-o-gestor-só-confirma-o-arquivo-que-conferiu) |
+| **Caixinha** | Financeiro | Gastos e reembolsos | [RN-FIN-22](../requisitos/financeiro/registrar-gasto-e-reembolsar.md#rn-fin-22-todo-gasto-tem-um-só-tipo-de-gasto), [RN-FIN-23](../requisitos/financeiro/registrar-gasto-e-reembolsar.md#rn-fin-23-todo-gasto-tem-nota-com-o-valor-total), [RN-FIN-24](../requisitos/financeiro/registrar-gasto-e-reembolsar.md#rn-fin-24-gasto-pago-do-próprio-bolso-gera-reembolso-e-só-sai-da-caixinha-no-reembolso), [RN-FIN-25](../requisitos/financeiro/registrar-gasto-e-reembolsar.md#rn-fin-25-só-o-gestor-reembolsa-uma-vez-por-gasto), [RN-FIN-30](../requisitos/financeiro/acompanhar-a-caixinha.md#rn-fin-30-todo-pagamento-entra-na-caixinha-todo-gasto-e-todo-reembolso-saem-dela) |
+| **Complemento** | Financeiro | Valor total e valor por participante | [RN-FIN-27](../requisitos/financeiro/solicitar-complemento.md#rn-fin-27-só-o-gestor-solicita-o-complemento-quando-o-saldo-da-caixinha-não-basta), [RN-FIN-28](../requisitos/financeiro/solicitar-complemento.md#rn-fin-28-o-complemento-é-dividido-em-partes-iguais-entre-os-participantes-ativos-no-momento-inclusive-os-pendentes), [RN-FIN-29](../requisitos/financeiro/solicitar-complemento.md#rn-fin-29-quem-entra-depois-da-solicitação-não-deve-parte-quem-sai-depois-continua-devendo-a-sua) |
 
 ### Decisões do modelo enxuto
 
@@ -317,3 +317,4 @@ Nenhum no momento.
 | 2.10 | 2026-10-26 | Nova política de Notificação: avisar a cota devida e lembrar os pendentes, a partir da leitura *Crédito e pendentes*, que Notificação consulta em Financeiro ([ADR 0027](../adr/0027-lembrete-aos-pendentes.md)). Ponto crítico 1 fechado (#72). Base atualizada para o glossário 2.7. |
 | 2.11 | 2026-10-26 | O participante envia o próprio comprovante, que o gestor confirma, recebendo o pagamento, ou recusa. Novos comandos *Enviar, editar ou cancelar comprovante*, *Confirmar comprovante* e *Recusar comprovante*, agregado *Comprovante enviado* e leitura *Comprovantes enviados*; *Pagamento recebido* também vem da confirmação, sem mudar o contrato ([ADR 0030](../adr/0030-pagamento-iniciado-pelo-participante.md), #87). Base atualizada para o glossário 2.8. |
 | 2.12 | 2026-10-26 | Novos eventos *Comprovante enviado* e *Comprovante recusado*, de Financeiro para Notificação, com as políticas de avisar o gestor de cada comprovante enviado e o participante da recusa; Notificação consulta os gestores em Usuário ([ADR 0031](../adr/0031-avisos-do-comprovante-enviado.md), #88). Base atualizada para o glossário 2.9. |
+| 2.13 | 2026-10-26 | A coluna *Regras que garante* dos agregados passa a apontar para as regras de negócio em [docs/requisitos/](../requisitos/README.md), por ID, sem repetir o texto ([ADR 0032](../adr/0032-requisitos-rastreaveis-em-bdd.md), #96). Base atualizada para o glossário 2.10. |

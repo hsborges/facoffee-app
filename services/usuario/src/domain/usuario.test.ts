@@ -35,7 +35,7 @@ describe('desativar', () => {
   const participante = '7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d';
   const gestor = '11111111-1111-4111-8111-111111111111';
 
-  it('the gestor deactivates another usuário and Usuário desativado is published', () => {
+  it('RN-USU-01: the gestor deactivates another usuário and Usuário desativado is published', () => {
     expect(desativar({ id: gestor, perfis: ['gestor'] }, participante, contexto)).toEqual({
       ok: true,
       value: {
@@ -51,12 +51,12 @@ describe('desativar', () => {
     });
   });
 
-  it('the participante deactivates their own access', () => {
+  it('RN-USU-01: the participante deactivates their own access', () => {
     const solicitante = { id: participante, perfis: ['participante'] as const };
     expect(desativar(solicitante, participante, contexto).ok).toBe(true);
   });
 
-  it('only the gestor deactivates someone else', () => {
+  it('RN-USU-01: only the gestor deactivates someone else', () => {
     const solicitante = { id: gestor, perfis: ['participante'] as const };
     expect(desativar(solicitante, participante, contexto)).toEqual({
       ok: false,

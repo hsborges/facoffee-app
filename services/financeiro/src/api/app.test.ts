@@ -236,7 +236,7 @@ describe('comprovante', () => {
     expect(new Uint8Array(await response.arrayBuffer())).toEqual(PNG);
   });
 
-  it('404 for another participante, as if it did not exist', async () => {
+  it('RN-FIN-04: 404 for another participante, as if it did not exist', async () => {
     const { api, id } = await guardado();
     expect((await api.request(`/comprovante/${id}`, { headers: doOutro })).status).toBe(404);
     expect((await api.request('/comprovante/abc', { headers: gestor })).status).toBe(404);
@@ -249,7 +249,7 @@ describe('comprovante', () => {
     expect((await enviar(api, '/guardar-comprovante', {}, form)).status).toBe(401);
   });
 
-  it('is guardado by the participante for themself, but 403 for someone else', async () => {
+  it('RN-FIN-13: is guardado by the participante for themself, but 403 for someone else', async () => {
     const proprio = formulario({ arquivo: PNG, participanteId: participante });
     expect((await enviar(app(), '/guardar-comprovante', doParticipante, proprio)).status).toBe(201);
     const alheio = formulario({ arquivo: PNG, participanteId: outro });
@@ -324,7 +324,7 @@ describe('POST /receber-pagamento', () => {
     );
   const emDinheiro = { participanteId: participante, valorEmCentavos: 3000, forma: 'dinheiro' };
 
-  it('201 with the id of the pagamento por PIX, referencing its comprovante', async () => {
+  it('RN-FIN-05: 201 with the id of the pagamento por PIX, referencing its comprovante', async () => {
     const api = app();
     const form = formulario({ arquivo: PNG, participanteId: participante });
     const comprovante = await enviar(api, '/guardar-comprovante', gestor, form);
@@ -422,7 +422,7 @@ describe('comprovante enviado', () => {
   const ler = async (api: ReturnType<typeof app>, path: string, headers: object) =>
     (await api.request(path, { headers: headers as Record<string, string> })).json();
 
-  it('is sent by the participante a confirmar, for them and the gestor to see', async () => {
+  it('RN-FIN-07: is sent by the participante a confirmar, for them and the gestor to see', async () => {
     const { api, id, comprovanteId } = await enviado();
     const esperado = {
       id,
@@ -464,7 +464,7 @@ describe('comprovante enviado', () => {
     expect(await alheio.json()).toEqual({ error: 'comprovante-nao-encontrado' });
   });
 
-  it('is edited and cancelled by the participante while a confirmar', async () => {
+  it('RN-FIN-11: is edited and cancelled by the participante while a confirmar', async () => {
     const { api, id } = await enviado();
     const outroArquivo = await guardar(api);
     const editado = await json(api, `/comprovante-enviado/${id}/editar`, doParticipante, {
@@ -487,7 +487,7 @@ describe('comprovante enviado', () => {
     expect(await repetido.json()).toEqual({ error: 'comprovante-enviado-nao-encontrado' });
   });
 
-  it('is confirmed by the gestor once, with the valor confirmado; then nobody changes it', async () => {
+  it('RN-FIN-08: is confirmed by the gestor once, with the valor confirmado; then nobody changes it', async () => {
     const { api, id, comprovanteId } = await enviado();
     const confirmar = (headers: object, body?: unknown) =>
       json(api, `/comprovante-enviado/${id}/confirmar`, headers, body);
@@ -527,7 +527,7 @@ describe('comprovante enviado', () => {
     }
   });
 
-  it('409 when the participante changed the arquivo after the gestor saw it', async () => {
+  it('RN-FIN-12: 409 when the participante changed the arquivo after the gestor saw it', async () => {
     const { api, id, comprovanteId } = await enviado();
     const outroArquivo = await guardar(api);
     await json(api, `/comprovante-enviado/${id}/editar`, doParticipante, {
@@ -545,7 +545,7 @@ describe('comprovante enviado', () => {
     ]);
   });
 
-  it('is recusado by the gestor only with a motivo, which the participante sees', async () => {
+  it('RN-FIN-10: is recusado by the gestor only with a motivo, which the participante sees', async () => {
     const { api, id } = await enviado();
     const recusar = (headers: object, body: unknown) =>
       json(api, `/comprovante-enviado/${id}/recusar`, headers, body);
@@ -597,7 +597,7 @@ describe('POST /registrar-gasto', () => {
   };
 
   it.each(['caixinha', 'proprio-bolso'])(
-    '201 with the id of a gasto pago pela %s, by any participante',
+    'RN-FIN-26: 201 with the id of a gasto pago pela %s, by any participante',
     async (origem) => {
       const api = app();
       const notaId = await comNota(api);
@@ -648,7 +648,7 @@ describe('POST /gasto/:id/reembolsar', () => {
   const reembolsar = (api: ReturnType<typeof app>, headers: Record<string, string>, id: string) =>
     api.request(`/gasto/${id}/reembolsar`, { method: 'POST', headers });
 
-  it('201 with the id of the reembolso, then 409 for the same gasto', async () => {
+  it('RN-FIN-25: 201 with the id of the reembolso, then 409 for the same gasto', async () => {
     const api = app();
     const response = await reembolsar(api, gestor, gastoDoBolso.id.toUpperCase());
     expect(response.status).toBe(201);
@@ -659,7 +659,7 @@ describe('POST /gasto/:id/reembolsar', () => {
     expect(await repetido.json()).toEqual({ error: 'gasto-ja-reembolsado' });
   });
 
-  it('409 for a gasto pago pela caixinha', async () => {
+  it('RN-FIN-24: 409 for a gasto pago pela caixinha', async () => {
     const response = await reembolsar(app(), gestor, gastoDaCaixinha.id);
     expect(response.status).toBe(409);
     expect(await response.json()).toEqual({ error: 'gasto-pago-pela-caixinha' });
@@ -714,7 +714,7 @@ describe('POST /solicitar-complemento', () => {
     expect(await response.json()).toEqual({ id: expect.any(String) });
   });
 
-  it('409 when the parte would be less than one centavo', async () => {
+  it('RN-FIN-28: 409 when the parte would be less than one centavo', async () => {
     const response = await solicitar(gestor, { valorEmCentavos: 1 });
     expect(response.status).toBe(409);
     expect(await response.json()).toEqual({ error: 'parte-menor-que-um-centavo' });
@@ -735,7 +735,7 @@ describe('POST /solicitar-complemento', () => {
 });
 
 describe('GET /caixinha', () => {
-  it('gives any participante the saldo and the gastos do ano anterior', async () => {
+  it('RN-FIN-33: gives any participante the saldo and the gastos do ano anterior', async () => {
     const response = await app().request('/caixinha', { headers: doParticipante });
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
@@ -748,7 +748,7 @@ describe('GET /caixinha', () => {
 });
 
 describe('GET /caixinha/:mes', () => {
-  it('gives any participante the caixinha of the month', async () => {
+  it('RN-FIN-32: gives any participante the caixinha of the month', async () => {
     const response = await app().request('/caixinha/2026-10', { headers: doParticipante });
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ mes: '2026-10', saldoNoFimEmCentavos: 1200 });
@@ -772,19 +772,19 @@ describe('Crédito e pendentes', () => {
     pendenteEmCentavos: 0,
   };
 
-  it('GET /participante gives the gestor every participante', async () => {
+  it('RN-FIN-19: GET /participante gives the gestor every participante', async () => {
     const response = await app().request('/participante', { headers: gestor });
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual([situacao]);
   });
 
-  it('GET /participante is 403 for a participante', async () => {
+  it('RN-FIN-19: GET /participante is 403 for a participante', async () => {
     const response = await app().request('/participante', { headers: doParticipante });
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({ error: 'sem-permissao' });
   });
 
-  it('GET /participante/eu gives the participante only their own situação, cotas and complementos', async () => {
+  it('RN-FIN-20: GET /participante/eu gives the participante only their own situação, cotas and complementos', async () => {
     const response = await app().request('/participante/eu', { headers: doParticipante });
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({

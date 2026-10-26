@@ -32,13 +32,13 @@ const inMemory = (conhecidos = [p1]) => {
 };
 
 describe('registrarGasto', () => {
-  it('saves the gasto as paid by the solicitante', async () => {
+  it('RN-FIN-22, RN-FIN-26: saves the gasto as paid by the solicitante', async () => {
     const { salvos, registrar } = inMemory();
     expect(await registrar({ id: p1 }, doBolso)).toEqual({ ok: true, value: 'id-1' });
     expect(salvos).toEqual([{ ...doBolso, id: 'id-1', participanteId: p1, feitoEm: now }]);
   });
 
-  it('refuses a nota that was not guardada, saving nothing', async () => {
+  it('RN-FIN-23: refuses a nota that was not guardada, saving nothing', async () => {
     const { salvos, registrar } = inMemory();
     expect(await registrar({ id: p1 }, { ...doBolso, notaId: 'nao-existe' })).toEqual({
       ok: false,
@@ -47,7 +47,7 @@ describe('registrarGasto', () => {
     expect(salvos).toEqual([]);
   });
 
-  it('refuses the nota guardada by another participante, saving nothing', async () => {
+  it('RN-FIN-23: refuses the nota guardada by another participante, saving nothing', async () => {
     const { salvos, registrar } = inMemory([p1, p2]);
     expect(await registrar({ id: p2 }, doBolso)).toEqual({
       ok: false,

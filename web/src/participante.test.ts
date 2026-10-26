@@ -101,7 +101,7 @@ describe('editarComprovante', () => {
 describe('situacaoDoComprovante', () => {
   const comprovante = { id: 'c', participanteId, comprovanteId: 'a', valorEmCentavos: 3000 };
 
-  it('shows a confirmar, the valor confirmado or the motivo da recusa', () => {
+  it('RN-FIN-10: shows a confirmar, the valor confirmado or the motivo da recusa', () => {
     const com = (analise: Analise) =>
       situacaoDoComprovante({ ...comprovante, enviadoEm: '', ...analise });
     expect(com({ situacao: 'a-confirmar' })).toBe('A confirmar');

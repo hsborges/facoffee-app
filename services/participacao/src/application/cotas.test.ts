@@ -43,7 +43,7 @@ const participante = (id: string, tipoDeCota: Participante['tipoDeCota']): Parti
 });
 
 describe('iniciarMes', () => {
-  it('each participante ativo owes the cota of the month once, even when triggered twice', async () => {
+  it('RN-PAR-12, RNF-05: each participante ativo owes the cota of the month once, even when triggered twice', async () => {
     const { participantes, devidas, events, iniciar } = inMemory([
       { tipoDeCota: 'so-cafe', ano: 2026, valorEmCentavos: 2500 },
       { tipoDeCota: 'completa', ano: 2026, valorEmCentavos: 3000 },
@@ -65,7 +65,7 @@ describe('iniciarMes', () => {
     ]);
   });
 
-  it('whoever enters during the month owes it on the next trigger', async () => {
+  it('RN-PAR-10: whoever enters during the month owes it on the next trigger', async () => {
     const valores = [{ tipoDeCota: 'so-cafe', ano: 2026, valorEmCentavos: 2500 }] as const;
     const { participantes, iniciar } = inMemory(valores);
     participantes.push(participante(p1, 'so-cafe'));
@@ -75,7 +75,7 @@ describe('iniciarMes', () => {
     expect(await iniciar()).toEqual({ cotasDevidas: 1, semValorDaCota: 0 });
   });
 
-  it('a tipo de cota without a valor for the year leaves its participantes for a later trigger', async () => {
+  it('RN-PAR-11: a tipo de cota without a valor for the year leaves its participantes for a later trigger', async () => {
     const { participantes, devidas, iniciar } = inMemory([
       { tipoDeCota: 'so-cafe', ano: 2026, valorEmCentavos: 2500 },
     ]);

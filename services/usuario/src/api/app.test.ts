@@ -95,7 +95,7 @@ describe('POST /:id/desativar', () => {
 
 // Called by the gateway ForwardAuth before every request (ADR 0011).
 describe('GET /acesso', () => {
-  it('204 for an active usuário and 403 for a deactivated one', async () => {
+  it('RN-USU-02: 204 for an active usuário and 403 for a deactivated one', async () => {
     expect((await app().request('/acesso', { headers: { 'x-user-id': ativo } })).status).toBe(204);
     expect((await app().request('/acesso', { headers: { 'x-user-id': desativado } })).status).toBe(
       403,

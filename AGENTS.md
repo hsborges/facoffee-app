@@ -33,6 +33,7 @@ Contratos de eventos em `contracts/events/` também seguem SemVer: mudança inco
 - Ciclo red → green → refactor: escreva o teste que falha antes do código de produção.
 - Todo `feat` e `fix` vem acompanhado de teste; um `fix` começa por um teste que reproduz o bug.
 - Teste o comportamento do domínio, não detalhes de implementação.
+- O teste que verifica uma regra de negócio cita o ID dela no nome (ver [Requisitos e regras de negócio](#requisitos-e-regras-de-negócio)).
 
 ## Domain-Driven Design
 
@@ -40,6 +41,20 @@ Contratos de eventos em `contracts/events/` também seguem SemVer: mudança inco
 - Respeite os contextos delimitados de [docs/dominio/MODELOS.md](docs/dominio/MODELOS.md): cada serviço em `services/` é um contexto; não compartilhe modelos nem bancos entre eles.
 - Contextos se comunicam apenas por eventos de domínio (`contracts/events/`) ou APIs públicas.
 - Regras de negócio ficam no domínio, livres de framework, banco e I/O; infraestrutura fica nas bordas.
+
+## Requisitos e regras de negócio
+
+`docs/requisitos/` é a fonte única dos requisitos e das regras de negócio, em BDD e rastreados por ID até os testes ([ADR 0032](docs/adr/0032-requisitos-rastreaveis-em-bdd.md)). Índice em [docs/requisitos/README.md](docs/requisitos/README.md).
+
+- IDs: `RF-<CTX>-NN` (funcionalidade), `RN-<CTX>-NN` (regra de negócio), `RNF-NN` (não funcional); `<CTX>` é `PAR`, `FIN`, `USU`, `NOT`, `AGE` ou `WEB`. Numeração sequencial por contexto, nunca reutilizada.
+- Um arquivo por funcionalidade, na subpasta do contexto, com as suas regras dentro; regra usada por mais de uma funcionalidade fica na principal, e as demais apontam para ela.
+- Cada regra tem um ou mais `Cenário` em Gherkin em português, só com termos do glossário.
+- **Regra nova ou alterada atualiza `docs/requisitos/` e o índice no mesmo PR**, e tem ao menos um teste que cita o ID no nome (`it('RN-FIN-07: ...')`). Regra fora do sistema, ou ainda não implementada, leva `- Verificação: revisão` com o motivo.
+- Antes de implementar, leia as regras da funcionalidade; mudança de comportamento que contraria um cenário é mudança de regra, e o cenário muda junto.
+- Regra que deixa de valer é removida do arquivo e do índice; o ID não volta a ser usado.
+- O glossário e MODELOS.md apontam para as regras por ID, sem repetir o texto: termo novo entra no glossário, regra nova entra em `docs/requisitos/`.
+- `pnpm lint` falha com ID fora do formato ou duplicado, ID citado em teste que não existe, arquivo com regras sem exatamente uma funcionalidade, índice desatualizado, regra sem teste ou regra sem `Cenário`; `node scripts/check-requisitos.ts --matriz` gera a matriz de rastreabilidade.
+- Issue e PR citam os IDs afetados nos campos **Requisitos** e **Requisitos afetados**.
 
 ## Decisões — ADRs
 

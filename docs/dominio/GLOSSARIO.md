@@ -5,7 +5,7 @@
 | **Escopo** | Divisão de custos da copa da FACOM |
 | **Sistema** | FACOFFEE |
 | **Disciplina** | Técnicas Avançadas de Desenvolvimento de Software (2026/2) |
-| **Versão** | 2.9 |
+| **Versão** | 2.10 |
 | **Data** | 2026-10-26 |
 | **Status** | Aprovado |
 
@@ -25,7 +25,7 @@ Este glossário define a linguagem ubíqua usada na divisão de custos da copa d
 
 - Os termos aparecem em ordem alfabética.
 - **Definição**: o significado do termo dentro do escopo deste glossário.
-- **Regras**: fatos do domínio ligados ao termo.
+- **Regras**: as regras de negócio ligadas ao termo. O texto de cada regra, com os cenários e os testes que a garantem, fica em [docs/requisitos/](../requisitos/README.md) ([ADR 0032](../adr/0032-requisitos-rastreaveis-em-bdd.md)); aqui ficam só o ID e o título.
 - **O gestor também diz**: palavras que o especialista usa com o mesmo sentido. Valem na conversa, mas nos modelos e no código usa-se só o termo do glossário.
 - **Relacionados**: outros termos do glossário ligados a este.
 
@@ -54,9 +54,8 @@ Dois termos aparecem em mais de um contexto:
 **Definição:** O dinheiro da divisão dos custos. Tudo o que os participantes pagam entra na caixinha, e todo gasto sai dela.
 
 **Regras:**
-- Recebe todos os pagamentos, sejam de cotas ou de complementos.
-- Paga todos os gastos e reembolsos.
-- Acumula de um mês para o outro.
+- [RN-FIN-30](../requisitos/financeiro/acompanhar-a-caixinha.md#rn-fin-30-todo-pagamento-entra-na-caixinha-todo-gasto-e-todo-reembolso-saem-dela) Todo pagamento entra na caixinha; todo gasto e todo reembolso saem dela
+- [RN-FIN-31](../requisitos/financeiro/acompanhar-a-caixinha.md#rn-fin-31-a-caixinha-acumula-de-um-mês-para-o-outro) A caixinha acumula de um mês para o outro
 
 **O gestor também diz:** "reserva", "fundo".
 
@@ -67,12 +66,12 @@ Dois termos aparecem em mais de um contexto:
 **Definição:** O valor extra que o gestor pede aos participantes quando o saldo da caixinha não é suficiente para os gastos.
 
 **Regras:**
-- O gestor calcula quanto falta e solicita o complemento aos participantes.
-- É dividido em partes iguais entre todos os participantes ativos no momento da solicitação, inclusive os pendentes, sem considerar o tipo de cota, porque costuma ser um valor pequeno.
-- Quem entra depois da solicitação não deve parte do complemento; quem sai depois continua devendo a sua parte.
-- O complemento pago entra na caixinha.
-- Pode ser abatido do [crédito](#crédito) do participante.
-- Enquanto não paga o complemento, o participante fica [pendente](#pendente).
+- [RN-FIN-27](../requisitos/financeiro/solicitar-complemento.md#rn-fin-27-só-o-gestor-solicita-o-complemento-quando-o-saldo-da-caixinha-não-basta) Só o gestor solicita o complemento, quando o saldo da caixinha não basta
+- [RN-FIN-28](../requisitos/financeiro/solicitar-complemento.md#rn-fin-28-o-complemento-é-dividido-em-partes-iguais-entre-os-participantes-ativos-no-momento-inclusive-os-pendentes) O complemento é dividido em partes iguais entre os participantes ativos no momento, inclusive os pendentes
+- [RN-FIN-29](../requisitos/financeiro/solicitar-complemento.md#rn-fin-29-quem-entra-depois-da-solicitação-não-deve-parte-quem-sai-depois-continua-devendo-a-sua) Quem entra depois da solicitação não deve parte; quem sai depois continua devendo a sua
+- [RN-FIN-30](../requisitos/financeiro/acompanhar-a-caixinha.md#rn-fin-30-todo-pagamento-entra-na-caixinha-todo-gasto-e-todo-reembolso-saem-dela) Todo pagamento entra na caixinha; todo gasto e todo reembolso saem dela
+- [RN-FIN-16](../requisitos/financeiro/credito-e-pendentes.md#rn-fin-16-o-crédito-abate-automaticamente-as-próximas-cotas-e-complementos) O crédito abate automaticamente as próximas cotas e complementos
+- [RN-FIN-17](../requisitos/financeiro/credito-e-pendentes.md#rn-fin-17-pendente-é-quem-tem-cota-ou-complemento-não-pago-nem-abatido-sem-multa-nem-juros) Pendente é quem tem cota ou complemento não pago nem abatido, sem multa nem juros
 
 **Relacionados:** [Saldo da caixinha](#saldo-da-caixinha), [Caixinha](#caixinha), [Gestor](#gestor), [Pagamento](#pagamento), [Crédito](#crédito), [Pendente](#pendente).
 
@@ -81,7 +80,7 @@ Dois termos aparecem em mais de um contexto:
 **Definição:** A aquisição de itens para abastecer a copa, feita conforme eles vão acabando.
 
 **Regras:**
-- Normalmente quem compra é o gestor; às vezes, outro participante.
+- [RN-FIN-26](../requisitos/financeiro/registrar-gasto-e-reembolsar.md#rn-fin-26-qualquer-participante-registra-um-gasto) Qualquer participante registra um gasto
 
 **O gestor também diz:** "reposição".
 
@@ -92,13 +91,18 @@ Dois termos aparecem em mais de um contexto:
 **Definição:** A prova de um pagamento por PIX, que o participante envia ao gestor ou que o gestor guarda ao receber o pagamento.
 
 **Regras:**
-- Só se aplica a pagamentos. O documento de um gasto é a [Nota](#nota).
-- Fica guardado junto do pagamento a que se refere e vale para um pagamento só.
-- É do participante cujas cotas o pagamento quita, mesmo que o PIX tenha saído da conta de outra pessoa. Só ele e o gestor veem o comprovante.
-- O participante pode enviar o próprio comprovante ao gestor, com o valor pago. O comprovante enviado fica **a confirmar** até o gestor analisá-lo, e enquanto isso não conta como pagamento.
-- O gestor **confirma** ou **recusa** o comprovante enviado, uma vez só. Ao confirmar, recebe o pagamento e pode corrigir o valor; vale o valor confirmado. Ao recusar, informa o motivo.
-- Enquanto está a confirmar, o participante pode editar o valor e o arquivo ou cancelar o envio. Depois de confirmado ou recusado, não pode mais. O comprovante recusado ou cancelado não conta como pagamento.
-- O FACOFFEE avisa o gestor de cada comprovante enviado, com quem enviou e o valor, e avisa o participante da confirmação, com o valor confirmado, ou da recusa, com o motivo.
+- [RN-FIN-06](../requisitos/financeiro/receber-pagamento.md#rn-fin-06-comprovante-é-de-pagamento-o-documento-de-um-gasto-é-a-nota) Comprovante é de pagamento; o documento de um gasto é a nota
+- [RN-FIN-05](../requisitos/financeiro/receber-pagamento.md#rn-fin-05-o-comprovante-fica-guardado-junto-do-pagamento-e-vale-para-um-pagamento-só) O comprovante fica guardado junto do pagamento e vale para um pagamento só
+- [RN-FIN-04](../requisitos/financeiro/receber-pagamento.md#rn-fin-04-o-comprovante-é-do-participante-e-só-ele-e-o-gestor-o-veem) O comprovante é do participante, e só ele e o gestor o veem
+- [RN-FIN-07](../requisitos/financeiro/enviar-comprovante.md#rn-fin-07-comprovante-a-confirmar-não-é-pagamento) Comprovante a confirmar não é pagamento
+- [RN-FIN-08](../requisitos/financeiro/enviar-comprovante.md#rn-fin-08-o-gestor-confirma-ou-recusa-o-comprovante-enviado-uma-vez-só) O gestor confirma ou recusa o comprovante enviado, uma vez só
+- [RN-FIN-09](../requisitos/financeiro/enviar-comprovante.md#rn-fin-09-ao-confirmar-o-gestor-recebe-o-pagamento-e-vale-o-valor-confirmado) Ao confirmar, o gestor recebe o pagamento e vale o valor confirmado
+- [RN-FIN-10](../requisitos/financeiro/enviar-comprovante.md#rn-fin-10-a-recusa-tem-motivo-que-o-participante-vê) A recusa tem motivo, que o participante vê
+- [RN-FIN-11](../requisitos/financeiro/enviar-comprovante.md#rn-fin-11-enquanto-a-confirmar-o-participante-edita-ou-cancela-o-envio-depois-não) Enquanto a confirmar, o participante edita ou cancela o envio; depois, não
+- [RN-FIN-12](../requisitos/financeiro/enviar-comprovante.md#rn-fin-12-o-gestor-só-confirma-o-arquivo-que-conferiu) O gestor só confirma o arquivo que conferiu
+- [RN-FIN-13](../requisitos/financeiro/enviar-comprovante.md#rn-fin-13-o-participante-guarda-comprovante-só-para-si-o-gestor-para-qualquer-participante) O participante guarda comprovante só para si; o gestor, para qualquer participante
+- [RN-NOT-05](../requisitos/notificacao/avisar-os-participantes.md#rn-not-05-comprovante-enviado-avisa-cada-gestor-com-quem-enviou-e-o-valor) Comprovante enviado avisa cada gestor, com quem enviou e o valor
+- [RN-NOT-06](../requisitos/notificacao/avisar-os-participantes.md#rn-not-06-comprovante-recusado-avisa-o-participante-com-o-valor-e-o-motivo) Comprovante recusado avisa o participante, com o valor e o motivo
 
 **Relacionados:** [Pagamento](#pagamento), [Nota](#nota).
 
@@ -107,7 +111,7 @@ Dois termos aparecem em mais de um contexto:
 **Definição:** O uso que os participantes fazem dos itens da copa (café, açúcar, leite, filtros, copos, bolachas e chás), dentro do que o tipo de cota permite.
 
 **Regras:**
-- Ninguém mede nem anota o consumo de cada participante; funciona na confiança.
+- [RNF-11](../requisitos/nao-funcionais.md#rnf-11-confiança-no-consumo-o-uso-da-copa-fica-fora-do-facoffee) Confiança no consumo: o uso da copa fica fora do FACOFFEE
 
 **O gestor também diz:** "consumo regular", "itens da copa", "suprimentos".
 
@@ -118,8 +122,7 @@ Dois termos aparecem em mais de um contexto:
 **Definição:** O espaço do departamento onde ficam a máquina de café e os itens de consumo e onde o pessoal se encontra.
 
 **Regras:**
-- Só quem participa usa a copa.
-- O acesso não é controlado; funciona na confiança.
+- [RNF-11](../requisitos/nao-funcionais.md#rnf-11-confiança-no-consumo-o-uso-da-copa-fica-fora-do-facoffee) Confiança no consumo: o uso da copa fica fora do FACOFFEE
 
 **Relacionados:** [Participante](#participante), [Consumo](#consumo).
 
@@ -128,13 +131,12 @@ Dois termos aparecem em mais de um contexto:
 **Definição:** O valor que o participante deve por mês para participar da divisão dos custos, de acordo com o seu tipo de cota.
 
 **Regras:**
-- É devida todo mês, no início do mês, enquanto a pessoa participa.
-- Quem entra durante o mês também deve a cota daquele mês.
-- O valor é o do [tipo de cota](#tipo-de-cota) do participante naquele mês, conforme o [valor da cota](#valor-da-cota) do ano.
-- Depois de devida, o valor não muda, mesmo que o participante troque de tipo ou saia.
-- O gestor também chama de "cota" o tipo escolhido. Neste glossário, **Cota** é sempre o valor do mês e **[Tipo de cota](#tipo-de-cota)** é a modalidade.
+- [RN-PAR-09](../requisitos/participacao/dever-a-cota-do-mes.md#rn-par-09-a-cota-é-devida-todo-início-de-mês-enquanto-a-pessoa-participa) A cota é devida todo início de mês enquanto a pessoa participa
+- [RN-PAR-10](../requisitos/participacao/dever-a-cota-do-mes.md#rn-par-10-quem-entra-durante-o-mês-também-deve-a-cota-daquele-mês) Quem entra durante o mês também deve a cota daquele mês
+- [RN-PAR-11](../requisitos/participacao/dever-a-cota-do-mes.md#rn-par-11-o-valor-da-cota-é-o-do-tipo-de-cota-do-participante-naquele-mês-conforme-o-valor-do-ano) O valor da cota é o do tipo de cota do participante naquele mês, conforme o valor do ano
+- [RN-PAR-12](../requisitos/participacao/dever-a-cota-do-mes.md#rn-par-12-depois-de-devida-a-cota-não-muda) Depois de devida, a cota não muda
 
-**O gestor também diz:** "a cota de março".
+**O gestor também diz:** "a cota de março". Também chama de "cota" o tipo escolhido; neste glossário, **Cota** é sempre o valor do mês e **[Tipo de cota](#tipo-de-cota)** é a modalidade.
 
 **Relacionados:** [Tipo de cota](#tipo-de-cota), [Valor da cota](#valor-da-cota), [Pagamento](#pagamento), [Crédito](#crédito), [Pendente](#pendente).
 
@@ -143,10 +145,10 @@ Dois termos aparecem em mais de um contexto:
 **Definição:** O valor pago a mais por um participante, que fica guardado para abater as próximas cotas ou complementos dele.
 
 **Regras:**
-- É abatido automaticamente das próximas cotas e complementos do participante, sem que o gestor precise decidir.
-- O dinheiro do crédito fica na caixinha, como todo pagamento.
-- Na saída, os meses pagos adiantado viram crédito.
-- O crédito não é devolvido em dinheiro; fica guardado para o participante usar quando retornar.
+- [RN-FIN-15](../requisitos/financeiro/credito-e-pendentes.md#rn-fin-15-o-que-for-pago-a-mais-vira-crédito) O que for pago a mais vira crédito
+- [RN-FIN-16](../requisitos/financeiro/credito-e-pendentes.md#rn-fin-16-o-crédito-abate-automaticamente-as-próximas-cotas-e-complementos) O crédito abate automaticamente as próximas cotas e complementos
+- [RN-FIN-18](../requisitos/financeiro/credito-e-pendentes.md#rn-fin-18-crédito-e-pendência-continuam-valendo-na-saída-e-no-retorno) Crédito e pendência continuam valendo na saída e no retorno
+- [RN-FIN-21](../requisitos/financeiro/credito-e-pendentes.md#rn-fin-21-o-crédito-não-é-devolvido-em-dinheiro) O crédito não é devolvido em dinheiro
 
 **Relacionados:** [Pagamento](#pagamento), [Cota](#cota), [Complemento](#complemento), [Caixinha](#caixinha), [Participante](#participante).
 
@@ -155,9 +157,9 @@ Dois termos aparecem em mais de um contexto:
 **Definição:** O dinheiro usado para manter a copa: compras de itens, conserto e manutenção da máquina de café e reposição de itens quebrados.
 
 **Regras:**
-- Todo gasto sai da caixinha.
-- Quem paga um gasto do próprio bolso recebe [reembolso](#reembolso).
-- Todo gasto tem um [tipo de gasto](#tipo-de-gasto).
+- [RN-FIN-30](../requisitos/financeiro/acompanhar-a-caixinha.md#rn-fin-30-todo-pagamento-entra-na-caixinha-todo-gasto-e-todo-reembolso-saem-dela) Todo pagamento entra na caixinha; todo gasto e todo reembolso saem dela
+- [RN-FIN-24](../requisitos/financeiro/registrar-gasto-e-reembolsar.md#rn-fin-24-gasto-pago-do-próprio-bolso-gera-reembolso-e-só-sai-da-caixinha-no-reembolso) Gasto pago do próprio bolso gera reembolso, e só sai da caixinha no reembolso
+- [RN-FIN-22](../requisitos/financeiro/registrar-gasto-e-reembolsar.md#rn-fin-22-todo-gasto-tem-um-só-tipo-de-gasto) Todo gasto tem um só tipo de gasto
 
 **O gestor também diz:** "despesa", "o que saiu".
 
@@ -168,9 +170,13 @@ Dois termos aparecem em mais de um contexto:
 **Definição:** O participante que organiza a divisão dos custos: avisa e cobra o pessoal, recebe os pagamentos, faz a maior parte das compras para manter a copa abastecida, cuida da caixinha e, quando falta dinheiro, calcula e pede o complemento.
 
 **Regras:**
-- É um papel, não uma pessoa à parte: o gestor também é um participante, com tipo de cota e cotas como os demais.
-- Hoje é uma pessoa só.
-- Só o gestor define o [valor da cota](#valor-da-cota), recebe [pagamentos](#pagamento), confirma ou recusa os [comprovantes](#comprovante) enviados pelos participantes, solicita [complementos](#complemento), faz [reembolsos](#reembolso) e desativa o acesso de um participante ao FACOFFEE.
+- [RN-PAR-04](../requisitos/participacao/entrar-na-copa.md#rn-par-04-o-gestor-é-um-papel-de-participante) O gestor é um papel de participante
+- [RN-PAR-13](../requisitos/participacao/definir-o-valor-da-cota.md#rn-par-13-só-o-gestor-define-o-valor-da-cota) Só o gestor define o valor da cota
+- [RN-FIN-01](../requisitos/financeiro/receber-pagamento.md#rn-fin-01-só-o-gestor-recebe-pagamentos) Só o gestor recebe pagamentos
+- [RN-FIN-08](../requisitos/financeiro/enviar-comprovante.md#rn-fin-08-o-gestor-confirma-ou-recusa-o-comprovante-enviado-uma-vez-só) O gestor confirma ou recusa o comprovante enviado, uma vez só
+- [RN-FIN-27](../requisitos/financeiro/solicitar-complemento.md#rn-fin-27-só-o-gestor-solicita-o-complemento-quando-o-saldo-da-caixinha-não-basta) Só o gestor solicita o complemento, quando o saldo da caixinha não basta
+- [RN-FIN-25](../requisitos/financeiro/registrar-gasto-e-reembolsar.md#rn-fin-25-só-o-gestor-reembolsa-uma-vez-por-gasto) Só o gestor reembolsa, uma vez por gasto
+- [RN-USU-01](../requisitos/usuario/acesso-ao-facoffee.md#rn-usu-01-o-acesso-é-desativado-pelo-gestor-ou-a-pedido-da-própria-pessoa-só-o-gestor-desativa-outra) O acesso é desativado pelo gestor ou a pedido da própria pessoa; só o gestor desativa outra
 
 **O gestor também diz:** "responsável".
 
@@ -181,7 +187,7 @@ Dois termos aparecem em mais de um contexto:
 **Definição:** A nota fiscal ou o recibo de um gasto, guardado para saber quanto foi gasto e para fazer o reembolso.
 
 **Regras:**
-- Basta o valor total; o gasto não precisa ser registrado item por item.
+- [RN-FIN-23](../requisitos/financeiro/registrar-gasto-e-reembolsar.md#rn-fin-23-todo-gasto-tem-nota-com-o-valor-total) Todo gasto tem nota, com o valor total
 
 **O gestor também diz:** "notinha", "recibo", "cupom".
 
@@ -192,13 +198,12 @@ Dois termos aparecem em mais de um contexto:
 **Definição:** O dinheiro que o gestor recebe, por PIX ou em mãos, para quitar as cotas ou um complemento de um participante.
 
 **Regras:**
-- Normalmente quita de uma vez as cotas de um semestre ou de um ano, no início do período.
-- O que for pago a mais vira [crédito](#crédito).
-- Todo pagamento entra na caixinha.
-- O pagamento por PIX é acompanhado de [comprovante](#comprovante).
-- O gestor recebe o pagamento diretamente ou ao confirmar o comprovante que o participante enviou. Antes da confirmação, o comprovante enviado não é pagamento.
-- Pertence ao participante cujas cotas ou complementos ele quita, mesmo quando outra pessoa entrega o dinheiro. Quem entregou não é guardado e não precisa ser participante; no PIX, o nome aparece no comprovante.
-- Quita as cotas de um participante só. Se alguém paga por mais de uma pessoa, o gestor registra um pagamento para cada uma.
+- [RN-FIN-15](../requisitos/financeiro/credito-e-pendentes.md#rn-fin-15-o-que-for-pago-a-mais-vira-crédito) O que for pago a mais vira crédito
+- [RN-FIN-30](../requisitos/financeiro/acompanhar-a-caixinha.md#rn-fin-30-todo-pagamento-entra-na-caixinha-todo-gasto-e-todo-reembolso-saem-dela) Todo pagamento entra na caixinha; todo gasto e todo reembolso saem dela
+- [RN-FIN-02](../requisitos/financeiro/receber-pagamento.md#rn-fin-02-o-pagamento-por-pix-é-acompanhado-de-comprovante-em-dinheiro-não) O pagamento por PIX é acompanhado de comprovante; em dinheiro, não
+- [RN-FIN-09](../requisitos/financeiro/enviar-comprovante.md#rn-fin-09-ao-confirmar-o-gestor-recebe-o-pagamento-e-vale-o-valor-confirmado) Ao confirmar, o gestor recebe o pagamento e vale o valor confirmado
+- [RN-FIN-07](../requisitos/financeiro/enviar-comprovante.md#rn-fin-07-comprovante-a-confirmar-não-é-pagamento) Comprovante a confirmar não é pagamento
+- [RN-FIN-03](../requisitos/financeiro/receber-pagamento.md#rn-fin-03-o-pagamento-pertence-ao-participante-cujas-cotas-ele-quita) O pagamento pertence ao participante cujas cotas ele quita
 
 **O gestor também diz:** "acertar", "quitar", "acerto", "repasse".
 
@@ -209,9 +214,10 @@ Dois termos aparecem em mais de um contexto:
 **Definição:** Professor ou técnico administrativo da FACOM que, por vontade própria, participa da divisão dos custos com um tipo de cota.
 
 **Regras:**
-- Deixa de participar quando pede a saída ao gestor.
-- Também deixa de participar quando o seu acesso ao FACOFFEE é desativado, seja pelo gestor, seja a pedido do próprio participante.
-- Pode retornar depois de sair. O crédito, as cotas e os complementos não pagos ficam guardados para o retorno.
+- [RN-PAR-07](../requisitos/participacao/sair-da-copa.md#rn-par-07-deixa-de-participar-quem-pede-a-saída) Deixa de participar quem pede a saída
+- [RN-PAR-08](../requisitos/participacao/sair-da-copa.md#rn-par-08-o-acesso-desativado-encerra-a-participação) O acesso desativado encerra a participação
+- [RN-PAR-03](../requisitos/participacao/entrar-na-copa.md#rn-par-03-retornar-é-entrar-de-novo) Retornar é entrar de novo
+- [RN-FIN-18](../requisitos/financeiro/credito-e-pendentes.md#rn-fin-18-crédito-e-pendência-continuam-valendo-na-saída-e-no-retorno) Crédito e pendência continuam valendo na saída e no retorno
 
 **O gestor também diz:** "o pessoal", "os colegas", "quem está na copa".
 
@@ -222,10 +228,9 @@ Dois termos aparecem em mais de um contexto:
 **Definição:** O participante que tem a cota de algum mês, até o atual, ou um complemento que não foi pago nem abatido do crédito.
 
 **Regras:**
-- As cotas não pagas se acumulam, mês a mês, até a saída do participante.
-- Na saída, as cotas e os complementos não pagos ficam registrados como devidos.
-- Pode continuar usando a copa e quitar depois.
-- Não há multa nem juros; o gestor acompanha, e o FACOFFEE lembra o participante ativo pendente uma vez por mês, só da própria situação, até ele acertar.
+- [RN-FIN-17](../requisitos/financeiro/credito-e-pendentes.md#rn-fin-17-pendente-é-quem-tem-cota-ou-complemento-não-pago-nem-abatido-sem-multa-nem-juros) Pendente é quem tem cota ou complemento não pago nem abatido, sem multa nem juros
+- [RN-FIN-18](../requisitos/financeiro/credito-e-pendentes.md#rn-fin-18-crédito-e-pendência-continuam-valendo-na-saída-e-no-retorno) Crédito e pendência continuam valendo na saída e no retorno
+- [RN-NOT-08](../requisitos/notificacao/lembrar-os-pendentes.md#rn-not-08-a-partir-do-dia-10-cada-participante-ativo-pendente-é-lembrado-uma-vez-no-mês-só-da-própria-situação) A partir do dia 10, cada participante ativo pendente é lembrado uma vez no mês, só da própria situação
 
 **O gestor também diz:** "devendo", "em atraso".
 
@@ -236,8 +241,8 @@ Dois termos aparecem em mais de um contexto:
 **Definição:** A devolução do que o gestor ou outro participante pagou do próprio bolso num gasto da copa: compra, conserto, manutenção ou reposição.
 
 **Regras:**
-- Sai da caixinha.
-- Quem faz o reembolso é o gestor.
+- [RN-FIN-30](../requisitos/financeiro/acompanhar-a-caixinha.md#rn-fin-30-todo-pagamento-entra-na-caixinha-todo-gasto-e-todo-reembolso-saem-dela) Todo pagamento entra na caixinha; todo gasto e todo reembolso saem dela
+- [RN-FIN-25](../requisitos/financeiro/registrar-gasto-e-reembolsar.md#rn-fin-25-só-o-gestor-reembolsa-uma-vez-por-gasto) Só o gestor reembolsa, uma vez por gasto
 
 **Relacionados:** [Gasto](#gasto), [Compra](#compra), [Nota](#nota), [Caixinha](#caixinha), [Gestor](#gestor).
 
@@ -246,7 +251,7 @@ Dois termos aparecem em mais de um contexto:
 **Definição:** Quanto dinheiro ainda está disponível na caixinha para as compras ou manutenções necessárias: tudo o que entrou menos tudo o que saiu.
 
 **Regras:**
-- Quando não é suficiente para os gastos, o gestor pede um [complemento](#complemento).
+- [RN-FIN-27](../requisitos/financeiro/solicitar-complemento.md#rn-fin-27-só-o-gestor-solicita-o-complemento-quando-o-saldo-da-caixinha-não-basta) Só o gestor solicita o complemento, quando o saldo da caixinha não basta
 
 **O gestor também diz:** "o que sobrou".
 
@@ -262,7 +267,7 @@ Dois termos aparecem em mais de um contexto:
 | **Completa** | R$ 30,00 | Café, bolachas, chás e os demais itens da copa |
 
 **Regras:**
-- A troca de tipo só vale a partir do mês seguinte.
+- [RN-PAR-05](../requisitos/participacao/trocar-tipo-de-cota.md#rn-par-05-a-troca-de-tipo-só-vale-a-partir-do-mês-seguinte) A troca de tipo só vale a partir do mês seguinte
 
 **O gestor também diz:** "cota" ("ela está na cota completa").
 
@@ -280,8 +285,7 @@ Dois termos aparecem em mais de um contexto:
 | **Reposição** | Reposição de itens quebrados. Não é a reposição dos itens que acabam, que é uma [compra](#compra) de café ou de outros itens da copa. |
 
 **Regras:**
-- Cada gasto tem um só tipo, escolhido por quem o registra. Uma nota com itens de tipos diferentes fica com o tipo da maior parte do valor; o gasto não é registrado item por item.
-- O café fica separado dos outros itens porque é o que os dois [tipos de cota](#tipo-de-cota) têm em comum.
+- [RN-FIN-22](../requisitos/financeiro/registrar-gasto-e-reembolsar.md#rn-fin-22-todo-gasto-tem-um-só-tipo-de-gasto) Todo gasto tem um só tipo de gasto
 
 **O gestor também diz:** "tipo de coisa".
 
@@ -292,9 +296,9 @@ Dois termos aparecem em mais de um contexto:
 **Definição:** O valor de cada tipo de cota, definido pelo gestor no início do ano com base nos gastos do ano anterior.
 
 **Regras:**
-- Não muda durante o ano.
-- Se o gestor não define o valor de um tipo de cota até o início do ano, repete-se o valor do ano anterior.
-- Os participantes são avisados quando o valor é definido.
+- [RN-PAR-14](../requisitos/participacao/definir-o-valor-da-cota.md#rn-par-14-o-valor-da-cota-não-muda-durante-o-ano) O valor da cota não muda durante o ano
+- [RN-PAR-15](../requisitos/participacao/definir-o-valor-da-cota.md#rn-par-15-sem-definição-até-o-início-do-ano-repete-se-o-valor-do-ano-anterior) Sem definição até o início do ano, repete-se o valor do ano anterior
+- [RN-NOT-01](../requisitos/notificacao/avisar-os-participantes.md#rn-not-01-os-participantes-são-avisados-quando-o-valor-da-cota-é-definido) Os participantes são avisados quando o valor da cota é definido
 
 **Relacionados:** [Tipo de cota](#tipo-de-cota), [Cota](#cota), [Gasto](#gasto), [Gestor](#gestor).
 
@@ -391,3 +395,4 @@ Nenhuma.
 | 2.7 | 2026-10-26 | [Pendente](#pendente): o FACOFFEE lembra o participante ativo pendente uma vez por mês, e o gestor só acompanha ([ADR 0027](../adr/0027-lembrete-aos-pendentes.md), #72). |
 | 2.8 | 2026-10-26 | Validado com o gestor: o participante envia o próprio [comprovante](#comprovante), que fica a confirmar até o gestor confirmar, com o valor corrigido se preciso, ou recusar, com o motivo; enquanto a confirmar, o participante edita ou cancela o envio. [Pagamento](#pagamento) e [Gestor](#gestor) ganham a confirmação do comprovante. "Aprovar" e "rejeitar" comprovante entram nos termos a evitar ([ADR 0030](../adr/0030-pagamento-iniciado-pelo-participante.md), #87). |
 | 2.9 | 2026-10-26 | [Comprovante](#comprovante): o FACOFFEE avisa o gestor de cada comprovante enviado e o participante da confirmação ou da recusa. Novos nomes nos contratos: comprovante (`receipt`), motivo (`reason`) e os eventos *Comprovante enviado* e *Comprovante recusado* ([ADR 0031](../adr/0031-avisos-do-comprovante-enviado.md), #88). |
+| 2.10 | 2026-10-26 | As seções **Regras** passam a apontar para as regras de negócio em [docs/requisitos/](../requisitos/README.md), por ID, sem repetir o texto ([ADR 0032](../adr/0032-requisitos-rastreaveis-em-bdd.md), #96). |

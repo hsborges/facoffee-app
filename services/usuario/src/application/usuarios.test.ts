@@ -60,7 +60,7 @@ describe('desativarAcesso', () => {
     ]);
   });
 
-  it('does not publish again for an usuário already desativado', async () => {
+  it('RN-USU-03: does not publish again for an usuário already desativado', async () => {
     const { events, desativar } = inMemory();
 
     await desativar(gestor, 'user-1');
@@ -83,14 +83,14 @@ describe('registrarAcesso and listarUsuarios', () => {
   const joao = { id: 'user-1', nome: 'João', email: 'joao@ufms.br' };
   const comPerfis = { ...joao, perfis: ['participante'] as const };
 
-  it('registers the usuário on the first access and lists them to the gestor', async () => {
+  it('RN-USU-05: registers the usuário on the first access and lists them to the gestor', async () => {
     const { registrar, listar } = inMemory();
 
     expect(await registrar(comPerfis)).toBe('ativo');
     expect(await listar(gestor)).toEqual({ ok: true, value: [{ ...joao, desativado: false }] });
   });
 
-  it('updates nome and email on the next access', async () => {
+  it('RN-USU-05: updates nome and email on the next access', async () => {
     const { registrar, listar } = inMemory();
 
     await registrar(comPerfis);
@@ -101,7 +101,7 @@ describe('registrarAcesso and listarUsuarios', () => {
     });
   });
 
-  it('keeps the perfis of the latest access', async () => {
+  it('RN-USU-05: keeps the perfis of the latest access', async () => {
     const { registrar, perfis } = inMemory();
 
     await registrar(comPerfis);
@@ -117,13 +117,13 @@ describe('registrarAcesso and listarUsuarios', () => {
     expect(await listar(gestor)).toEqual({ ok: true, value: [{ ...joao, desativado: true }] });
   });
 
-  it('only the gestor lists the usuários', async () => {
+  it('RN-USU-06: only the gestor lists the usuários', async () => {
     expect(await inMemory().listar(participante)).toEqual({ ok: false, error: 'sem-permissao' });
   });
 });
 
 describe('reativarAcesso', () => {
-  it('the gestor reactivates a desativado access', async () => {
+  it('RN-USU-04: the gestor reactivates a desativado access', async () => {
     const { desativados, desativar, reativar } = inMemory();
 
     await desativar(gestor, 'user-1');
@@ -131,7 +131,7 @@ describe('reativarAcesso', () => {
     expect(desativados.size).toBe(0);
   });
 
-  it('only the gestor reactivates, even their own access', async () => {
+  it('RN-USU-04: only the gestor reactivates, even their own access', async () => {
     const { desativados, desativar, reativar } = inMemory();
 
     await desativar(participante, participante.id);

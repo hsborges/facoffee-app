@@ -22,7 +22,7 @@ const respostas: Record<string, unknown> = {
 };
 
 describe('dispararGatilhos', () => {
-  it('triggers the início do ano, the início do mês, then the lembrete, and logs what each did', async () => {
+  it('RNF-05: triggers the início do ano, the início do mês, then the lembrete, and logs what each did', async () => {
     logs.length = 0;
     const { chamadas, fetch } = servicos((url) =>
       Response.json(respostas[url.slice(url.lastIndexOf('/') + 1)]),
@@ -42,7 +42,7 @@ describe('dispararGatilhos', () => {
     ]);
   });
 
-  it('stops at a failed trigger, so the month never runs before the year; the next run retries', async () => {
+  it('RNF-05: stops at a failed trigger, so the month never runs before the year; the next run retries', async () => {
     logs.length = 0;
     const falha = servicos(() => new Response(null, { status: 500 }));
     await dispararGatilhos(urls, logger, falha.fetch);

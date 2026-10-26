@@ -1,6 +1,6 @@
 # Contribuindo
 
-Como desenvolver no FACOFFEE. O que o produto faz está no [README](README.md); as práticas completas (TDD, DDD, ADRs, estilo) em [AGENTS.md](AGENTS.md). Antes de mexer no domínio, leia a [visão de produto](docs/produto/VISAO.md), o [glossário](docs/dominio/GLOSSARIO.md) e os [modelos de domínio](docs/dominio/MODELOS.md).
+Como desenvolver no FACOFFEE. O que o produto faz está no [README](README.md); as práticas completas (TDD, DDD, ADRs, estilo) em [AGENTS.md](AGENTS.md). Antes de mexer no domínio, leia a [visão de produto](docs/produto/VISAO.md), o [glossário](docs/dominio/GLOSSARIO.md), os [modelos de domínio](docs/dominio/MODELOS.md) e os [requisitos](docs/requisitos/README.md) da funcionalidade.
 
 ## Arquitetura
 
@@ -19,8 +19,8 @@ Um serviço por contexto delimitado, cada um com o próprio banco ([ADR 0001](do
 | `web/` | FACOFFEE web |
 | `infra/` | Ambiente local (docker compose, Keycloak, RabbitMQ, bancos, arquivos, e-mail) |
 | `e2e/` | Teste ponta a ponta |
-| `scripts/` | Scripts da raiz (verificação de TSDoc) |
-| `docs/` | Produto, domínio, arquitetura, ADRs e design ([índice](docs/README.md)) |
+| `scripts/` | Scripts da raiz (verificação de TSDoc e dos requisitos) |
+| `docs/` | Produto, domínio, requisitos, arquitetura, ADRs e design ([índice](docs/README.md)) |
 
 Cada pasta tem um README com rotas, eventos publicados e consumidos e configuração. Todo serviço segue as camadas do [template](templates/service/README.md): `domain/` (funções puras), `application/` (casos de uso), `infra/` (banco, mensageria) e `api/` (rotas HTTP).
 
@@ -51,7 +51,7 @@ O web e a API ficam em https://localhost (ou http://localhost), a documentação
 
 | Comando | O que faz |
 |---|---|
-| `pnpm lint` | Lint e formatação (Biome) e TSDoc nos exports (`scripts/check-tsdoc.ts`), sem alterar arquivos |
+| `pnpm lint` | Lint e formatação (Biome), TSDoc nos exports (`scripts/check-tsdoc.ts`) e requisitos rastreados (`scripts/check-requisitos.ts`), sem alterar arquivos. `node scripts/check-requisitos.ts --matriz` gera a matriz de rastreabilidade |
 | `pnpm format` | Corrige lint e formatação |
 | `pnpm test` | Testes (Vitest) de todos os workspaces |
 | `pnpm test:e2e` | Teste ponta a ponta do fluxo de eventos com Playwright ([`e2e/`](e2e/), [ADR 0023](docs/adr/0023-teste-ponta-a-ponta-com-playwright.md)), no computador e, nos testes das telas (`@celular`), num celular de 320 px ([ADR 0028](docs/adr/0028-mobile-first.md)). Sobe uma stack própria com Testcontainers ([`infra/docker-compose.test.yml`](infra/docker-compose.test.yml), em portas aleatórias, ao lado da stack local) e a remove no fim; os logs ficam em `test-results/compose.log`. Precisa do Docker; na primeira vez, `pnpm exec playwright install chromium` |
@@ -64,6 +64,7 @@ Workspaces: `services/*`, `templates/*`, `web`, `contracts` e `gateway`, declara
 ## Antes do PR
 
 - **Teste primeiro:** todo `feat` e `fix` tem teste; um `fix` começa pelo teste que reproduz o bug.
+- **Requisitos:** regra de negócio nova ou alterada atualiza [`docs/requisitos/`](docs/requisitos/README.md) e o índice no mesmo PR, com ao menos um teste que cita o ID no nome (`it('RN-FIN-07: ...')`) ou a marca `Verificação: revisão` ([ADR 0032](docs/adr/0032-requisitos-rastreaveis-em-bdd.md)); o `pnpm lint` confere. Cite os IDs em **Requisitos afetados** no PR.
 - **TSDoc:** todo export em `src/` tem comentário `/** ... */` ([ADR 0010](docs/adr/0010-tsdoc-obrigatorio-nos-exports.md)); o `pnpm lint` confere.
 - **Rotas HTTP:** em português, seguindo o [ADR 0016](docs/adr/0016-nomenclatura-das-rotas-http.md). Rota pública nova ou alterada atualiza [`gateway/openapi.yaml`](gateway/openapi.yaml) ([ADR 0009](docs/adr/0009-openapi-da-api-publica.md)).
 - **Eventos:** contratos em [`contracts/events/`](contracts/events/), em inglês, com os nomes da tabela do [glossário](docs/dominio/GLOSSARIO.md#nomes-nos-contratos-de-eventos) ([ADR 0006](docs/adr/0006-contratos-dos-eventos-em-ingles.md)). Mudança incompatível vira nova versão major do contrato.

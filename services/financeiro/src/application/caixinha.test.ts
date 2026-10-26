@@ -40,7 +40,7 @@ describe('consultarCaixinha', () => {
 });
 
 describe('consultarCaixinhaDoMes', () => {
-  it('gives the caixinha of the month from the movimento before it and in it', async () => {
+  it('RN-FIN-31: gives the caixinha of the month from the movimento before it and in it', async () => {
     const consultar = consultarCaixinhaDoMes({
       totais: async () => ({ recebidoEmCentavos: 0, gastos: [], reembolsadoEmCentavos: 0 }),
       gastosDoAno: async () => [],

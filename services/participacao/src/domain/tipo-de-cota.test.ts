@@ -7,7 +7,7 @@ const gestor = { perfis: ['participante', 'gestor'] };
 const valor: ValorDaCota = { tipoDeCota: 'so-cafe', ano: 2027, valorEmCentavos: 2500 };
 
 describe('definirValorDaCota', () => {
-  it('the gestor defines the valor of a tipo de cota for the year and Valor da cota definido is published', () => {
+  it('RN-PAR-13: the gestor defines the valor of a tipo de cota for the year and Valor da cota definido is published', () => {
     expect(definirValorDaCota(undefined, gestor, valor, contexto)).toEqual({
       ok: true,
       value: {
@@ -23,20 +23,20 @@ describe('definirValorDaCota', () => {
     });
   });
 
-  it('a second definition in the same year is refused', () => {
+  it('RN-PAR-14: a second definition in the same year is refused', () => {
     expect(
       definirValorDaCota(valor, gestor, { ...valor, valorEmCentavos: 3000 }, contexto),
     ).toEqual({ ok: false, error: 'valor-ja-definido' });
   });
 
-  it('a participante who is not the gestor cannot define it', () => {
+  it('RN-PAR-13: a participante who is not the gestor cannot define it', () => {
     expect(definirValorDaCota(undefined, { perfis: ['participante'] }, valor, contexto)).toEqual({
       ok: false,
       error: 'sem-permissao',
     });
   });
 
-  it('may define the next year but not a past one', () => {
+  it('RN-PAR-14: may define the next year but not a past one', () => {
     expect(definirValorDaCota(undefined, gestor, { ...valor, ano: 2028 }, contexto).ok).toBe(true);
     expect(definirValorDaCota(undefined, gestor, { ...valor, ano: 2026 }, contexto)).toEqual({
       ok: false,
@@ -48,7 +48,7 @@ describe('definirValorDaCota', () => {
 describe('repetirValorDoAnoAnterior', () => {
   const anterior: ValorDaCota = { ...valor, ano: 2026, valorEmCentavos: 2200 };
 
-  it('a tipo de cota left without a valor repeats the previous year and Valor da cota definido is published', () => {
+  it('RN-PAR-15: a tipo de cota left without a valor repeats the previous year and Valor da cota definido is published', () => {
     expect(repetirValorDoAnoAnterior(undefined, anterior, contexto)).toEqual({
       valor: { tipoDeCota: 'so-cafe', ano: 2027, valorEmCentavos: 2200 },
       evento: {
@@ -61,7 +61,7 @@ describe('repetirValorDoAnoAnterior', () => {
     });
   });
 
-  it('keeps the valor the gestor already defined, and repeats nothing without a previous year', () => {
+  it('RN-PAR-15: keeps the valor the gestor already defined, and repeats nothing without a previous year', () => {
     expect(repetirValorDoAnoAnterior(valor, anterior, contexto)).toBeUndefined();
     expect(repetirValorDoAnoAnterior(undefined, undefined, contexto)).toBeUndefined();
   });
