@@ -1,6 +1,6 @@
 # 0005. Template de serviço
 
-- Status: Aceito
+- Status: Substituído por 0025
 - Data: 2026-10-25
 
 ## Contexto
