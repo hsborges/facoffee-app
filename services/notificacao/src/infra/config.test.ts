@@ -6,6 +6,7 @@ const env = {
   DATABASE_URL: 'postgres://notificacao@localhost/notificacao',
   RABBITMQ_URL: 'amqp://localhost',
   USUARIO_URL: 'http://usuario:3000',
+  FINANCEIRO_URL: 'http://financeiro:3000',
   SMTP_URL: 'smtp://mailpit:1025',
   SMTP_FROM: 'FACOFFEE <facoffee@ufms.br>',
 };
@@ -20,6 +21,7 @@ describe('readConfig', () => {
         databaseUrl: env.DATABASE_URL,
         rabbitmqUrl: env.RABBITMQ_URL,
         usuarioUrl: env.USUARIO_URL,
+        financeiroUrl: env.FINANCEIRO_URL,
         smtpUrl: env.SMTP_URL,
         smtpFrom: env.SMTP_FROM,
       },
@@ -34,6 +36,7 @@ describe('readConfig', () => {
         'DATABASE_URL is not set',
         'RABBITMQ_URL is not set',
         'USUARIO_URL is not set',
+        'FINANCEIRO_URL is not set',
         'SMTP_URL is not set',
         'SMTP_FROM is not set',
         'PORT is invalid',

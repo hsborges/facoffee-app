@@ -7,6 +7,7 @@ export type Config = {
   readonly databaseUrl: string;
   readonly rabbitmqUrl: string;
   readonly usuarioUrl: string;
+  readonly financeiroUrl: string;
   readonly smtpUrl: string;
   readonly smtpFrom: string;
 };
@@ -16,13 +17,14 @@ const OBRIGATORIAS = [
   'DATABASE_URL',
   'RABBITMQ_URL',
   'USUARIO_URL',
+  'FINANCEIRO_URL',
   'SMTP_URL',
   'SMTP_FROM',
 ];
 
 /**
- * Reads `SERVICE`, `DATABASE_URL`, `RABBITMQ_URL`, `USUARIO_URL`, `SMTP_URL`, `SMTP_FROM`
- * (required) and `PORT` (default 3000). Fails with every problem found, not just the first.
+ * Reads `SERVICE`, `DATABASE_URL`, `RABBITMQ_URL`, `USUARIO_URL`, `FINANCEIRO_URL`, `SMTP_URL`,
+ * `SMTP_FROM` (required) and `PORT` (default 3000). Fails with every problem found, not just the first.
  */
 export const readConfig = (
   env: Readonly<Record<string, string | undefined>>,
@@ -40,6 +42,7 @@ export const readConfig = (
     databaseUrl: env.DATABASE_URL as string,
     rabbitmqUrl: env.RABBITMQ_URL as string,
     usuarioUrl: env.USUARIO_URL as string,
+    financeiroUrl: env.FINANCEIRO_URL as string,
     smtpUrl: env.SMTP_URL as string,
     smtpFrom: env.SMTP_FROM as string,
   });

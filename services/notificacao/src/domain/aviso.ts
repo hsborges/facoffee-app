@@ -24,7 +24,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const FORMAS: Readonly<Record<string, string>> = { pix: 'por PIX', cash: 'em dinheiro' };
 
 const reais = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
-const emReais = (centavos: number) => reais.format(centavos / 100);
+/** A valor in centavos written in reais, like `R$ 30,00`. */
+export const emReais = (centavos: number) => reais.format(centavos / 100);
 const uuid = (v: unknown): v is string => typeof v === 'string' && UUID.test(v);
 const positivo = (v: unknown): v is number => Number.isInteger(v) && (v as number) > 0;
 
@@ -88,7 +89,8 @@ export const avisosDoEvento = (event: Event): Result<readonly Aviso[], PayloadIn
   return lista ? ok(lista) : fail('payload-invalido');
 };
 
-const email = (contato: Contato, aviso: Aviso): Email => ({
+/** The e-mail of an aviso to the contato, greeting them by nome. */
+export const email = (contato: Contato, aviso: Aviso): Email => ({
   para: contato.email,
   assunto: aviso.assunto,
   texto: `Olá${contato.nome ? `, ${contato.nome}` : ''}.\n\n${aviso.texto}\n\nFACOFFEE\n`,

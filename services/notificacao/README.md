@@ -4,7 +4,7 @@ Serviço de suporte. Avisos aos participantes por e-mail (Gmail) e WhatsApp.
 
 - **Consome:** Valor da cota definido, Pagamento recebido, Complemento solicitado, Reembolso feito
 
-Banco e consumidor vêm do [template de serviço](../../templates/service/); sem outbox, porque não publica eventos. Decisão em [ADR 0020](../../docs/adr/0020-envio-de-e-mails-da-notificacao.md).
+Banco e consumidor vêm do [template de serviço](../../templates/service/); sem outbox, porque não publica eventos. Decisões em [ADR 0020](../../docs/adr/0020-envio-de-e-mails-da-notificacao.md) e [ADR 0027](../../docs/adr/0027-lembrete-aos-pendentes.md).
 
 ## Avisos por e-mail
 
@@ -19,6 +19,19 @@ Fila `notification.events`. Para cada evento com payload válido, Notificação 
 
 Participante sem contato fica sem e-mail, com um aviso no log. Payload inválido ou Usuário fora do ar: o evento é tentado de novo e vai para a fila de mensagens mortas, como no template.
 
+## Cota devida e lembretes aos pendentes
+
+`POST /lembrar-pendentes`, rota interna disparada pelo agendador a cada hora; o gateway não roteia Notificação. Consulta os participantes ativos pendentes em Financeiro (`GET /pendente`, rota interna) e, no horário de Campo Grande:
+
+| E-mail | Quem recebe |
+|---|---|
+| *Cota de \<mês\>* | O pendente cuja cota mais recente, em Financeiro, é a do mês atual. Quem tem a cota abatida do crédito não está pendente e não recebe. |
+| *Lembrete da copa* | A partir do dia 10, cada pendente, uma vez no mês. Quem recebe o aviso da cota devida do dia 10 em diante não recebe outro. |
+
+Cada e-mail cita só a pendência do próprio participante. A tabela `lembretes` tem chave única (participante, mês, tipo): disparos repetidos ou simultâneos não duplicam e-mail. Responde `{ lembretes }`, quantos foram registrados agora. Financeiro ou Usuário fora do ar: 500, e o agendador tenta de novo na hora seguinte. O dia do lembrete é `DIA_DO_LEMBRETE`, em `src/domain/lembrete.ts`.
+
+## Envio
+
 Um processo à parte envia os e-mails devidos a cada segundo. Falha no envio não perde o e-mail: ele é tentado de novo 1 minuto depois, com espera dobrando até 1 hora, até o servidor SMTP aceitar. Só o destinatário recusado de vez (5xx no `RCPT TO`) para de ser tentado: o e-mail fica na tabela com `recusado_em` e um erro no log.
 
 ## Configuração
@@ -26,10 +39,11 @@ Um processo à parte envia os e-mails devidos a cada segundo. Falha no envio nã
 | Variável | Exemplo |
 |---|---|
 | `SERVICE` | `notification` (nome do contexto nos contratos) |
-| `PORT` | `3000` (padrão; só `GET /health`) |
+| `PORT` | `3000` (padrão; `GET /health` e `POST /lembrar-pendentes`) |
 | `DATABASE_URL` | `postgres://notificacao:notificacao@localhost:5432/notificacao` |
 | `RABBITMQ_URL` | `amqp://facoffee:facoffee@localhost:5672` |
 | `USUARIO_URL` | `http://usuario:3000` |
+| `FINANCEIRO_URL` | `http://financeiro:3000` |
 | `SMTP_URL` | `smtp://localhost:1025` (Mailpit); no Gmail, `smtps://<conta>:<senha-de-app>@smtp.gmail.com:465` |
 | `SMTP_FROM` | `FACOFFEE <facoffee@localhost>` |
 

@@ -192,6 +192,7 @@ services:
       DATABASE_URL: postgres://notificacao:${NOTIFICACAO_DB_PASSWORD}@postgres:5432/notificacao
       RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
       USUARIO_URL: http://usuario:3000
+      FINANCEIRO_URL: http://financeiro:3000
       SMTP_URL: smtp://mailpit:1025
       SMTP_FROM: FACOFFEE <facoffee@localhost>
     depends_on:
@@ -202,15 +203,19 @@ services:
       mailpit:
         condition: service_healthy
 
-  # Dispara os gatilhos de tempo de Participação a cada hora (ADR 0017). Sem servidor HTTP.
+  # Dispara os gatilhos de tempo de Participação e Notificação a cada hora (ADR 0017, ADR 0027).
+  # Sem servidor HTTP.
   agendador:
     build:
       context: ..
       dockerfile: services/agendador/Dockerfile
     environment:
       PARTICIPACAO_URL: http://participacao:3000
+      NOTIFICACAO_URL: http://notificacao:3000
     depends_on:
       participacao:
+        condition: service_healthy
+      notificacao:
         condition: service_healthy
 
 volumes:
