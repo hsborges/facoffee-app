@@ -36,8 +36,8 @@ Contratos de eventos em `contracts/events/` também seguem SemVer: mudança inco
 
 ## Domain-Driven Design
 
-- Use a linguagem ubíqua de [docs/GLOSSARIO.md](docs/GLOSSARIO.md) em código, testes, commits e issues.
-- Respeite os contextos delimitados de [docs/MODELOS_DOMINIO.md](docs/MODELOS_DOMINIO.md): cada serviço em `services/` é um contexto; não compartilhe modelos nem bancos entre eles.
+- Use a linguagem ubíqua de [docs/dominio/GLOSSARIO.md](docs/dominio/GLOSSARIO.md) em código, testes, commits e issues.
+- Respeite os contextos delimitados de [docs/dominio/MODELOS.md](docs/dominio/MODELOS.md): cada serviço em `services/` é um contexto; não compartilhe modelos nem bancos entre eles.
 - Contextos se comunicam apenas por eventos de domínio (`contracts/events/`) ou APIs públicas.
 - Regras de negócio ficam no domínio, livres de framework, banco e I/O; infraestrutura fica nas bordas.
 
@@ -83,7 +83,7 @@ Regras de nomenclatura das rotas públicas ([ADR 0016](docs/adr/0016-nomenclatur
 - Em português, minúsculas, kebab-case, sem acento.
 - Recursos (leituras) são substantivos no singular: `GET /api/usuario`, `GET /api/usuario/eu`.
 - Comandos são `POST` com verbo no infinitivo, em voz ativa, como sub-recurso: `POST /api/<contexto>/{id}/<verbo>` (ex.: `desativar`, `reativar`) ou, sobre o usuário logado, `POST /api/<contexto>/<verbo>` (ex.: `entrar`, `sair`).
-- O verbo, e o complemento quando houver, vem da linguagem ubíqua ([docs/GLOSSARIO.md](docs/GLOSSARIO.md)): `trocar-tipo-de-cota`, `definir-valor-da-cota`.
+- O verbo, e o complemento quando houver, vem da linguagem ubíqua ([docs/dominio/GLOSSARIO.md](docs/dominio/GLOSSARIO.md)): `trocar-tipo-de-cota`, `definir-valor-da-cota`.
 - Eventos continuam no passado e em inglês ([ADR 0006](docs/adr/0006-contratos-dos-eventos-em-ingles.md)); a regra vale só para rotas HTTP.
 
 ## Documentação

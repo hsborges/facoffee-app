@@ -2,11 +2,7 @@
 
 Divisão de custos da copa da FACOM.
 
-- [Glossário](docs/GLOSSARIO.md) — linguagem ubíqua
-- [Modelos de domínio](docs/MODELOS_DOMINIO.md) — mapa conceitual, Event Storming, contextos
-- [Design System](docs/SYSTEM_DESIGN.md) — identidade visual
-- [Arquitetura](docs/arquitetura.png) — visão geral dos serviços
-- [ADRs](docs/adr/) — decisões de arquitetura
+- [Documentação](docs/README.md) — produto, domínio, arquitetura, ADRs e design
 - [Práticas de engenharia](AGENTS.md) — fluxo, commits, versionamento, TDD, DDD, estilo
 - [Contribuindo](CONTRIBUTING.md) — ambiente, comandos, branch/PR, commits
 
@@ -14,7 +10,7 @@ Divisão de custos da copa da FACOM.
 
 | Pasta | Conteúdo |
 |---|---|
-| `docs/` | Documentação e ADRs (`docs/adr/`) |
+| `docs/` | Documentação: `produto/`, `dominio/`, `arquitetura/`, `adr/`, `design/` |
 | `contracts/events/` | Contratos dos eventos de domínio (RabbitMQ) |
 | `services/usuario/` | Contexto Usuário — acesso via Passaporte UFMS (Keycloak) |
 | `services/participacao/` | Contexto Participação — Participante, Tipo de cota, Cota |

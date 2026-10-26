@@ -5,7 +5,7 @@
 
 ## Contexto
 
-Não havia regra escrita para nomear rotas, e cada contexto decidiu do seu jeito. As rotas de comando usavam substantivos (`desativacao`, `reativacao`, `entrada`, `troca-cota`, `saida`, `valor-da-cota`), enquanto a linguagem ubíqua nomeia os comandos com verbos ("Desativar acesso", "Trocar tipo de cota", "Definir valor da cota"). Com o substantivo, a rota não diz o que o comando faz, e `troca-cota` ainda usa "cota" no sentido de tipo de cota, que o [glossário](../GLOSSARIO.md#cota) evita.
+Não havia regra escrita para nomear rotas, e cada contexto decidiu do seu jeito. As rotas de comando usavam substantivos (`desativacao`, `reativacao`, `entrada`, `troca-cota`, `saida`, `valor-da-cota`), enquanto a linguagem ubíqua nomeia os comandos com verbos ("Desativar acesso", "Trocar tipo de cota", "Definir valor da cota"). Com o substantivo, a rota não diz o que o comando faz, e `troca-cota` ainda usa "cota" no sentido de tipo de cota, que o [glossário](../dominio/GLOSSARIO.md#cota) evita.
 
 ## Decisão
 
@@ -14,7 +14,7 @@ Regras para rotas HTTP públicas:
 - Em português, minúsculas, kebab-case, sem acento.
 - Recursos (leituras) são substantivos no singular: `GET /api/usuario`, `GET /api/usuario/eu`.
 - Comandos são `POST` com um verbo no infinitivo, em voz ativa, como sub-recurso: `POST /api/<contexto>/{id}/<verbo>` quando agem sobre um recurso identificado, ou `POST /api/<contexto>/<verbo>` quando agem sobre o usuário logado.
-- O verbo, e o complemento quando houver, vem da linguagem ubíqua ([docs/GLOSSARIO.md](../GLOSSARIO.md)).
+- O verbo, e o complemento quando houver, vem da linguagem ubíqua ([docs/dominio/GLOSSARIO.md](../dominio/GLOSSARIO.md)).
 - Eventos continuam no passado e em inglês ([ADR 0006](0006-contratos-dos-eventos-em-ingles.md)); a regra vale só para rotas HTTP.
 
 Rotas renomeadas, sem manter os caminhos antigos (passam a responder 404):

@@ -1,6 +1,6 @@
 # FACOFFEE web
 
-Front-end para participantes e gestor (React com Vite). Segue o [Design System](../docs/SYSTEM_DESIGN.md). Decisões em [ADR 0019](../docs/adr/0019-base-do-front-end.md).
+Front-end para participantes e gestor (React com Vite). Segue o [Design System](../docs/design/DESIGN_SYSTEM.md). Decisões em [ADR 0019](../docs/adr/0019-base-do-front-end.md).
 
 Entra pelo Keycloak (OIDC, Authorization Code + PKCE) e chama a API pelo [gateway](../gateway/), em `/api/...`. O menu depende dos perfis de `GET /api/usuario/eu`: todos veem as páginas do participante; o gestor vê também as dele.
 

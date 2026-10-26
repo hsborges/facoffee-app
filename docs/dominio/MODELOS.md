@@ -5,10 +5,10 @@
 | **Escopo** | Divisão de custos da copa da FACOM |
 | **Sistema** | FACOFFEE |
 | **Disciplina** | Técnicas Avançadas de Desenvolvimento de Software (2026/2) |
-| **Versão** | 2.5 |
+| **Versão** | 2.6 |
 | **Data** | 2026-10-25 |
 | **Status** | Aprovado |
-| **Base** | [Glossário da Linguagem Ubíqua](GLOSSARIO.md) (versão 2.3) e arquitetura do FACOFFEE ([arquitetura.png](arquitetura.png)) |
+| **Base** | [Glossário da Linguagem Ubíqua](GLOSSARIO.md) (versão 2.4) e arquitetura do FACOFFEE ([arquitetura/visao-geral.png](../arquitetura/visao-geral.png)) |
 
 ## Propósito
 
@@ -231,7 +231,7 @@ O contexto Participação também recebe um evento do contexto Usuário:
 
 ## 3. Contextos delimitados
 
-O FACOFFEE divide o domínio em três contextos de negócio e usa um contexto de apoio. O diagrama completo da arquitetura está em [arquitetura.png](arquitetura.png).
+O FACOFFEE divide o domínio em três contextos de negócio e usa um contexto de apoio. O diagrama completo da arquitetura está em [arquitetura/visao-geral.png](../arquitetura/visao-geral.png).
 
 | Contexto | Tipo | Responsabilidade | Termos do glossário |
 |---|---|---|---|
@@ -254,7 +254,7 @@ flowchart LR
     N -. "consulta contatos" .-> U
 ```
 
-As setas vão de quem publica para quem consome. A seta tracejada é uma consulta: Notificação busca em Usuário o nome e o e-mail de cada participante a avisar ([ADR 0020](adr/0020-envio-de-e-mails-da-notificacao.md)). A dependência entre os contextos de negócio tem uma só direção: Usuário → Participação → Financeiro. Participação traduz *Usuário desativado* para a linguagem do domínio, encerrando a participação. Assim, o termo "usuário" não entra no modelo de Participação.
+As setas vão de quem publica para quem consome. A seta tracejada é uma consulta: Notificação busca em Usuário o nome e o e-mail de cada participante a avisar ([ADR 0020](../adr/0020-envio-de-e-mails-da-notificacao.md)). A dependência entre os contextos de negócio tem uma só direção: Usuário → Participação → Financeiro. Participação traduz *Usuário desativado* para a linguagem do domínio, encerrando a participação. Assim, o termo "usuário" não entra no modelo de Participação.
 
 ### Eventos entre contextos
 
@@ -267,7 +267,8 @@ As setas vão de quem publica para quem consome. A seta tracejada é uma consult
 
 ### Pontos críticos para validar
 
-Nenhum ponto crítico em aberto nesta versão.
+1. **Avisar o início da cobrança e lembrar os pendentes** ([#72](../../../../issues/72)). Notificação não consome *Cota devida* nem recebe nada sobre quem está pendente. Falta decidir o gatilho (consumir *Cota devida* e/ou uma política do agendador sobre a leitura *Crédito e pendentes*) e validar frequência e canal com o gestor.
+2. **Pagamento feito por outra pessoa** ([#74](../../../../issues/74)). *Receber pagamento por PIX ou em dinheiro* chega ao agregado Participante (Financeiro) de quem paga. Falta definir o que acontece quando quem entrega o dinheiro não é o participante cujas cotas são quitadas.
 
 ## Histórico de revisões
 
@@ -278,6 +279,7 @@ Nenhum ponto crítico em aberto nesta versão.
 | 2.0 | 2026-10-24 | Revisão a partir da arquitetura do FACOFFEE. Nova seção [3. Contextos delimitados](#3-contextos-delimitados), com mapa de contextos e eventos entre contextos. Agregados, eventos e leituras passam a indicar o contexto. O agregado Participante foi dividido entre Participação e Financeiro. O pagamento passa a ser recebido pelo gestor. A desativação do acesso encerra a participação. Nova leitura *Participantes do momento*. O ponto crítico sobre a divisão do complemento foi resolvido (participantes do momento da solicitação) e entrou o ponto crítico sobre a desativação do acesso. |
 | 2.1 | 2026-10-24 | Decisões: o crédito é abatido automaticamente (ponto crítico fechado) e o complemento é dividido entre todos os participantes ativos. A leitura *Participantes do momento* passa a se chamar *Participantes ativos*. O acesso é desativado pelo gestor ou a pedido do participante, e isso encerra a participação (ponto crítico fechado). |
 | 2.2 | 2026-10-24 | O diagrama de classes foi substituído por um [mapa conceitual](#1-mapa-conceitual). Pendente, Saldo da caixinha e Consumo passam a aparecer como conceitos. |
-| 2.3 | 2026-10-24 | Usuário passa a ser contexto de negócio, alinhado à arquitetura e ao [ADR 0001](adr/0001-arquitetura-servicos.md). O agendador é um processo agendado na rede interna que chama Participação. |
-| 2.4 | 2026-10-25 | Quem entra durante o mês também deve a cota daquele mês. Sem definição do gestor até o início do ano, o valor da cota repete o do ano anterior ([ADR 0017](adr/0017-gatilhos-de-tempo-do-agendador.md)). |
-| 2.5 | 2026-10-25 | Notificação consulta os contatos em Usuário para enviar os avisos por e-mail ([ADR 0020](adr/0020-envio-de-e-mails-da-notificacao.md)). |
+| 2.3 | 2026-10-24 | Usuário passa a ser contexto de negócio, alinhado à arquitetura e ao [ADR 0001](../adr/0001-arquitetura-servicos.md). O agendador é um processo agendado na rede interna que chama Participação. |
+| 2.4 | 2026-10-25 | Quem entra durante o mês também deve a cota daquele mês. Sem definição do gestor até o início do ano, o valor da cota repete o do ano anterior ([ADR 0017](../adr/0017-gatilhos-de-tempo-do-agendador.md)). |
+| 2.5 | 2026-10-25 | Notificação consulta os contatos em Usuário para enviar os avisos por e-mail ([ADR 0020](../adr/0020-envio-de-e-mails-da-notificacao.md)). |
+| 2.6 | 2026-10-25 | Abertos os pontos críticos 1 (avisar o início da cobrança e lembrar os pendentes, #72) e 2 (pagamento feito por outra pessoa, #74), levantados na [Visão de produto](../produto/VISAO.md). Base atualizada para o glossário 2.4. |

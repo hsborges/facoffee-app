@@ -5,7 +5,7 @@
 
 ## Contexto
 
-O [ADR 0002](0002-stack.md) escolheu React com Vite (SPA) para o FACOFFEE web. Antes das telas do participante e do gestor, o front-end precisa entrar pelo Keycloak, chamar a API pelo gateway, navegar conforme o perfil e seguir o [Design System](../SYSTEM_DESIGN.md).
+O [ADR 0002](0002-stack.md) escolheu React com Vite (SPA) para o FACOFFEE web. Antes das telas do participante e do gestor, o front-end precisa entrar pelo Keycloak, chamar a API pelo gateway, navegar conforme o perfil e seguir o [Design System](../design/DESIGN_SYSTEM.md).
 
 Forças em jogo:
 

@@ -5,7 +5,7 @@
 | **Escopo** | Divisão de custos da copa da FACOM |
 | **Sistema** | FACOFFEE |
 | **Disciplina** | Técnicas Avançadas de Desenvolvimento de Software (2026/2) |
-| **Versão** | 2.3 |
+| **Versão** | 2.4 |
 | **Data** | 2026-10-25 |
 | **Status** | Aprovado |
 
@@ -19,7 +19,7 @@ Este glossário define a linguagem ubíqua usada na divisão de custos da copa d
 - Glossários entregues na atividade *System Design com Domain-Driven Design (DDD)*: 23 glossários distintos, entre individuais e de duplas.
 - Entraram os termos que aparecem em pelo menos 6 dos 23 glossários. As definições foram conferidas com os fatos do domínio.
 - Os termos [Crédito](#crédito) e [Complemento](#complemento) foram definidos para responder às questões levantadas durante a consolidação.
-- A versão 2.0 incorpora as decisões tomadas no desenho da arquitetura do FACOFFEE ([arquitetura.png](arquitetura.png)): a divisão em contextos, a saída por desativação do acesso e a divisão do complemento entre todos os participantes ativos.
+- A versão 2.0 incorpora as decisões tomadas no desenho da arquitetura do FACOFFEE ([arquitetura/visao-geral.png](../arquitetura/visao-geral.png)): a divisão em contextos, a saída por desativação do acesso e a divisão do complemento entre todos os participantes ativos.
 
 ## Convenções
 
@@ -31,7 +31,7 @@ Este glossário define a linguagem ubíqua usada na divisão de custos da copa d
 
 ## Visão por área
 
-A coluna **Contexto** indica em qual contexto do FACOFFEE o termo é tratado. Os contextos estão descritos nos [Modelos de Domínio](MODELOS_DOMINIO.md#3-contextos-delimitados).
+A coluna **Contexto** indica em qual contexto do FACOFFEE o termo é tratado. Os contextos estão descritos nos [Modelos de Domínio](MODELOS.md#3-contextos-delimitados).
 
 | Área | Termos | Contexto |
 |---|---|---|
@@ -272,7 +272,7 @@ Dois termos aparecem em mais de um contexto:
 
 ## Nomes nos contratos de eventos
 
-Os contratos dos eventos trocados entre os contextos ([`contracts/events/`](../contracts/events/)) usam nomes em inglês ([ADR 0006](adr/0006-contratos-dos-eventos-em-ingles.md)). O nome em português continua valendo nas conversas, nos modelos e no código de cada contexto.
+Os contratos dos eventos trocados entre os contextos ([`contracts/events/`](../../contracts/events/)) usam nomes em inglês ([ADR 0006](../adr/0006-contratos-dos-eventos-em-ingles.md)). O nome em português continua valendo nas conversas, nos modelos e no código de cada contexto.
 
 Estas tabelas são a única fonte das traduções: cada termo tem um só nome nos contratos, e os testes de `contracts/` recusam tipo de evento, campo ou valor com palavra que não esteja aqui. Para usar um termo novo num contrato, registre-o aqui primeiro.
 
@@ -338,7 +338,8 @@ O tipo do evento nos contratos é `<contexto>.<evento>`, com o contexto de orige
 
 ## Questões em aberto
 
-Nenhuma questão em aberto nesta versão.
+1. **Tipo do gasto** ([#73](../../../../issues/73)). O gestor quer mostrar o total gasto por tipo de coisa (café, bolacha, conserto), mas [Gasto](#gasto) não tem tipo. Falta validar com ele a lista de tipos e o nome que usa.
+2. **Pagamento feito por outra pessoa** ([#74](../../../../issues/74)). Às vezes alguém paga pelo outro. [Pagamento](#pagamento) não diz a quem o pagamento é atribuído nem se importa guardar quem pagou.
 
 ## Histórico de revisões
 
@@ -350,3 +351,4 @@ Nenhuma questão em aberto nesta versão.
 | 2.1 | 2026-10-24 | Decisões: o [crédito](#crédito) é abatido automaticamente; o [complemento](#complemento) é dividido entre todos os participantes ativos; o acesso é desativado pelo [gestor](#gestor) ou a pedido do [participante](#participante), e isso encerra a participação. Questões 1 e 2 fechadas. |
 | 2.2 | 2026-10-25 | Nova seção [Nomes nos contratos de eventos](#nomes-nos-contratos-de-eventos), com o nome em inglês de cada termo e evento usado nos contratos de eventos. |
 | 2.3 | 2026-10-25 | [Cota](#cota): quem entra durante o mês também deve a cota daquele mês. [Valor da cota](#valor-da-cota): sem definição do gestor até o início do ano, repete-se o valor do ano anterior. |
+| 2.4 | 2026-10-25 | Abertas as questões 1 (tipo do gasto, #73) e 2 (pagamento feito por outra pessoa, #74), levantadas na [Visão de produto](../produto/VISAO.md). |

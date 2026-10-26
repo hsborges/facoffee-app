@@ -5,7 +5,7 @@
 
 ## Contexto
 
-O acesso de uma pessoa ao FACOFFEE é desativado pelo gestor ou a pedido da própria pessoa; só o gestor desativa o acesso de outra pessoa ([Modelos de domínio §2.1](../MODELOS_DOMINIO.md)). A desativação publica *Usuário desativado* (`user.user-deactivated.v1`), e o usuário desativado não pode mais acessar o FACOFFEE.
+O acesso de uma pessoa ao FACOFFEE é desativado pelo gestor ou a pedido da própria pessoa; só o gestor desativa o acesso de outra pessoa ([Modelos de domínio §2.1](../dominio/MODELOS.md)). A desativação publica *Usuário desativado* (`user.user-deactivated.v1`), e o usuário desativado não pode mais acessar o FACOFFEE.
 
 Forças em jogo:
 

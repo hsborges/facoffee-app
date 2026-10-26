@@ -9,7 +9,7 @@ O acesso desativado ([ADR 0011](0011-acesso-desativado.md)) só pode ser desfeit
 
 Forças em jogo:
 
-- Reativar o acesso não devolve a participação: para voltar, a pessoa pede a entrada de novo ([Modelos de domínio §2.1](../MODELOS_DOMINIO.md)).
+- Reativar o acesso não devolve a participação: para voltar, a pessoa pede a entrada de novo ([Modelos de domínio §2.1](../dominio/MODELOS.md)).
 - Só vai para outros contextos o evento que alguém usa (Modelos de domínio, decisões do modelo).
 
 ## Decisão
