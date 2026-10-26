@@ -1,5 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import {
+  type CaixinhaDoMes as CaixinhaDoMesLida,
   type Caixinha as CaixinhaLida,
   comandar,
   type Leitura,
@@ -7,13 +8,16 @@ import {
   type Participacao,
   type Situacao,
   type TipoDeCota,
+  type TipoDeGasto,
 } from './api';
 import {
   dataEmCampoGrande,
   emReais,
   ITENS_DO_TIPO_DE_COTA,
+  mesEmCampoGrande,
   mesPorExtenso,
   NOME_DO_TIPO_DE_COTA,
+  NOME_DO_TIPO_DE_GASTO,
 } from './formato';
 
 /** Reads a recurso when mounted; gives the leitura (undefined while loading) and how to reload it. */
@@ -260,17 +264,74 @@ export const MinhaSituacao = ({
   );
 };
 
-/** *Caixinha*: the saldo da caixinha and the gastos do ano anterior. */
+const CaixinhaDoMes = ({ token }: { token: string }) => {
+  const [mes, setMes] = useState(() => mesEmCampoGrande(new Date()));
+  const [lida, recarregar] = useLeitura<CaixinhaDoMesLida>(
+    token,
+    `/api/financeiro/caixinha/${mes}`,
+  );
+  return (
+    <section aria-labelledby="caixinha-do-mes">
+      <h2 id="caixinha-do-mes">Caixinha do mês</h2>
+      <label className="campo">
+        Mês
+        <input
+          type="month"
+          value={mes}
+          required
+          onChange={(evento) =>
+            /^\d{4}-\d{2}$/.test(evento.target.value) && setMes(evento.target.value)
+          }
+        />
+      </label>
+      {!lida ? (
+        <Carregando />
+      ) : lida.situacao !== 'ok' ? (
+        <FalhaAoCarregar tentarDeNovo={recarregar} />
+      ) : (
+        <table>
+          <caption>Caixinha de {mesPorExtenso(lida.valor.mes)}</caption>
+          <tbody>
+            <tr>
+              <th scope="row">Saldo no início do mês</th>
+              <td>{emReais(lida.valor.saldoNoInicioEmCentavos)}</td>
+            </tr>
+            <tr>
+              <th scope="row">Entrou (pagamentos recebidos)</th>
+              <td>{emReais(lida.valor.recebidoEmCentavos)}</td>
+            </tr>
+            {Object.entries(NOME_DO_TIPO_DE_GASTO).map(([tipo, nome]) => (
+              <tr key={tipo}>
+                <th scope="row">Saiu: {nome}</th>
+                <td>{emReais(lida.valor.gastosPorTipoEmCentavos[tipo as TipoDeGasto])}</td>
+              </tr>
+            ))}
+            <tr>
+              <th scope="row">Saldo no fim do mês</th>
+              <td>{emReais(lida.valor.saldoNoFimEmCentavos)}</td>
+            </tr>
+          </tbody>
+        </table>
+      )}
+      <p>Um gasto pago do próprio bolso sai da caixinha no mês do reembolso.</p>
+    </section>
+  );
+};
+
+/** *Caixinha*: the saldo da caixinha, the gastos do ano anterior and the caixinha do mês. */
 export const Caixinha = ({ token }: { token: string }) => {
   const [caixinha, recarregar] = useLeitura<CaixinhaLida>(token, '/api/financeiro/caixinha');
   if (!caixinha) return <Carregando />;
   if (caixinha.situacao !== 'ok') return <FalhaAoCarregar tentarDeNovo={recarregar} />;
   return (
-    <dl>
-      <dt>Saldo da caixinha</dt>
-      <dd>{emReais(caixinha.valor.saldoEmCentavos)}</dd>
-      <dt>Gastos do ano anterior</dt>
-      <dd>{emReais(caixinha.valor.gastosDoAnoAnteriorEmCentavos)}</dd>
-    </dl>
+    <>
+      <dl>
+        <dt>Saldo da caixinha</dt>
+        <dd>{emReais(caixinha.valor.saldoEmCentavos)}</dd>
+        <dt>Gastos do ano anterior</dt>
+        <dd>{emReais(caixinha.valor.gastosDoAnoAnteriorEmCentavos)}</dd>
+      </dl>
+      <CaixinhaDoMes token={token} />
+    </>
   );
 };

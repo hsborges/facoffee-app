@@ -27,8 +27,8 @@ const PERFIS = [
     titulo: 'Para o participante',
     itens: [
       'Entrar, trocar de tipo de cota e sair.',
-      'Ver o saldo da caixinha e o total gasto no ano anterior.',
-      'Registrar um gasto com a nota e, se pagou do próprio bolso, receber o reembolso.',
+      'Ver o saldo da caixinha, o total gasto no ano anterior e o resumo do mês.',
+      'Registrar um gasto com o tipo e a nota e, se pagou do próprio bolso, receber o reembolso.',
       'Receber avisos por e-mail: valor da cota, pagamento recebido, complemento e reembolso.',
     ],
   },

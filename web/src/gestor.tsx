@@ -8,7 +8,13 @@ import {
   type TipoDeCota,
   type UsuarioRegistrado,
 } from './api';
-import { dataEmCampoGrande, emCentavos, emReais, NOME_DO_TIPO_DE_COTA } from './formato';
+import {
+  dataEmCampoGrande,
+  emCentavos,
+  emReais,
+  NOME_DO_TIPO_DE_COTA,
+  NOME_DO_TIPO_DE_GASTO,
+} from './formato';
 import { Carregando, FalhaAoCarregar, useLeitura } from './participante';
 
 const ERROS: ReadonlyMap<string, string> = new Map([
@@ -130,7 +136,12 @@ export const registrarGasto = (
   {
     nota,
     ...gasto
-  }: { readonly valorEmCentavos: number; readonly origem: Gasto['origem']; readonly nota: File },
+  }: {
+    readonly valorEmCentavos: number;
+    readonly origem: Gasto['origem'];
+    readonly tipo: Gasto['tipo'];
+    readonly nota: File;
+  },
 ) =>
   guardarAntes(token, '/api/financeiro/guardar-nota', { arquivo: nota }, (notaId) =>
     comandar(token, '/api/financeiro/registrar-gasto', { ...gasto, notaId }),
@@ -345,6 +356,7 @@ export const Gastos = ({ token }: { token: string }) => {
         registrarGasto(token, {
           valorEmCentavos: emCentavos(String(dados.get('valor'))),
           origem: dados.get('origem') as Gasto['origem'],
+          tipo: dados.get('tipo') as Gasto['tipo'],
           nota: dados.get('nota') as File,
         }),
       'Gasto registrado.',
@@ -367,6 +379,19 @@ export const Gastos = ({ token }: { token: string }) => {
       <section aria-labelledby="registrar-gasto">
         <h2 id="registrar-gasto">Registrar gasto</h2>
         <form onSubmit={registrar}>
+          <label className="campo">
+            Tipo
+            <select name="tipo" required defaultValue="">
+              <option value="" disabled>
+                Escolha o tipo do gasto
+              </option>
+              {Object.entries(NOME_DO_TIPO_DE_GASTO).map(([tipo, nome]) => (
+                <option key={tipo} value={tipo}>
+                  {nome}
+                </option>
+              ))}
+            </select>
+          </label>
           <CampoValor rotulo="Valor total (R$)" />
           <fieldset>
             <legend>Pago com</legend>
@@ -402,6 +427,7 @@ export const Gastos = ({ token }: { token: string }) => {
               <tr>
                 <th scope="col">Data</th>
                 <th scope="col">Quem pagou</th>
+                <th scope="col">Tipo</th>
                 <th scope="col">Valor</th>
                 <th scope="col">Pago com</th>
                 <th scope="col">Reembolso</th>
@@ -414,6 +440,7 @@ export const Gastos = ({ token }: { token: string }) => {
                   <tr key={gasto.id}>
                     <td>{dataEmCampoGrande(gasto.feitoEm)}</td>
                     <td>{quem}</td>
+                    <td>{NOME_DO_TIPO_DE_GASTO[gasto.tipo]}</td>
                     <td>{emReais(gasto.valorEmCentavos)}</td>
                     <td>{NOME_DA_ORIGEM[gasto.origem]}</td>
                     <td>

@@ -64,12 +64,16 @@ export type CreditoEPendente = {
   readonly pendenteEmCentavos: number;
 };
 
+/** Tipo de gasto. */
+export type TipoDeGasto = 'cafe' | 'outros-itens' | 'conserto-e-manutencao' | 'reposicao';
+
 /** A gasto, as listed by `GET /api/financeiro/gasto`. */
 export type Gasto = {
   readonly id: string;
   readonly participanteId: string;
   readonly valorEmCentavos: number;
   readonly origem: 'caixinha' | 'proprio-bolso';
+  readonly tipo: TipoDeGasto;
   readonly notaId: string;
   readonly feitoEm: string;
   readonly reembolsado: boolean;
@@ -96,6 +100,15 @@ export type Situacao = CreditoEPendente & {
 export type Caixinha = {
   readonly saldoEmCentavos: number;
   readonly gastosDoAnoAnteriorEmCentavos: number;
+};
+
+/** What entered, left per tipo de gasto and was left, as answered by `GET /api/financeiro/caixinha/{mes}`. */
+export type CaixinhaDoMes = {
+  readonly mes: string;
+  readonly saldoNoInicioEmCentavos: number;
+  readonly recebidoEmCentavos: number;
+  readonly gastosPorTipoEmCentavos: Readonly<Record<TipoDeGasto, number>>;
+  readonly saldoNoFimEmCentavos: number;
 };
 
 /** Outcome of reading a recurso: its valor, not found (404) or any other failure. */
