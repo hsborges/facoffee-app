@@ -31,6 +31,8 @@ Workspaces: `services/*`, `templates/*`, `web`, `contracts` e `gateway`, declara
 2. Abra um Pull Request para `main` vinculado à issue (`Closes #N`).
 3. O merge exige revisão e CI verde. `main` é protegida: nada de commit direto.
 
+A CI ([ADR 0024](docs/adr/0024-ci-no-github-actions.md)) roda `pnpm lint`, os testes dos contratos e dos scripts da raiz e, só nos workspaces afetados, testes e build. Integração, ponta a ponta e imagens Docker não rodam na CI: rode `pnpm test:e2e` localmente antes do PR quando mexer no fluxo de eventos.
+
 ## Conventional Commits
 
 `<tipo>(<escopo opcional>): <descrição>`
