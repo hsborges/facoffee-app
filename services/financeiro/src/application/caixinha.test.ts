@@ -16,7 +16,10 @@ describe('consultarCaixinha', () => {
         }),
         gastosDoAno: async (ano) => {
           anos.push(ano);
-          return 123456;
+          return [
+            { tipo: 'cafe', valorEmCentavos: 100000 },
+            { tipo: 'outros-itens', valorEmCentavos: 23456 },
+          ];
         },
         movimento: async () => ({ recebidoEmCentavos: 0, saidas: [] }),
       },
@@ -25,6 +28,12 @@ describe('consultarCaixinha', () => {
     expect(await consultar()).toEqual({
       saldoEmCentavos: 2410,
       gastosDoAnoAnteriorEmCentavos: 123456,
+      gastosDoAnoAnteriorPorTipoEmCentavos: {
+        cafe: 100000,
+        'outros-itens': 23456,
+        'conserto-e-manutencao': 0,
+        reposicao: 0,
+      },
     });
     expect(anos).toEqual([2025]);
   });
@@ -34,7 +43,7 @@ describe('consultarCaixinhaDoMes', () => {
   it('gives the caixinha of the month from the movimento before it and in it', async () => {
     const consultar = consultarCaixinhaDoMes({
       totais: async () => ({ recebidoEmCentavos: 0, gastos: [], reembolsadoEmCentavos: 0 }),
-      gastosDoAno: async () => 0,
+      gastosDoAno: async () => [],
       movimento: async (mes, periodo) =>
         mes !== '2026-10'
           ? { recebidoEmCentavos: 0, saidas: [] }

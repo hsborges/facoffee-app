@@ -467,6 +467,7 @@ it('keeps Saldo da caixinha and Gastos do ano anterior, with gastos pela caixinh
     (await (await fetch(`${url}/caixinha`, { headers: { 'x-user-id': participante } })).json()) as {
       saldoEmCentavos: number;
       gastosDoAnoAnteriorEmCentavos: number;
+      gastosDoAnoAnteriorPorTipoEmCentavos: Record<string, number>;
     };
   const registrar = async (origem: string, valorEmCentavos: number) => {
     const form = new FormData();
@@ -510,23 +511,28 @@ it('keeps Saldo da caixinha and Gastos do ano anterior, with gastos pela caixinh
     valorEmCentavos: number,
     origem: 'caixinha' | 'proprio-bolso',
     feitoEm: string,
+    tipo: 'cafe' | 'reposicao' = 'cafe',
   ) => ({
     id: randomUUID(),
     participanteId: participante,
     valorEmCentavos,
     origem,
-    tipo: 'cafe' as const,
+    tipo,
     notaId: randomUUID(),
     feitoEm: new Date(feitoEm),
   });
   await database.db.insert(gastos).values([
     gasto(700, 'caixinha', `${ano + 1}-01-01T03:59:00Z`), // 31/12 23:59 in Campo Grande
-    gasto(50, 'proprio-bolso', `${ano}-06-15T12:00:00Z`),
+    gasto(50, 'proprio-bolso', `${ano}-06-15T12:00:00Z`, 'reposicao'),
     gasto(9, 'caixinha', `${ano}-01-01T03:59:00Z`), // still the year before, in Campo Grande
   ]);
-  expect(
-    (await caixinha()).gastosDoAnoAnteriorEmCentavos - antes.gastosDoAnoAnteriorEmCentavos,
-  ).toBe(750);
+  const doAno = await caixinha();
+  expect(doAno.gastosDoAnoAnteriorEmCentavos - antes.gastosDoAnoAnteriorEmCentavos).toBe(750);
+  const porTipo = (tipo: string) =>
+    (doAno.gastosDoAnoAnteriorPorTipoEmCentavos[tipo] ?? 0) -
+    (antes.gastosDoAnoAnteriorPorTipoEmCentavos[tipo] ?? 0);
+  expect(porTipo('cafe')).toBe(700);
+  expect(porTipo('reposicao')).toBe(50);
 });
 
 it('sums the Caixinha do mês per tipo de gasto, matching the Saldo da caixinha', async () => {

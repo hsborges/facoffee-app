@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { anoAnterior, caixinhaDoMes, saldoDaCaixinha } from './caixinha.js';
+import { anoAnterior, caixinha, caixinhaDoMes, saldoDaCaixinha } from './caixinha.js';
 
 describe('saldoDaCaixinha', () => {
   it('takes out gastos pagos pela caixinha and reembolsos, but not gastos do próprio bolso', () => {
@@ -23,6 +23,27 @@ describe('saldoDaCaixinha', () => {
         reembolsadoEmCentavos: 0,
       }),
     ).toBe(-3000);
+  });
+});
+
+describe('caixinha', () => {
+  it('sums the gastos do ano anterior in total and per tipo de gasto, besides the saldo', () => {
+    expect(
+      caixinha({ recebidoEmCentavos: 5000, gastos: [], reembolsadoEmCentavos: 0 }, [
+        { tipo: 'cafe', valorEmCentavos: 60000 },
+        { tipo: 'reposicao', valorEmCentavos: 4000 },
+        { tipo: 'cafe', valorEmCentavos: 500 },
+      ]),
+    ).toEqual({
+      saldoEmCentavos: 5000,
+      gastosDoAnoAnteriorEmCentavos: 64500,
+      gastosDoAnoAnteriorPorTipoEmCentavos: {
+        cafe: 60500,
+        'outros-itens': 0,
+        'conserto-e-manutencao': 0,
+        reposicao: 4000,
+      },
+    });
   });
 });
 

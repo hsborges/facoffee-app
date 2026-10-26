@@ -16,6 +16,8 @@ export type Caixinha = {
   readonly saldoEmCentavos: number;
   /** All gastos of the year before, de qualquer origem: the base for the valor da cota. */
   readonly gastosDoAnoAnteriorEmCentavos: number;
+  /** The same gastos, per tipo de gasto. */
+  readonly gastosDoAnoAnteriorPorTipoEmCentavos: Readonly<Record<TipoDeGasto, number>>;
 };
 
 /**
@@ -52,8 +54,25 @@ export type CaixinhaDoMes = {
   readonly saldoNoFimEmCentavos: number;
 };
 
-const soma = (saidas: Movimento['saidas']) =>
-  saidas.reduce((total, saida) => total + saida.valorEmCentavos, 0);
+type ValorPorTipo = readonly Pick<Gasto, 'tipo' | 'valorEmCentavos'>[];
+
+const soma = (valores: ValorPorTipo) =>
+  valores.reduce((total, { valorEmCentavos }) => total + valorEmCentavos, 0);
+
+const porTipo = (valores: ValorPorTipo) =>
+  Object.fromEntries(
+    TIPOS_DE_GASTO.map((tipo) => [tipo, soma(valores.filter((valor) => valor.tipo === tipo))]),
+  ) as Record<TipoDeGasto, number>;
+
+/** *Saldo da caixinha* and *Gastos do ano anterior*, from the gastos feitos that year. */
+export const caixinha = (
+  totais: TotaisDaCaixinha,
+  gastosDoAnoAnterior: ValorPorTipo,
+): Caixinha => ({
+  saldoEmCentavos: saldoDaCaixinha(totais),
+  gastosDoAnoAnteriorEmCentavos: soma(gastosDoAnoAnterior),
+  gastosDoAnoAnteriorPorTipoEmCentavos: porTipo(gastosDoAnoAnterior),
+});
 
 /**
  * *Caixinha do mês* from the movimento `antes` the month and the one `noMes`. A gasto pago do
@@ -61,14 +80,11 @@ const soma = (saidas: Movimento['saidas']) =>
  */
 export const caixinhaDoMes = (mes: Mes, antes: Movimento, noMes: Movimento): CaixinhaDoMes => {
   const saldoNoInicioEmCentavos = antes.recebidoEmCentavos - soma(antes.saidas);
-  const gastosPorTipoEmCentavos = Object.fromEntries(
-    TIPOS_DE_GASTO.map((tipo) => [tipo, soma(noMes.saidas.filter((saida) => saida.tipo === tipo))]),
-  ) as Record<TipoDeGasto, number>;
   return {
     mes,
     saldoNoInicioEmCentavos,
     recebidoEmCentavos: noMes.recebidoEmCentavos,
-    gastosPorTipoEmCentavos,
+    gastosPorTipoEmCentavos: porTipo(noMes.saidas),
     saldoNoFimEmCentavos: saldoNoInicioEmCentavos + noMes.recebidoEmCentavos - soma(noMes.saidas),
   };
 };

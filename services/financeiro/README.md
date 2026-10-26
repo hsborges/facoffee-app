@@ -70,10 +70,10 @@ Guardados num bucket S3 ([ADR 0018](../../docs/adr/0018-armazenamento-de-comprov
 
 ## Caixinha
 
-`GET /caixinha` (qualquer participante) → `200 { saldoEmCentavos, gastosDoAnoAnteriorEmCentavos }`.
+`GET /caixinha` (qualquer participante) → `200 { saldoEmCentavos, gastosDoAnoAnteriorEmCentavos, gastosDoAnoAnteriorPorTipoEmCentavos: { cafe, outros-itens, conserto-e-manutencao, reposicao } }`.
 
 - *Saldo da caixinha*: pagamentos recebidos − gastos pagos pela caixinha − reembolsos. O gasto do próprio bolso só sai no reembolso. Fica negativo quando os gastos passam do que entrou.
-- *Gastos do ano anterior*: soma de todos os gastos, de qualquer origem, feitos no ano anterior pelo horário de Campo Grande ([ADR 0015](../../docs/adr/0015-fuso-horario-do-dominio.md)).
+- *Gastos do ano anterior*: soma de todos os gastos, de qualquer origem, feitos no ano anterior pelo horário de Campo Grande ([ADR 0015](../../docs/adr/0015-fuso-horario-do-dominio.md)), no total e por tipo de gasto. Só totais: não mostra a situação de ninguém.
 
 `GET /caixinha/:mes` (qualquer participante; `mes` em `AAAA-MM`, senão 404) → `200 { mes, saldoNoInicioEmCentavos, recebidoEmCentavos, gastosPorTipoEmCentavos: { cafe, outros-itens, conserto-e-manutencao, reposicao }, saldoNoFimEmCentavos }`, a leitura *Caixinha do mês*. O que saiu por tipo são os gastos pagos pela caixinha e os reembolsos feitos no mês, cada um pelo tipo do seu gasto; assim saldo no fim = saldo no início + recebido − gastos, e no mês atual é o saldo da caixinha. O mês vira pelo horário de Campo Grande. Só totais: não mostra a situação de ninguém.
 

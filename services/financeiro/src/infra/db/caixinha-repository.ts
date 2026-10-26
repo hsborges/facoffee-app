@@ -32,13 +32,12 @@ export const caixinhaRepository = (db: Executor): BuscarCaixinha => ({
       reembolsadoEmCentavos: reembolsado?.total ?? 0,
     };
   },
-  gastosDoAno: async (ano) => {
-    const [soma] = await db
-      .select({ total: total(gastos.valorEmCentavos) })
+  gastosDoAno: (ano) =>
+    db
+      .select({ tipo: gastos.tipo, valorEmCentavos: total(gastos.valorEmCentavos) })
       .from(gastos)
-      .where(sql`extract(year from ${gastos.feitoEm} at time zone ${FUSO}) = ${ano}`);
-    return soma?.total ?? 0;
-  },
+      .where(sql`extract(year from ${gastos.feitoEm} at time zone ${FUSO}) = ${ano}`)
+      .groupBy(gastos.tipo),
   movimento: async (mes, periodo) => {
     const [[recebido], pelaCaixinha, reembolsados] = await Promise.all([
       db
