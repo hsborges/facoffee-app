@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { comandar, ler, obterUsuarioLogado } from './api';
+import { comandar, ler, mensagemDaFalha, obterUsuarioLogado } from './api';
 
 const usuario = {
   id: '11111111-1111-4111-8111-111111111111',
@@ -125,5 +125,15 @@ describe('comandar', () => {
 
     responde(() => Promise.reject(new TypeError('Failed to fetch')));
     expect(await comandar('token', '/api/participacao/sair')).toEqual({ feito: false });
+  });
+});
+
+describe('mensagemDaFalha', () => {
+  it('explains a known error of the API, and falls back to the comando message', () => {
+    expect(mensagemDaFalha('valor-ja-definido', 'Falhou.')).toBe(
+      'O valor desse tipo de cota já foi definido para esse ano.',
+    );
+    expect(mensagemDaFalha('internal-error', 'Falhou.')).toBe('Falhou.');
+    expect(mensagemDaFalha(undefined, 'Falhou.')).toBe('Falhou.');
   });
 });

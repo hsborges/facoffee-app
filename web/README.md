@@ -23,6 +23,6 @@ Entre com um usuário de teste do [realm local](../infra/README.md#keycloak) (`g
 | `src/api.ts` | Chamadas à API pelo gateway |
 | `src/formato.ts` | Valores, meses e datas em português |
 | `src/inicial.tsx` | Página inicial de quem não está logado |
-| `src/participante.tsx` | Páginas do participante: Minha situação e Caixinha |
-| `src/gestor.tsx` | Páginas do gestor: Participantes, Gastos, Valor da cota e o complemento em Gastos |
+| `src/participante.tsx` | Páginas do participante: Minha situação, com o envio de comprovantes, e Caixinha |
+| `src/gestor.tsx` | Páginas do gestor: Participantes, com os comprovantes a confirmar, Gastos, Valor da cota e o complemento em Gastos |
 | `src/app.tsx` | Login, layout e rotas |
