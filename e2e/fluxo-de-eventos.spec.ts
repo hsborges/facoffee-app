@@ -132,7 +132,7 @@ const menu = (page: Page) => page.getByRole('navigation', { name: 'Principal' })
 
 // The avatar opens the menu da conta, with the troca de visão of the gestor and Sair (ADR 0029).
 const abrirConta = async (page: Page) => {
-  await page.getByRole('button', { name: /^Conta de / }).click();
+  await page.getByRole('button', { name: /, conta de / }).click();
   const conta = page.locator('#conta');
   await expect(conta).toBeVisible();
   return conta;

@@ -1,3 +1,4 @@
+import { matchPath } from 'react-router';
 import type { Perfil } from './api';
 
 /** A link of the main navigation; each one is also a route. */
@@ -21,8 +22,9 @@ export type Visao = 'gestor' | 'participante';
 export const navegacao = (visao: Visao): readonly Item[] =>
   visao === 'gestor' ? DO_GESTOR : DO_PARTICIPANTE;
 
+// Same match as the <Route>s: trailing slash and any case.
 const daVisao = (visao: Visao, caminho: string) =>
-  navegacao(visao).some((item) => item.caminho === caminho);
+  navegacao(visao).some((item) => matchPath(item.caminho, caminho));
 
 /**
  * Visão to show, or `undefined` while the gestor has not chosen one. Whoever is not gestor always
@@ -40,6 +42,13 @@ export const visaoAtual = (
   if (daVisao('participante', caminho)) return 'participante';
   return escolhida;
 };
+
+/**
+ * Visão kept in the tab (`sessionStorage`), or `undefined` on a new login, when the gestor chooses
+ * again, and for anything that is not a visão.
+ */
+export const visaoGuardada = (novoLogin: boolean, guardada: string | null): Visao | undefined =>
+  !novoLogin && (guardada === 'gestor' || guardada === 'participante') ? guardada : undefined;
 
 /**
  * Page to open after the login: the path kept in the OIDC `state` when the login started.

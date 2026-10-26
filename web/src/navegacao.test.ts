@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { destinoDoLogin, navegacao, type Visao, visaoAtual } from './navegacao';
+import { destinoDoLogin, navegacao, type Visao, visaoAtual, visaoGuardada } from './navegacao';
 
 describe('destinoDoLogin', () => {
   it('returns to the page asked before the login', () => {
@@ -53,8 +53,30 @@ describe('visaoAtual', () => {
     expect(visaoAtual(GESTOR, 'gestor', '/caixinha')).toBe('participante');
   });
 
+  it('matches the page as the router does: trailing slash and any case', () => {
+    expect(visaoAtual(GESTOR, 'participante', '/gastos/')).toBe('gestor');
+    expect(visaoAtual(GESTOR, 'participante', '/Valor-da-Cota')).toBe('gestor');
+    expect(visaoAtual(GESTOR, 'gestor', '/caixinha/')).toBe('participante');
+  });
+
   it('a page of no visão keeps the one chosen', () => {
     expect(visaoAtual(GESTOR, 'gestor', '/nada')).toBe('gestor');
     expect(visaoAtual(GESTOR, 'participante', '/nada')).toBe('participante');
+  });
+});
+
+describe('visaoGuardada', () => {
+  it('keeps the visão chosen in the tab', () => {
+    expect(visaoGuardada(false, 'gestor')).toBe('gestor');
+    expect(visaoGuardada(false, 'participante')).toBe('participante');
+  });
+
+  it('a new login chooses again', () => {
+    expect(visaoGuardada(true, 'gestor')).toBeUndefined();
+  });
+
+  it('nothing or anything else is no visão', () => {
+    expect(visaoGuardada(false, null)).toBeUndefined();
+    expect(visaoGuardada(false, 'admin')).toBeUndefined();
   });
 });

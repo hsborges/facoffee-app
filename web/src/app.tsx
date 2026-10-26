@@ -6,7 +6,7 @@ import { obterUsuarioLogado, type UsuarioLogado } from './api';
 import { iniciais } from './formato';
 import { Gastos, Participantes, SolicitarComplemento, ValorDaCota } from './gestor';
 import { PaginaInicial } from './inicial';
-import { navegacao, type Visao, visaoAtual } from './navegacao';
+import { navegacao, type Visao, visaoAtual, visaoGuardada } from './navegacao';
 import { Caixinha, MinhaSituacao } from './participante';
 
 const Pagina = ({ titulo, children }: { titulo: string; children: ReactNode }) => {
@@ -48,9 +48,14 @@ export const App = () => {
   const [eu, setEu] = useState<UsuarioLogado>();
   // Kept across reloads of the tab; a new login chooses again.
   const [escolhida, setEscolhida] = useState(() => {
-    if (hasAuthParams()) sessionStorage.removeItem(VISAO);
-    return (sessionStorage.getItem(VISAO) as Visao | null) ?? undefined;
+    const guardada = visaoGuardada(hasAuthParams(), sessionStorage.getItem(VISAO));
+    if (!guardada) sessionStorage.removeItem(VISAO);
+    return guardada;
   });
+  const guardar = (visao: Visao) => {
+    sessionStorage.setItem(VISAO, visao);
+    setEscolhida(visao);
+  };
   const { pathname } = useLocation();
   const navigate = useNavigate();
 
@@ -110,8 +115,7 @@ export const App = () => {
   const visao = visaoAtual(eu.usuario.perfis, escolhida, pathname);
   if (!visao) {
     const escolher = (nova: Visao) => {
-      sessionStorage.setItem(VISAO, nova);
-      setEscolhida(nova);
+      guardar(nova);
       if (visaoAtual(eu.usuario.perfis, nova, pathname) !== nova) navigate(inicio(nova));
     };
     return (
@@ -123,6 +127,9 @@ export const App = () => {
           </button>
           <button type="button" onClick={() => escolher('participante')}>
             Visão do participante
+          </button>
+          <button type="button" className="fantasma" onClick={sair}>
+            Sair
           </button>
         </div>
       </Aviso>
@@ -165,7 +172,7 @@ export const App = () => {
           type="button"
           className="secundario avatar"
           popoverTarget="conta"
-          aria-label={`Conta de ${eu.usuario.nome}`}
+          aria-label={`${iniciais(eu.usuario.nome)}, conta de ${eu.usuario.nome}`}
         >
           {iniciais(eu.usuario.nome)}
         </button>
@@ -174,7 +181,10 @@ export const App = () => {
           {eu.usuario.perfis.includes('gestor') && (
             <Link
               to={inicio(outra)}
-              onClick={() => document.getElementById('conta')?.hidePopover()}
+              onClick={() => {
+                guardar(outra);
+                document.getElementById('conta')?.hidePopover();
+              }}
             >
               Trocar para <strong>{outra === 'gestor' ? 'Gestor' : 'Participante'}</strong>
             </Link>
