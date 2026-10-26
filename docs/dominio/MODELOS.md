@@ -5,10 +5,10 @@
 | **Escopo** | Divisão de custos da copa da FACOM |
 | **Sistema** | FACOFFEE |
 | **Disciplina** | Técnicas Avançadas de Desenvolvimento de Software (2026/2) |
-| **Versão** | 2.11 |
+| **Versão** | 2.12 |
 | **Data** | 2026-10-26 |
 | **Status** | Aprovado |
-| **Base** | [Glossário da Linguagem Ubíqua](GLOSSARIO.md) (versão 2.8) e arquitetura do FACOFFEE ([arquitetura/visao-geral.png](../arquitetura/visao-geral.png)) |
+| **Base** | [Glossário da Linguagem Ubíqua](GLOSSARIO.md) (versão 2.9) e arquitetura do FACOFFEE ([arquitetura/visao-geral.png](../arquitetura/visao-geral.png)) |
 
 ## Propósito
 
@@ -129,8 +129,11 @@ flowchart LR
     P1["⚙ Todo início de mês"] --> G1["▣ Participante (Participação)"] --> E1["⚡ Cota devida"]
     A1["👤 Gestor"] --> C1["▶ Receber pagamento por PIX ou em dinheiro"] --> G2["▣ Participante (Financeiro)"] --> E2["⚡ Pagamento recebido"]
     A2["👤 Participante"] --> C2["▶ Enviar, editar ou cancelar comprovante"] --> G3["▣ Comprovante enviado (Financeiro)"] --> R4["👁 Comprovantes enviados (Financeiro)"]
+    G3 -- "ao enviar" --> E3["⚡ Comprovante enviado"] --> P3["⚙ Avisar o gestor de cada comprovante enviado (Notificação)"]
     R4 --> A3["👤 Gestor"] --> C3["▶ Confirmar comprovante"] --> G3 --> G2
+    P3 --> A3
     A3 --> C4["▶ Recusar comprovante"] --> G3
+    G3 -- "ao recusar" --> E4["⚡ Comprovante recusado"] --> P4["⚙ Avisar o participante da recusa (Notificação)"]
     E1 --> R1["👁 Crédito e pendentes (Financeiro)"]
     E2 --> R1
     E2 --> R2["👁 Saldo da caixinha (Financeiro)"]
@@ -141,6 +144,8 @@ flowchart LR
 A cota passa a ser devida em Participação, que sabe o tipo de cota do participante naquele mês. Quem entra durante o mês também deve a cota daquele mês. Financeiro recebe o evento *Cota devida* com o valor e passa a cobrá-la.
 
 O pagamento é sempre recebido pelo gestor, no agregado Participante (Financeiro) de quem tem as cotas quitadas: diretamente, com o dinheiro ou o comprovante entregue pelo participante ou por outra pessoa em nome dele, ou ao confirmar o comprovante que o participante enviou ([ADR 0030](../adr/0030-pagamento-iniciado-pelo-participante.md)). O comprovante enviado fica a confirmar e não conta como pagamento; enquanto isso, o participante pode editar o valor e o arquivo ou cancelar o envio. O gestor analisa cada comprovante uma vez só: ao confirmar, pode corrigir o valor, e vale o valor confirmado; ao recusar, informa o motivo, que o participante vê.
+
+O gestor é avisado de cada comprovante enviado, com quem enviou e o valor, e o participante é avisado da análise: da confirmação, pelo aviso de *Pagamento recebido*, com o valor confirmado, e da recusa, com o valor e o motivo ([ADR 0031](../adr/0031-avisos-do-comprovante-enviado.md)). Editar e cancelar não geram aviso.
 
 O crédito é abatido automaticamente: cada nova cota ou parte de complemento consome primeiro o crédito do participante, sem comando de ninguém.
 
@@ -204,6 +209,8 @@ A coluna **Publicado para** indica quais contextos recebem o evento. Os eventos 
 | 7 | **Complemento solicitado** | O gestor pediu um complemento; cada participante ativo passou a dever uma parte igual. | Financeiro: Complemento | Saldo da caixinha insuficiente | Notificação |
 | 8 | **Gasto feito** | Alguém pagou uma compra, um conserto, uma manutenção ou uma reposição, com dinheiro da caixinha ou do próprio bolso, e guardou a nota, com o tipo de gasto. | Financeiro: Caixinha | *Pagar compra, conserto, manutenção ou reposição* | *interno* |
 | 9 | **Reembolso feito** | O gestor devolveu o valor a quem pagou um gasto do próprio bolso. | Financeiro: Caixinha | Gasto pago do próprio bolso | Notificação |
+| 10 | **Comprovante enviado** | O participante enviou o próprio comprovante ao gestor, com o valor pago; fica a confirmar. | Financeiro: Comprovante enviado | *Enviar comprovante* | Notificação |
+| 11 | **Comprovante recusado** | O gestor recusou o comprovante enviado pelo participante, com o motivo; não conta como pagamento. | Financeiro: Comprovante enviado | *Recusar comprovante* | Notificação |
 
 O contexto Participação também recebe um evento do contexto Usuário:
 
@@ -245,7 +252,7 @@ O contexto Participação também recebe um evento do contexto Usuário:
 | Retornar é entrar de novo. | Saiu *Participante retornou*. |
 | A compra é um tipo de gasto. | *Compra feita* e *Gasto pago* viraram um só evento: *Gasto feito*. |
 | O complemento já define a parte de cada participante. | *Complemento solicitado* e *Complemento devido* viraram um só evento. |
-| Só a confirmação do comprovante enviado mexe no dinheiro. | Enviar, editar, cancelar e recusar comprovante não geram evento: mudam só a situação do comprovante enviado. Confirmar gera *Pagamento recebido*, o mesmo evento do pagamento recebido diretamente. |
+| Só a confirmação do comprovante enviado mexe no dinheiro. | Confirmar gera *Pagamento recebido*, o mesmo evento do pagamento recebido diretamente. *Comprovante enviado* e *Comprovante recusado* só avisam o gestor e o participante; editar e cancelar comprovante não geram evento. |
 | Lembrar um pendente não muda nada no domínio. | Saiu *Pendente cobrado*. Lembrar os pendentes é uma política de Notificação sobre a leitura *Crédito e pendentes* ([ADR 0027](../adr/0027-lembrete-aos-pendentes.md)). |
 | A desativação do acesso acontece no contexto Usuário, mas tem efeito em Participação. | *Usuário desativado* vem do contexto Usuário e é traduzido em *Participante saiu*. |
 | Só vai para outros contextos o evento que alguém usa. | *Tipo de cota trocado* e *Gasto feito* ficam internos. *Cota devida* já leva o valor do tipo de cota, e o saldo da caixinha é calculado no próprio Financeiro. |
@@ -271,12 +278,12 @@ flowchart LR
     U -- "Usuário desativado" --> P["Participação"]
     P -- "Participante entrou, Participante saiu, Cota devida" --> F["Financeiro"]
     P -- "Valor da cota definido" --> N["Notificação"]
-    F -- "Pagamento recebido, Complemento solicitado, Reembolso feito" --> N
-    N -. "consulta contatos" .-> U
+    F -- "Pagamento recebido, Complemento solicitado, Reembolso feito, Comprovante enviado, Comprovante recusado" --> N
+    N -. "consulta contatos e gestores" .-> U
     N -. "consulta pendentes" .-> F
 ```
 
-As setas vão de quem publica para quem consome. As setas tracejadas são consultas: Notificação busca em Usuário o nome e o e-mail de cada participante a avisar ([ADR 0020](../adr/0020-envio-de-e-mails-da-notificacao.md)) e em Financeiro os participantes ativos pendentes, para avisar a cota devida e lembrá-los ([ADR 0027](../adr/0027-lembrete-aos-pendentes.md)). A dependência entre os contextos de negócio tem uma só direção: Usuário → Participação → Financeiro. Participação traduz *Usuário desativado* para a linguagem do domínio, encerrando a participação. Assim, o termo "usuário" não entra no modelo de Participação.
+As setas vão de quem publica para quem consome. As setas tracejadas são consultas: Notificação busca em Usuário o nome e o e-mail de cada participante a avisar ([ADR 0020](../adr/0020-envio-de-e-mails-da-notificacao.md)) e dos gestores ([ADR 0031](../adr/0031-avisos-do-comprovante-enviado.md)) e em Financeiro os participantes ativos pendentes, para avisar a cota devida e lembrá-los ([ADR 0027](../adr/0027-lembrete-aos-pendentes.md)). A dependência entre os contextos de negócio tem uma só direção: Usuário → Participação → Financeiro. Participação traduz *Usuário desativado* para a linguagem do domínio, encerrando a participação. Assim, o termo "usuário" não entra no modelo de Participação.
 
 ### Eventos entre contextos
 
@@ -284,8 +291,8 @@ As setas vão de quem publica para quem consome. As setas tracejadas são consul
 |---|---|---|
 | **Usuário** | Usuário desativado | — |
 | **Participação** | Participante entrou, Participante saiu, Cota devida, Valor da cota definido | Usuário desativado |
-| **Financeiro** | Pagamento recebido, Complemento solicitado, Reembolso feito | Cota devida, Participante entrou, Participante saiu |
-| **Notificação** | — | Valor da cota definido, Pagamento recebido, Complemento solicitado, Reembolso feito |
+| **Financeiro** | Pagamento recebido, Complemento solicitado, Reembolso feito, Comprovante enviado, Comprovante recusado | Cota devida, Participante entrou, Participante saiu |
+| **Notificação** | — | Valor da cota definido, Pagamento recebido, Complemento solicitado, Reembolso feito, Comprovante enviado, Comprovante recusado |
 
 ### Pontos críticos para validar
 
@@ -309,3 +316,4 @@ Nenhum no momento.
 | 2.9 | 2026-10-26 | A leitura *Gastos do ano anterior* passa a ser por tipo de gasto e serve também aos participantes. Nova leitura *Valores da cota* (Participação), com o valor de cada tipo de cota no ano (#77). |
 | 2.10 | 2026-10-26 | Nova política de Notificação: avisar a cota devida e lembrar os pendentes, a partir da leitura *Crédito e pendentes*, que Notificação consulta em Financeiro ([ADR 0027](../adr/0027-lembrete-aos-pendentes.md)). Ponto crítico 1 fechado (#72). Base atualizada para o glossário 2.7. |
 | 2.11 | 2026-10-26 | O participante envia o próprio comprovante, que o gestor confirma, recebendo o pagamento, ou recusa. Novos comandos *Enviar, editar ou cancelar comprovante*, *Confirmar comprovante* e *Recusar comprovante*, agregado *Comprovante enviado* e leitura *Comprovantes enviados*; *Pagamento recebido* também vem da confirmação, sem mudar o contrato ([ADR 0030](../adr/0030-pagamento-iniciado-pelo-participante.md), #87). Base atualizada para o glossário 2.8. |
+| 2.12 | 2026-10-26 | Novos eventos *Comprovante enviado* e *Comprovante recusado*, de Financeiro para Notificação, com as políticas de avisar o gestor de cada comprovante enviado e o participante da recusa; Notificação consulta os gestores em Usuário ([ADR 0031](../adr/0031-avisos-do-comprovante-enviado.md), #88). Base atualizada para o glossário 2.9. |

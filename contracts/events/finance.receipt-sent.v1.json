@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/hsborges/facoffee-app/blob/main/contracts/events/finance.receipt-sent.v1.json",
+  "title": "Comprovante enviado",
+  "description": "O participante enviou o próprio comprovante ao gestor, com o valor pago; fica a confirmar.",
+  "type": "object",
+  "allOf": [{ "$ref": "envelope.v1.json" }],
+  "properties": {
+    "type": { "const": "finance.receipt-sent" },
+    "version": { "const": 1 },
+    "payload": {
+      "type": "object",
+      "required": ["receiptId", "participantId", "amountInCents"],
+      "properties": {
+        "receiptId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Identificador do comprovante enviado."
+        },
+        "participantId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Quem enviou: identificador da pessoa, o mesmo do contexto Usuário (sub do Passaporte UFMS)."
+        },
+        "amountInCents": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Valor pago informado pelo participante, em centavos de real."
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "id": "0b6f2f0e-6a1c-4c55-9a43-6f1f1b0c9e18",
+      "type": "finance.receipt-sent",
+      "version": 1,
+      "occurredAt": "2026-11-10T15:00:00Z",
+      "payload": {
+        "receiptId": "c3d4e5f6-0718-4293-a4b5-c6d7e8f90a1b",
+        "participantId": "2b3c4d5e-6f70-4a81-9b2c-3d4e5f6a7b8c",
+        "amountInCents": 3000
+      }
+    }
+  ]
+}

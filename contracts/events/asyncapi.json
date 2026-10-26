@@ -2,7 +2,7 @@
   "asyncapi": "3.0.0",
   "info": {
     "title": "Eventos de domínio do FACOFFEE",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Eventos trocados entre os contextos via RabbitMQ. Convenções e versionamento em README.md e no ADR 0006."
   },
   "defaultContentType": "application/json",
@@ -190,6 +190,50 @@
         }
       }
     },
+    "finance.receipt-sent.v1": {
+      "address": "finance.receipt-sent.v1",
+      "title": "Comprovante enviado",
+      "messages": {
+        "finance.receipt-sent.v1": {
+          "$ref": "#/components/messages/finance.receipt-sent.v1"
+        }
+      },
+      "bindings": {
+        "amqp": {
+          "is": "routingKey",
+          "exchange": {
+            "name": "facoffee.events",
+            "type": "topic",
+            "durable": true,
+            "autoDelete": false,
+            "vhost": "/"
+          },
+          "bindingVersion": "0.3.0"
+        }
+      }
+    },
+    "finance.receipt-rejected.v1": {
+      "address": "finance.receipt-rejected.v1",
+      "title": "Comprovante recusado",
+      "messages": {
+        "finance.receipt-rejected.v1": {
+          "$ref": "#/components/messages/finance.receipt-rejected.v1"
+        }
+      },
+      "bindings": {
+        "amqp": {
+          "is": "routingKey",
+          "exchange": {
+            "name": "facoffee.events",
+            "type": "topic",
+            "durable": true,
+            "autoDelete": false,
+            "vhost": "/"
+          },
+          "bindingVersion": "0.3.0"
+        }
+      }
+    },
     "participation.events": {
       "address": "participation.events",
       "description": "Fila de Participação, ligada ao exchange facoffee.events pelas routing keys: user.user-deactivated.v1.",
@@ -242,7 +286,7 @@
     },
     "notification.events": {
       "address": "notification.events",
-      "description": "Fila de Notificação, ligada ao exchange facoffee.events pelas routing keys: participation.contribution-amount-set.v1, finance.payment-received.v1, finance.top-up-requested.v1, finance.reimbursement-made.v1.",
+      "description": "Fila de Notificação, ligada ao exchange facoffee.events pelas routing keys: participation.contribution-amount-set.v1, finance.payment-received.v1, finance.top-up-requested.v1, finance.reimbursement-made.v1, finance.receipt-sent.v1, finance.receipt-rejected.v1.",
       "messages": {
         "participation.contribution-amount-set.v1": {
           "$ref": "#/components/messages/participation.contribution-amount-set.v1"
@@ -255,6 +299,12 @@
         },
         "finance.reimbursement-made.v1": {
           "$ref": "#/components/messages/finance.reimbursement-made.v1"
+        },
+        "finance.receipt-sent.v1": {
+          "$ref": "#/components/messages/finance.receipt-sent.v1"
+        },
+        "finance.receipt-rejected.v1": {
+          "$ref": "#/components/messages/finance.receipt-rejected.v1"
         }
       },
       "bindings": {
@@ -361,6 +411,28 @@
         }
       ]
     },
+    "publish.finance.receipt-sent.v1": {
+      "action": "send",
+      "title": "Financeiro publica Comprovante enviado",
+      "tags": [{ "name": "Financeiro" }],
+      "channel": { "$ref": "#/channels/finance.receipt-sent.v1" },
+      "messages": [
+        {
+          "$ref": "#/channels/finance.receipt-sent.v1/messages/finance.receipt-sent.v1"
+        }
+      ]
+    },
+    "publish.finance.receipt-rejected.v1": {
+      "action": "send",
+      "title": "Financeiro publica Comprovante recusado",
+      "tags": [{ "name": "Financeiro" }],
+      "channel": { "$ref": "#/channels/finance.receipt-rejected.v1" },
+      "messages": [
+        {
+          "$ref": "#/channels/finance.receipt-rejected.v1/messages/finance.receipt-rejected.v1"
+        }
+      ]
+    },
     "consume.participation": {
       "action": "receive",
       "title": "Participação consome",
@@ -390,7 +462,9 @@
         },
         { "$ref": "#/channels/notification.events/messages/finance.payment-received.v1" },
         { "$ref": "#/channels/notification.events/messages/finance.top-up-requested.v1" },
-        { "$ref": "#/channels/notification.events/messages/finance.reimbursement-made.v1" }
+        { "$ref": "#/channels/notification.events/messages/finance.reimbursement-made.v1" },
+        { "$ref": "#/channels/notification.events/messages/finance.receipt-sent.v1" },
+        { "$ref": "#/channels/notification.events/messages/finance.receipt-rejected.v1" }
       ]
     }
   },
@@ -451,6 +525,20 @@
         "summary": "O gestor devolveu o valor a quem pagou um gasto do próprio bolso.",
         "contentType": "application/json",
         "payload": { "$ref": "./finance.reimbursement-made.v1.json" }
+      },
+      "finance.receipt-sent.v1": {
+        "name": "finance.receipt-sent",
+        "title": "Comprovante enviado",
+        "summary": "O participante enviou o próprio comprovante ao gestor, com o valor pago; fica a confirmar.",
+        "contentType": "application/json",
+        "payload": { "$ref": "./finance.receipt-sent.v1.json" }
+      },
+      "finance.receipt-rejected.v1": {
+        "name": "finance.receipt-rejected",
+        "title": "Comprovante recusado",
+        "summary": "O gestor recusou o comprovante enviado pelo participante, com o motivo; não conta como pagamento.",
+        "contentType": "application/json",
+        "payload": { "$ref": "./finance.receipt-rejected.v1.json" }
       }
     }
   }
