@@ -9,6 +9,7 @@ import {
   type Situacao,
   type TipoDeCota,
   type TipoDeGasto,
+  type ValorDaCota,
 } from './api';
 import {
   dataEmCampoGrande,
@@ -318,7 +319,60 @@ const CaixinhaDoMes = ({ token }: { token: string }) => {
   );
 };
 
-/** *Caixinha*: the saldo da caixinha, the gastos do ano anterior and the caixinha do mês. */
+/** The gastos do ano anterior per tipo de gasto, and their total. */
+export const GastosDoAnoAnterior = ({ caixinha }: { caixinha: CaixinhaLida }) => (
+  <table>
+    <caption>Gastos do ano anterior</caption>
+    <tbody>
+      {Object.entries(NOME_DO_TIPO_DE_GASTO).map(([tipo, nome]) => (
+        <tr key={tipo}>
+          <th scope="row">{nome}</th>
+          <td>{emReais(caixinha.gastosDoAnoAnteriorPorTipoEmCentavos[tipo as TipoDeGasto])}</td>
+        </tr>
+      ))}
+      <tr>
+        <th scope="row">Total</th>
+        <td>{emReais(caixinha.gastosDoAnoAnteriorEmCentavos)}</td>
+      </tr>
+    </tbody>
+  </table>
+);
+
+const ValoresDaCota = ({ token }: { token: string }) => {
+  const [valores, recarregar] = useLeitura<readonly ValorDaCota[]>(
+    token,
+    '/api/participacao/tipo-de-cota',
+  );
+  if (!valores) return <Carregando />;
+  if (valores.situacao !== 'ok') return <FalhaAoCarregar tentarDeNovo={recarregar} />;
+  if (valores.valor.length === 0) return <p>O valor da cota deste ano ainda não foi definido.</p>;
+  return (
+    <table>
+      <caption>Valor da cota em {valores.valor[0]?.ano}</caption>
+      <thead>
+        <tr>
+          <th scope="col">Tipo de cota</th>
+          <th scope="col">Inclui</th>
+          <th scope="col">Por mês</th>
+        </tr>
+      </thead>
+      <tbody>
+        {valores.valor.map((valor) => (
+          <tr key={valor.tipoDeCota}>
+            <th scope="row">{NOME_DO_TIPO_DE_COTA[valor.tipoDeCota]}</th>
+            <td>{ITENS_DO_TIPO_DE_COTA[valor.tipoDeCota]}</td>
+            <td>{emReais(valor.valorEmCentavos)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+};
+
+/**
+ * *Caixinha*: the saldo da caixinha, the valor of each tipo de cota with the gastos do ano anterior
+ * it comes from, and the caixinha do mês.
+ */
 export const Caixinha = ({ token }: { token: string }) => {
   const [caixinha, recarregar] = useLeitura<CaixinhaLida>(token, '/api/financeiro/caixinha');
   if (!caixinha) return <Carregando />;
@@ -328,9 +382,16 @@ export const Caixinha = ({ token }: { token: string }) => {
       <dl>
         <dt>Saldo da caixinha</dt>
         <dd>{emReais(caixinha.valor.saldoEmCentavos)}</dd>
-        <dt>Gastos do ano anterior</dt>
-        <dd>{emReais(caixinha.valor.gastosDoAnoAnteriorEmCentavos)}</dd>
       </dl>
+      <section aria-labelledby="valor-da-cota">
+        <h2 id="valor-da-cota">De onde vem o valor da cota</h2>
+        <p>
+          No início do ano, o gestor define o valor de cada tipo de cota com base nos gastos do ano
+          anterior.
+        </p>
+        <ValoresDaCota token={token} />
+        <GastosDoAnoAnterior caixinha={caixinha.valor} />
+      </section>
       <CaixinhaDoMes token={token} />
     </>
   );

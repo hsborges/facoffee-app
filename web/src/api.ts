@@ -100,6 +100,14 @@ export type Situacao = CreditoEPendente & {
 export type Caixinha = {
   readonly saldoEmCentavos: number;
   readonly gastosDoAnoAnteriorEmCentavos: number;
+  readonly gastosDoAnoAnteriorPorTipoEmCentavos: Readonly<Record<TipoDeGasto, number>>;
+};
+
+/** The valor of a tipo de cota in a year, as listed by `GET /api/participacao/tipo-de-cota`. */
+export type ValorDaCota = {
+  readonly tipoDeCota: TipoDeCota;
+  readonly ano: number;
+  readonly valorEmCentavos: number;
 };
 
 /** What entered, left per tipo de gasto and was left, as answered by `GET /api/financeiro/caixinha/{mes}`. */
