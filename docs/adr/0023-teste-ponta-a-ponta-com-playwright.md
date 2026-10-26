@@ -23,14 +23,14 @@ Forças em jogo:
 - O Chromium leva `localhost:80` e `localhost:8080` às portas aleatórias (`--host-resolver-rules`), mantendo o `Host`: o web, o login e o `iss` dos tokens não mudam.
 - O teste usa o web pelo gateway, com o login pela tela do Keycloak, cada pessoa no seu contexto de navegador. Cada teste cria usuários novos pela API de administração do Keycloak; o gestor é o usuário de teste do realm.
 - Fora do web, só o que ele não mostra: o e-mail, pela API do Mailpit; a leitura *Crédito e pendentes* de todos, pela API, com a sessão do gestor; e o *Todo início de mês*, reiniciando o agendador, que dispara os gatilhos ao subir.
-- No CI, o workflow `e2e` (GitHub Actions) roda o teste a cada PR para `main`; numa falha, guarda os traces do Playwright e os logs do compose.
+- O teste roda só na máquina, quando necessário, e não no CI: cada execução faz o build e sobe a stack inteira, caro demais para cada PR no GitHub Actions. Numa falha, os traces do Playwright e os logs do compose ficam em `test-results/`.
 
 ## Consequências
 
 Ganhos:
 
 - O fluxo de eventos é conferido como a pessoa o usa, inclusive gateway, login e e-mail.
-- Um comando, igual no CI e na máquina: stack limpa a cada execução, sem tocar na stack local nem nos seus dados.
+- Um comando: stack limpa a cada execução, sem tocar na stack local nem nos seus dados.
 
 Custos:
 
