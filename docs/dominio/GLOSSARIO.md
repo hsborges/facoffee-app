@@ -5,8 +5,8 @@
 | **Escopo** | Divisão de custos da copa da FACOM |
 | **Sistema** | FACOFFEE |
 | **Disciplina** | Técnicas Avançadas de Desenvolvimento de Software (2026/2) |
-| **Versão** | 2.4 |
-| **Data** | 2026-10-25 |
+| **Versão** | 2.5 |
+| **Data** | 2026-10-26 |
 | **Status** | Aprovado |
 
 ## Propósito
@@ -38,7 +38,7 @@ A coluna **Contexto** indica em qual contexto do FACOFFEE o termo é tratado. Os
 | Participação | [Participante](#participante), [Gestor](#gestor) | Participação |
 | Cotas | [Cota](#cota), [Tipo de cota](#tipo-de-cota), [Valor da cota](#valor-da-cota) | Participação |
 | Pagamento | [Pagamento](#pagamento), [Comprovante](#comprovante), [Crédito](#crédito), [Pendente](#pendente) | Financeiro |
-| Gastos | [Gasto](#gasto), [Compra](#compra), [Nota](#nota), [Reembolso](#reembolso) | Financeiro |
+| Gastos | [Gasto](#gasto), [Tipo de gasto](#tipo-de-gasto), [Compra](#compra), [Nota](#nota), [Reembolso](#reembolso) | Financeiro |
 | Caixinha | [Caixinha](#caixinha), [Saldo da caixinha](#saldo-da-caixinha), [Complemento](#complemento) | Financeiro |
 | Uso da copa | [Copa](#copa), [Consumo](#consumo) | Fora do sistema: o uso da copa não é registrado. |
 
@@ -152,10 +152,11 @@ Dois termos aparecem em mais de um contexto:
 **Regras:**
 - Todo gasto sai da caixinha.
 - Quem paga um gasto do próprio bolso recebe [reembolso](#reembolso).
+- Todo gasto tem um [tipo de gasto](#tipo-de-gasto).
 
 **O gestor também diz:** "despesa", "o que saiu".
 
-**Relacionados:** [Compra](#compra), [Nota](#nota), [Reembolso](#reembolso), [Caixinha](#caixinha), [Valor da cota](#valor-da-cota).
+**Relacionados:** [Tipo de gasto](#tipo-de-gasto), [Compra](#compra), [Nota](#nota), [Reembolso](#reembolso), [Caixinha](#caixinha), [Valor da cota](#valor-da-cota).
 
 ### Gestor
 
@@ -259,6 +260,25 @@ Dois termos aparecem em mais de um contexto:
 
 **Relacionados:** [Cota](#cota), [Valor da cota](#valor-da-cota), [Consumo](#consumo).
 
+### Tipo de gasto
+
+**Definição:** Com o que foi o gasto, para mostrar a todos quanto saiu da caixinha com cada coisa.
+
+| Tipo | O que inclui |
+|---|---|
+| **Café** | O café. |
+| **Outros itens da copa** | Açúcar, leite, filtros, copos, bolachas, chás e os demais itens de consumo. |
+| **Conserto e manutenção** | Conserto e manutenção da máquina de café. |
+| **Reposição** | Reposição de itens quebrados. Não é a reposição dos itens que acabam, que é uma [compra](#compra) de café ou de outros itens da copa. |
+
+**Regras:**
+- Cada gasto tem um só tipo, escolhido por quem o registra. Uma nota com itens de tipos diferentes fica com o tipo da maior parte do valor; o gasto não é registrado item por item.
+- O café fica separado dos outros itens porque é o que os dois [tipos de cota](#tipo-de-cota) têm em comum.
+
+**O gestor também diz:** "tipo de coisa".
+
+**Relacionados:** [Gasto](#gasto), [Compra](#compra), [Consumo](#consumo), [Tipo de cota](#tipo-de-cota).
+
 ### Valor da cota
 
 **Definição:** O valor de cada tipo de cota, definido pelo gestor no início do ano com base nos gastos do ano anterior.
@@ -301,6 +321,8 @@ Estas tabelas são a única fonte das traduções: cada termo tem um só nome no
 | Parte (do complemento) | `share` | |
 | [Reembolso](#reembolso) | `reimbursement` | Devolve a quem pagou um gasto do próprio bolso. Não `refund`, que é a devolução do valor de uma compra. |
 | [Gasto](#gasto) | `expense` | |
+| [Tipo de gasto](#tipo-de-gasto) | `expenseType` | |
+| Café, outros itens da copa, conserto e manutenção, reposição | `coffee`, `other-supplies`, `repair-and-maintenance`, `replacement` | |
 
 ### Eventos
 
@@ -338,8 +360,7 @@ O tipo do evento nos contratos é `<contexto>.<evento>`, com o contexto de orige
 
 ## Questões em aberto
 
-1. **Tipo do gasto** ([#73](../../../../issues/73)). O gestor quer mostrar o total gasto por tipo de coisa (café, bolacha, conserto), mas [Gasto](#gasto) não tem tipo. Falta validar com ele a lista de tipos e o nome que usa.
-2. **Pagamento feito por outra pessoa** ([#74](../../../../issues/74)). Às vezes alguém paga pelo outro. [Pagamento](#pagamento) não diz a quem o pagamento é atribuído nem se importa guardar quem pagou.
+1. **Pagamento feito por outra pessoa** ([#74](../../../../issues/74)). Às vezes alguém paga pelo outro. [Pagamento](#pagamento) não diz a quem o pagamento é atribuído nem se importa guardar quem pagou.
 
 ## Histórico de revisões
 
@@ -352,3 +373,4 @@ O tipo do evento nos contratos é `<contexto>.<evento>`, com o contexto de orige
 | 2.2 | 2026-10-25 | Nova seção [Nomes nos contratos de eventos](#nomes-nos-contratos-de-eventos), com o nome em inglês de cada termo e evento usado nos contratos de eventos. |
 | 2.3 | 2026-10-25 | [Cota](#cota): quem entra durante o mês também deve a cota daquele mês. [Valor da cota](#valor-da-cota): sem definição do gestor até o início do ano, repete-se o valor do ano anterior. |
 | 2.4 | 2026-10-25 | Abertas as questões 1 (tipo do gasto, #73) e 2 (pagamento feito por outra pessoa, #74), levantadas na [Visão de produto](../produto/VISAO.md). |
+| 2.5 | 2026-10-26 | Novo termo [Tipo de gasto](#tipo-de-gasto) (café, outros itens da copa, conserto e manutenção, reposição), validado com o gestor, com o nome nos contratos. Todo [gasto](#gasto) tem um tipo. Questão 1 fechada (#73). |
