@@ -780,23 +780,8 @@ paths:
                       bolso, em centavos de real; o ano vira à meia-noite de Campo Grande (MS). É
                       a base para o valor da cota.
                   gastosDoAnoAnteriorPorTipoEmCentavos:
-                    type: object
-                    required: [cafe, outros-itens, conserto-e-manutencao, reposicao]
-                    additionalProperties: false
+                    $ref: '#/components/schemas/PorTipoDeGasto'
                     description: Os mesmos gastos do ano anterior, por tipo de gasto, em centavos de real.
-                    properties:
-                      cafe:
-                        type: integer
-                        minimum: 0
-                      outros-itens:
-                        type: integer
-                        minimum: 0
-                      conserto-e-manutencao:
-                        type: integer
-                        minimum: 0
-                      reposicao:
-                        type: integer
-                        minimum: 0
               example:
                 saldoEmCentavos: 4500
                 gastosDoAnoAnteriorEmCentavos: 384000
@@ -857,26 +842,11 @@ paths:
                     minimum: 0
                     description: Pagamentos recebidos no mês, em centavos de real.
                   gastosPorTipoEmCentavos:
-                    type: object
-                    required: [cafe, outros-itens, conserto-e-manutencao, reposicao]
-                    additionalProperties: false
+                    $ref: '#/components/schemas/PorTipoDeGasto'
                     description: |
                       O que saiu da caixinha no mês, por tipo de gasto, em centavos de real: os
                       gastos pagos pela caixinha e os reembolsos feitos no mês. Um gasto pago do
                       próprio bolso conta no mês do reembolso.
-                    properties:
-                      cafe:
-                        type: integer
-                        minimum: 0
-                      outros-itens:
-                        type: integer
-                        minimum: 0
-                      conserto-e-manutencao:
-                        type: integer
-                        minimum: 0
-                      reposicao:
-                        type: integer
-                        minimum: 0
                   saldoNoFimEmCentavos:
                     type: integer
                     description: Saldo da caixinha no fim do mês, em centavos de real.
@@ -1172,6 +1142,24 @@ components:
       description: |
         Tipo de gasto: `cafe`; `outros-itens` da copa (açúcar, leite, bolachas, chás, filtros,
         copos); `conserto-e-manutencao` da máquina de café; `reposicao` de itens quebrados.
+    PorTipoDeGasto:
+      type: object
+      required: [cafe, outros-itens, conserto-e-manutencao, reposicao]
+      additionalProperties: false
+      description: Um valor em centavos de real para cada tipo de gasto.
+      properties:
+        cafe:
+          type: integer
+          minimum: 0
+        outros-itens:
+          type: integer
+          minimum: 0
+        conserto-e-manutencao:
+          type: integer
+          minimum: 0
+        reposicao:
+          type: integer
+          minimum: 0
     Gasto:
       type: object
       required: [id, participanteId, valorEmCentavos, origem, tipo, notaId, feitoEm, reembolsado]
