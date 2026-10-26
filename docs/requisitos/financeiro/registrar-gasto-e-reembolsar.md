@@ -41,7 +41,7 @@ Regra: RN-FIN-22 Todo gasto tem um só tipo de gasto
 
 - Termo: [Nota](../../dominio/GLOSSARIO.md#nota) · Origem: glossário, [ADR 0018](../../adr/0018-armazenamento-de-comprovantes-e-notas.md)
 
-Basta o valor total; o gasto não é registrado item por item. A nota é guardada por quem registra o gasto e pode ser vista por qualquer participante (transparência no agregado, RNF-04).
+Basta o valor total; o gasto não é registrado item por item. A nota é guardada por quem registra o gasto e pode ser vista por qualquer participante (transparência no agregado, RNF-09).
 
 ```gherkin
 # language: pt
