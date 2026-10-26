@@ -5,10 +5,10 @@
 | **Escopo** | Divisão de custos da copa da FACOM |
 | **Sistema** | FACOFFEE |
 | **Disciplina** | Técnicas Avançadas de Desenvolvimento de Software (2026/2) |
-| **Versão** | 1.3 |
+| **Versão** | 1.4 |
 | **Data** | 2026-10-26 |
 | **Status** | Proposto |
-| **Base** | [Glossário](../dominio/GLOSSARIO.md) (versão 2.6) e [Modelos de Domínio](../dominio/MODELOS.md) (versão 2.9) |
+| **Base** | [Glossário](../dominio/GLOSSARIO.md) (versão 2.6) e [Modelos de Domínio](../dominio/MODELOS.md) (versão 2.10) |
 
 ## Propósito
 
@@ -127,9 +127,9 @@ Cada necessidade aponta para onde o domínio já a trata.
 | Registrar pagamento por PIX (com comprovante) ou em dinheiro | Gestor | Comando *Receber pagamento por PIX ou em dinheiro*; [Comprovante](../dominio/GLOSSARIO.md#comprovante) |
 | Aceitar pagamento adiantado de semestre ou ano | Gestor | [Crédito](../dominio/GLOSSARIO.md#crédito) abatido automaticamente |
 | Ver a própria situação (em dia, pendente, crédito) | Participante | Leitura *Crédito e pendentes*, só a do próprio participante |
-| Lembrar quem está pendente sem o gestor cobrar | Gestor | **Lacuna:** Notificação não recebe nenhum evento que indique cota ou complemento pendente ([#72](../../../../issues/72)) |
+| Lembrar quem está pendente sem o gestor cobrar | Gestor | Política de Notificação sobre a leitura *Crédito e pendentes* (Financeiro): uma vez por mês, a partir do dia 10 ([ADR 0027](../adr/0027-lembrete-aos-pendentes.md)) |
 | Avisar o valor da cota do ano | Todos | Evento *Valor da cota definido* → Notificação |
-| Avisar o início da cobrança do mês | Todos | **Lacuna:** *Cota devida* vai só para Financeiro, não para Notificação ([#72](../../../../issues/72)) |
+| Avisar o início da cobrança do mês | Quem tem a cota do mês pendente | Mesma política: aviso da cota devida, exceto a quem tem a cota abatida do crédito ([ADR 0027](../adr/0027-lembrete-aos-pendentes.md)) |
 | Registrar gastos com nota e reembolsar quem pagou | Gestor | [Gasto](../dominio/GLOSSARIO.md#gasto), [Nota](../dominio/GLOSSARIO.md#nota), [Reembolso](../dominio/GLOSSARIO.md#reembolso) |
 | Resumo do mês: entrou, saiu e sobrou | Todos | Leitura *Caixinha do mês* (Financeiro), com o que saiu por [Tipo de gasto](../dominio/GLOSSARIO.md#tipo-de-gasto) |
 | Pedir complemento quando a caixinha não dá conta | Gestor | [Complemento](../dominio/GLOSSARIO.md#complemento) |
@@ -148,14 +148,14 @@ Cada necessidade aponta para onde o domínio já a trata.
 
 ## Questões em aberto
 
-1. **Lembretes** ([#72](../../../../issues/72)). É a prioridade 1, mas o modelo atual não tem como disparar: Notificação não recebe *Cota devida* nem nada sobre cota ou complemento pendente. O gestor também nunca pensou em lembretes vindos de outro lugar; só não quer que o pessoal se sinta pressionado. Gatilho, frequência e canal (e-mail, WhatsApp) precisam ser decididos e validados com ele.
-2. **Desequilíbrio entre os tipos de cota.** Alguns participantes do tipo de cota só café consomem bolacha e chá. O gestor quer mais equilíbrio, mas não quer controlar consumo. O produto pode, no máximo, deixar claro o que cada tipo de cota inclui.
+1. **Desequilíbrio entre os tipos de cota.** Alguns participantes do tipo de cota só café consomem bolacha e chá. O gestor quer mais equilíbrio, mas não quer controlar consumo. O produto pode, no máximo, deixar claro o que cada tipo de cota inclui.
 
 ### Decididas
 
 - **Substituto do gestor.** Não é problema: quando o gestor viaja, outros colegas ajudam informalmente. O FACOFFEE não precisa de um papel de substituto.
 - **Gasto por tipo** ([#73](../../../../issues/73)). Todo gasto tem um [tipo de gasto](../dominio/GLOSSARIO.md#tipo-de-gasto): café, outros itens da copa, conserto e manutenção ou reposição. O resumo do mês mostra a todos o que entrou, o que saiu com cada tipo e o saldo no início e no fim do mês.
 - **Pagamento feito por outra pessoa** ([#74](../../../../issues/74)). O [pagamento](../dominio/GLOSSARIO.md#pagamento) é do participante cujas cotas ele quita, mesmo quando outra pessoa paga. Quem pagou não é guardado; no PIX, o nome aparece no comprovante. Se alguém paga por mais de uma pessoa, o gestor registra um pagamento para cada uma.
+- **Lembretes** ([#72](../../../../issues/72)). Saem do FACOFFEE, por e-mail, sem ação do gestor ([ADR 0027](../adr/0027-lembrete-aos-pendentes.md)). No início do mês, quem fica com a cota pendente é avisado da cota devida; quem tem a cota abatida do crédito não recebe nada. A partir do dia 10, cada participante ativo pendente recebe um lembrete por mês, em tom leve, só com a própria situação. Quem saiu com pendência continua com o gestor. WhatsApp fica para depois.
 
 ## Histórico de revisões
 
@@ -165,3 +165,4 @@ Cada necessidade aponta para onde o domínio já a trata.
 | 1.1 | 2026-10-26 | Decidida a questão do gasto por tipo (#73): o resumo do mês é a leitura *Caixinha do mês*. |
 | 1.2 | 2026-10-26 | Decidida a questão do pagamento feito por outra pessoa (#74): o pagamento é do participante cujas cotas ele quita. |
 | 1.3 | 2026-10-26 | Fechada a lacuna da explicação dos valores (#77): todos veem os gastos do ano anterior por tipo de gasto e o valor de cada tipo de cota do ano. |
+| 1.4 | 2026-10-26 | Decidida a questão dos lembretes (#72): aviso da cota devida no início do mês e um lembrete por mês, a partir do dia 10, aos pendentes ativos. |

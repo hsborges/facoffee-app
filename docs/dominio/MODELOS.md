@@ -5,7 +5,7 @@
 | **Escopo** | Divisão de custos da copa da FACOM |
 | **Sistema** | FACOFFEE |
 | **Disciplina** | Técnicas Avançadas de Desenvolvimento de Software (2026/2) |
-| **Versão** | 2.9 |
+| **Versão** | 2.10 |
 | **Data** | 2026-10-26 |
 | **Status** | Aprovado |
 | **Base** | [Glossário da Linguagem Ubíqua](GLOSSARIO.md) (versão 2.6) e arquitetura do FACOFFEE ([arquitetura/visao-geral.png](../arquitetura/visao-geral.png)) |
@@ -130,6 +130,7 @@ flowchart LR
     E2 --> R1
     E2 --> R2["👁 Saldo da caixinha (Financeiro)"]
     E2 --> R3["👁 Caixinha do mês (Financeiro)"]
+    R1 --> P2["⚙ Todo mês, avisar a cota devida e lembrar os pendentes (Notificação)"]
 ```
 
 A cota passa a ser devida em Participação, que sabe o tipo de cota do participante naquele mês. Quem entra durante o mês também deve a cota daquele mês. Financeiro recebe o evento *Cota devida* com o valor e passa a cobrá-la.
@@ -137,6 +138,8 @@ A cota passa a ser devida em Participação, que sabe o tipo de cota do particip
 O comando de pagamento é do gestor: é ele quem recebe o dinheiro, entregue pelo participante ou por outra pessoa em nome dele, no agregado Participante (Financeiro) de quem tem as cotas quitadas.
 
 O crédito é abatido automaticamente: cada nova cota ou parte de complemento consome primeiro o crédito do participante, sem comando de ninguém.
+
+Os pendentes são lembrados sem o gestor ([ADR 0027](../adr/0027-lembrete-aos-pendentes.md)). Quando a cota do mês entra na leitura *Crédito e pendentes* e o participante fica pendente, ele é avisado da cota devida; quem tem a cota abatida do crédito não é. A partir do dia 10, cada participante ativo pendente é lembrado uma vez no mês. Cada um é avisado só da própria situação, e lembrar não gera evento.
 
 ### 2.3 Gastos
 
@@ -207,7 +210,7 @@ O contexto Participação também recebe um evento do contexto Usuário:
 
 | Leitura | Contexto | Como é calculada | Quem usa e para quê |
 |---|---|---|---|
-| **Crédito e pendentes** | Financeiro | Para cada participante: pagamentos recebidos menos cotas devidas e partes de complementos. Se o resultado é positivo, é crédito; se é negativo, o participante está pendente. | O gestor, para lembrar quem deve; o participante, para saber a própria situação. |
+| **Crédito e pendentes** | Financeiro | Para cada participante: pagamentos recebidos menos cotas devidas e partes de complementos. Se o resultado é positivo, é crédito; se é negativo, o participante está pendente. | O gestor, para acompanhar quem deve; o participante, para saber a própria situação; Notificação, para avisar a cota devida e lembrar os pendentes, cada um só da própria situação. |
 | **Saldo da caixinha** | Financeiro | Pagamentos recebidos menos gastos pagos pela caixinha e reembolsos feitos. | O gestor, para decidir se precisa pedir complemento; os participantes, para acompanhar. |
 | **Caixinha do mês** | Financeiro | Saldo da caixinha no início do mês, pagamentos recebidos no mês, o que saiu no mês por tipo de gasto (gastos pagos pela caixinha e reembolsos feitos) e o saldo no fim do mês, que é o do início mais o que entrou menos o que saiu. | Todos os participantes, para acompanhar quanto entrou, quanto saiu com cada coisa e quanto sobrou. Mostra só totais, sem a situação de ninguém. |
 | **Gastos do ano anterior** | Financeiro | Soma dos gastos feitos no ano anterior, no total e por tipo de gasto. | O gestor, para definir o valor da cota; todos os participantes, para entender de onde vem o valor de cada tipo de cota. Mostra só totais, sem a situação de ninguém. |
@@ -235,7 +238,7 @@ O contexto Participação também recebe um evento do contexto Usuário:
 | Retornar é entrar de novo. | Saiu *Participante retornou*. |
 | A compra é um tipo de gasto. | *Compra feita* e *Gasto pago* viraram um só evento: *Gasto feito*. |
 | O complemento já define a parte de cada participante. | *Complemento solicitado* e *Complemento devido* viraram um só evento. |
-| Lembrar um pendente não muda nada no domínio. | Saiu *Pendente cobrado*. |
+| Lembrar um pendente não muda nada no domínio. | Saiu *Pendente cobrado*. Lembrar os pendentes é uma política de Notificação sobre a leitura *Crédito e pendentes* ([ADR 0027](../adr/0027-lembrete-aos-pendentes.md)). |
 | A desativação do acesso acontece no contexto Usuário, mas tem efeito em Participação. | *Usuário desativado* vem do contexto Usuário e é traduzido em *Participante saiu*. |
 | Só vai para outros contextos o evento que alguém usa. | *Tipo de cota trocado* e *Gasto feito* ficam internos. *Cota devida* já leva o valor do tipo de cota, e o saldo da caixinha é calculado no próprio Financeiro. |
 
@@ -262,9 +265,10 @@ flowchart LR
     P -- "Valor da cota definido" --> N["Notificação"]
     F -- "Pagamento recebido, Complemento solicitado, Reembolso feito" --> N
     N -. "consulta contatos" .-> U
+    N -. "consulta pendentes" .-> F
 ```
 
-As setas vão de quem publica para quem consome. A seta tracejada é uma consulta: Notificação busca em Usuário o nome e o e-mail de cada participante a avisar ([ADR 0020](../adr/0020-envio-de-e-mails-da-notificacao.md)). A dependência entre os contextos de negócio tem uma só direção: Usuário → Participação → Financeiro. Participação traduz *Usuário desativado* para a linguagem do domínio, encerrando a participação. Assim, o termo "usuário" não entra no modelo de Participação.
+As setas vão de quem publica para quem consome. As setas tracejadas são consultas: Notificação busca em Usuário o nome e o e-mail de cada participante a avisar ([ADR 0020](../adr/0020-envio-de-e-mails-da-notificacao.md)) e em Financeiro os participantes ativos pendentes, para avisar a cota devida e lembrá-los ([ADR 0027](../adr/0027-lembrete-aos-pendentes.md)). A dependência entre os contextos de negócio tem uma só direção: Usuário → Participação → Financeiro. Participação traduz *Usuário desativado* para a linguagem do domínio, encerrando a participação. Assim, o termo "usuário" não entra no modelo de Participação.
 
 ### Eventos entre contextos
 
@@ -277,7 +281,7 @@ As setas vão de quem publica para quem consome. A seta tracejada é uma consult
 
 ### Pontos críticos para validar
 
-1. **Avisar o início da cobrança e lembrar os pendentes** ([#72](../../../../issues/72)). Notificação não consome *Cota devida* nem recebe nada sobre quem está pendente. Falta decidir o gatilho (consumir *Cota devida* e/ou uma política do agendador sobre a leitura *Crédito e pendentes*) e validar frequência e canal com o gestor.
+Nenhum no momento.
 
 ## Histórico de revisões
 
@@ -295,3 +299,4 @@ As setas vão de quem publica para quem consome. A seta tracejada é uma consult
 | 2.7 | 2026-10-26 | Todo gasto tem um tipo de gasto (#73). Nova leitura *Caixinha do mês*, com o que entrou, o que saiu por tipo de gasto e o saldo no início e no fim do mês. Base atualizada para o glossário 2.5. |
 | 2.8 | 2026-10-26 | Decisão: o pagamento pertence ao participante cujas cotas ele quita, mesmo quando outra pessoa paga; um pagamento por participante (ponto crítico 2 fechado, #74). Base atualizada para o glossário 2.6. |
 | 2.9 | 2026-10-26 | A leitura *Gastos do ano anterior* passa a ser por tipo de gasto e serve também aos participantes. Nova leitura *Valores da cota* (Participação), com o valor de cada tipo de cota no ano (#77). |
+| 2.10 | 2026-10-26 | Nova política de Notificação: avisar a cota devida e lembrar os pendentes, a partir da leitura *Crédito e pendentes*, que Notificação consulta em Financeiro ([ADR 0027](../adr/0027-lembrete-aos-pendentes.md)). Ponto crítico 1 fechado (#72). |
