@@ -165,6 +165,17 @@ test('entrar, cota devida e pagamento recebido: crédito correto e e-mail enviad
   });
   await test.step(`E-mail "Pagamento recebido" chega a ${pessoa.email}`, () =>
     expect.poll(() => assuntosDosEmails(pessoa.email), ESPERA).toContain('Pagamento recebido'));
+
+  await test.step(`${pessoa.usuario} vê de onde vem o valor da cota`, async () => {
+    await participante.goto('/caixinha');
+    const valores = participante.getByRole('table', { name: /^Valor da cota em \d+$/ });
+    await expect(valores.getByRole('row').filter({ hasText: 'Só café' })).toContainText(
+      /R\$\s20,00/,
+    );
+    // A new stack has no gasto in the year before.
+    const gastos = participante.getByRole('table', { name: 'Gastos do ano anterior' });
+    await expect(gastos.getByRole('row').filter({ hasText: 'Total' })).toContainText(/R\$\s0,00/);
+  });
 });
 
 test('desativar acesso: participante saiu e fica fora dos participantes ativos', async ({
