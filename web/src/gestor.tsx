@@ -476,7 +476,7 @@ export const Gastos = ({ token }: { token: string }) => {
 };
 
 /**
- * *Solicitar complemento* (gestor), under the saldo da caixinha: the valor is divided among the
+ * *Solicitar complemento* (gestor), under the *Gastos*: the valor is divided among the
  * participantes ativos.
  */
 export const SolicitarComplemento = ({ token }: { token: string }) => {

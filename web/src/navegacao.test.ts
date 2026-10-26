@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { destinoDoLogin, navegacao } from './navegacao';
+import { destinoDoLogin, navegacao, type Visao, visaoAtual, visaoGuardada } from './navegacao';
 
 describe('destinoDoLogin', () => {
   it('returns to the page asked before the login', () => {
@@ -22,25 +22,61 @@ describe('destinoDoLogin', () => {
   });
 });
 
-const caminhos = (perfis: Parameters<typeof navegacao>[0]) =>
-  navegacao(perfis).map(({ caminho }) => caminho);
+const caminhos = (visao: Visao) => navegacao(visao).map(({ caminho }) => caminho);
 
 describe('navegacao', () => {
-  it('the participante sees only their pages', () => {
-    expect(caminhos(['participante'])).toEqual(['/', '/caixinha']);
+  it('the visão do participante has only the participante pages', () => {
+    expect(caminhos('participante')).toEqual(['/', '/caixinha']);
   });
 
-  it('the gestor also sees the gestor pages', () => {
-    expect(caminhos(['gestor', 'participante'])).toEqual([
-      '/',
-      '/caixinha',
-      '/participantes',
-      '/gastos',
-      '/valor-da-cota',
-    ]);
+  it('the visão do gestor has only the gestor pages', () => {
+    expect(caminhos('gestor')).toEqual(['/participantes', '/gastos', '/valor-da-cota']);
+  });
+});
+
+describe('visaoAtual', () => {
+  const GESTOR = ['gestor', 'participante'] as const;
+
+  it('whoever is not gestor always sees the visão do participante, on any page', () => {
+    for (const perfis of [['participante'], []] as const)
+      for (const caminho of ['/', '/gastos', '/nada'])
+        expect(visaoAtual(perfis, undefined, caminho)).toBe('participante');
   });
 
-  it('whoever does not participate yet sees the participante pages, to ask to join', () => {
-    expect(caminhos([])).toEqual(['/', '/caixinha']);
+  it('the gestor chooses the visão first, on any page', () => {
+    for (const caminho of ['/', '/gastos', '/nada'])
+      expect(visaoAtual(GESTOR, undefined, caminho)).toBeUndefined();
+  });
+
+  it('a page of the other visão leads the gestor to it', () => {
+    expect(visaoAtual(GESTOR, 'participante', '/gastos')).toBe('gestor');
+    expect(visaoAtual(GESTOR, 'gestor', '/caixinha')).toBe('participante');
+  });
+
+  it('matches the page as the router does: trailing slash and any case', () => {
+    expect(visaoAtual(GESTOR, 'participante', '/gastos/')).toBe('gestor');
+    expect(visaoAtual(GESTOR, 'participante', '/Valor-da-Cota')).toBe('gestor');
+    expect(visaoAtual(GESTOR, 'gestor', '/caixinha/')).toBe('participante');
+  });
+
+  it('a page of no visão keeps the one chosen', () => {
+    expect(visaoAtual(GESTOR, 'gestor', '/nada')).toBe('gestor');
+    expect(visaoAtual(GESTOR, 'participante', '/nada')).toBe('participante');
+  });
+});
+
+describe('visaoGuardada', () => {
+  it('keeps the visão chosen in the tab', () => {
+    expect(visaoGuardada(false, 'gestor')).toBe('gestor');
+    expect(visaoGuardada(false, 'participante')).toBe('participante');
+  });
+
+  it('a new login chooses again', () => {
+    expect(visaoGuardada(true, 'gestor')).toBeUndefined();
+  });
+
+  it('nothing or anything else is no visão', () => {
+    expect(visaoGuardada(false, null)).toBeUndefined();
+    expect(visaoGuardada(false, 'admin')).toBeUndefined();
   });
 });

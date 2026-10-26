@@ -85,8 +85,11 @@ const semRolagemHorizontal = (page: Page) =>
     )
     .toBe(0);
 
-// Each person in their own browser context, logged in through the Keycloak like anyone else.
-const entrarNoFacoffee = (browser: Browser, usuario: string, senha = usuario) =>
+const PAGINA_INICIAL = { participante: 'Minha situação', gestor: 'Participantes' } as const;
+
+// Each person in their own browser context, logged in through the Keycloak like anyone else; the
+// gestor chooses the visão, by keyboard (ADR 0029).
+const entrarNoFacoffee = (browser: Browser, usuario: string, visao?: keyof typeof PAGINA_INICIAL) =>
   test.step(`Entrar no FACOFFEE como ${usuario}`, async () => {
     const page = await (await browser.newContext()).newPage();
     page.on('dialog', (dialogo) => dialogo.accept());
@@ -96,9 +99,18 @@ const entrarNoFacoffee = (browser: Browser, usuario: string, senha = usuario) =>
     await expect(page.locator('#username')).toBeVisible();
     await semRolagemHorizontal(page);
     await page.locator('#username').fill(usuario);
-    await page.locator('#password').fill(senha);
+    await page.locator('#password').fill(usuario);
     await page.locator('#kc-login').click();
-    await expect(page.getByRole('heading', { name: 'Minha situação' })).toBeVisible();
+    if (visao) {
+      const escolha = page.getByRole('button', { name: `Visão do ${visao}` });
+      await expect(escolha).toBeVisible();
+      await semRolagemHorizontal(page);
+      await escolha.focus();
+      await page.keyboard.press('Enter');
+    }
+    await expect(
+      page.getByRole('heading', { name: PAGINA_INICIAL[visao ?? 'participante'] }),
+    ).toBeVisible();
     return page;
   });
 
@@ -115,6 +127,16 @@ const recarregarAte = (page: Page, esperado: Locator) =>
     await page.reload();
     await expect(esperado).toBeVisible({ timeout: 2_000 });
   }).toPass(ESPERA);
+
+const menu = (page: Page) => page.getByRole('navigation', { name: 'Principal' }).getByRole('link');
+
+// The avatar opens the menu da conta, with the troca de visão of the gestor and Sair (ADR 0029).
+const abrirConta = async (page: Page) => {
+  await page.getByRole('button', { name: /, conta de / }).click();
+  const conta = page.locator('#conta');
+  await expect(conta).toBeVisible();
+  return conta;
+};
 
 const linhaDe = (page: Page, nome: string) => page.getByRole('row').filter({ hasText: nome });
 
@@ -162,8 +184,22 @@ test('entrar, cota devida e pagamento recebido: crédito correto e e-mail enviad
 }, async ({ browser }) => {
   const pessoa = await novoUsuario();
   const participante = await entrarNoFacoffee(browser, pessoa.usuario);
-  const gestor = await entrarNoFacoffee(browser, 'gestor');
+  const gestor = await entrarNoFacoffee(browser, 'gestor', 'gestor');
   await pedirEntrada(participante, pessoa.usuario);
+
+  await test.step(`${pessoa.usuario} vê só as páginas do participante`, async () => {
+    await expect(menu(participante)).toHaveText(['Minha situação', 'Caixinha']);
+    const conta = await abrirConta(participante);
+    await expect(conta.getByRole('link')).toHaveCount(0);
+    await expect(conta.getByRole('button', { name: 'Sair' })).toBeVisible();
+    await participante.keyboard.press('Escape');
+    await expect(conta).toBeHidden();
+    await participante.goto('/gastos');
+    await expect(
+      participante.getByRole('heading', { name: 'Página não encontrada' }),
+    ).toBeVisible();
+    await participante.goto('/');
+  });
 
   await test.step('Gestor define o valor da cota Só café: R$ 20,00', async () => {
     // Once per ano: the other project's run of this test, on the same stack, may have defined it.
@@ -239,15 +275,32 @@ test('telas do gestor: gasto do próprio bolso e nenhuma tela rola na horizontal
     sobrenome: `Wolfeschlegelsteinhausenbergerdorff${randomUUID().slice(0, 4)}`,
     gestor: true,
   });
-  const gestor = await entrarNoFacoffee(browser, pessoa.usuario);
+  const gestor = await entrarNoFacoffee(browser, pessoa.usuario, 'participante');
   // Only who has pedido entrada has gastos.
   await pedirEntrada(gestor, pessoa.usuario);
+
+  await test.step('Gestor troca de visão pelo menu: cada uma só com as suas páginas', async () => {
+    await expect(menu(gestor)).toHaveText(['Minha situação', 'Caixinha']);
+    const conta = await abrirConta(gestor);
+    await semRolagemHorizontal(gestor);
+    await conta.getByRole('link', { name: 'Trocar para Gestor' }).click();
+    await expect(conta).toBeHidden();
+    await expect(gestor.getByRole('heading', { name: 'Participantes' })).toBeVisible();
+    await expect(menu(gestor)).toHaveText(['Participantes', 'Gastos', 'Valor da cota']);
+    await expect(
+      (await abrirConta(gestor)).getByRole('link', { name: 'Trocar para Participante' }),
+    ).toBeVisible();
+    await gestor.keyboard.press('Escape');
+  });
   await participarNaTelaDoGestor(gestor, pessoa.nome);
 
   await test.step('Gestor registra um gasto de R$ 12,34 pago do próprio bolso', async () => {
     await gestor.goto('/gastos');
     await gestor.getByLabel('Tipo').selectOption({ label: 'Café' });
-    await gestor.getByLabel('Valor total (R$)').fill('12.34');
+    await gestor
+      .getByRole('region', { name: 'Registrar gasto' })
+      .getByLabel('Valor total (R$)')
+      .fill('12.34');
     await gestor.getByLabel('Próprio bolso').check();
     await gestor.getByLabel(/^Nota/).setInputFiles({
       name: 'nota.png',
@@ -275,7 +328,7 @@ test('desativar acesso: participante saiu e fica fora dos participantes ativos',
 }) => {
   const pessoa = await novoUsuario();
   const participante = await entrarNoFacoffee(browser, pessoa.usuario);
-  const gestor = await entrarNoFacoffee(browser, 'gestor');
+  const gestor = await entrarNoFacoffee(browser, 'gestor', 'gestor');
   await pedirEntrada(participante, pessoa.usuario);
   await participarNaTelaDoGestor(gestor, pessoa.nome);
 
@@ -288,7 +341,7 @@ test('desativar acesso: participante saiu e fica fora dos participantes ativos',
 });
 
 test('complemento: parte igual para cada participante ativo', async ({ browser }) => {
-  const gestor = await entrarNoFacoffee(browser, 'gestor');
+  const gestor = await entrarNoFacoffee(browser, 'gestor', 'gestor');
   const participantes: Page[] = [];
   for (const pessoa of [await novoUsuario(), await novoUsuario()]) {
     const participante = await entrarNoFacoffee(browser, pessoa.usuario);
@@ -302,8 +355,11 @@ test('complemento: parte igual para cada participante ativo', async ({ browser }
   const parte = 150;
   const total = ((parte * ativos) / 100).toFixed(2);
   await test.step(`Gestor solicita complemento de R$ ${total} para ${ativos} ativos`, async () => {
-    await gestor.goto('/caixinha');
-    await gestor.getByLabel('Valor total (R$)').fill(total);
+    await gestor.goto('/gastos');
+    await gestor
+      .getByRole('region', { name: 'Solicitar complemento' })
+      .getByLabel('Valor total (R$)')
+      .fill(total);
     await gestor.getByRole('button', { name: 'Solicitar complemento' }).click();
     await expect(gestor.getByText('Complemento solicitado.')).toBeVisible();
   });

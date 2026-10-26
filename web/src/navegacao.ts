@@ -1,3 +1,4 @@
+import { matchPath } from 'react-router';
 import type { Perfil } from './api';
 
 /** A link of the main navigation; each one is also a route. */
@@ -14,12 +15,40 @@ const DO_GESTOR: readonly Item[] = [
   { caminho: '/valor-da-cota', titulo: 'Valor da cota' },
 ];
 
+/** The two visões of the web (ADR 0029): the gestor pages or the participante pages. */
+export type Visao = 'gestor' | 'participante';
+
+/** Main navigation of a visão; its first item is where the visão starts. */
+export const navegacao = (visao: Visao): readonly Item[] =>
+  visao === 'gestor' ? DO_GESTOR : DO_PARTICIPANTE;
+
+// Same match as the <Route>s: trailing slash and any case.
+const daVisao = (visao: Visao, caminho: string) =>
+  navegacao(visao).some((item) => matchPath(item.caminho, caminho));
+
 /**
- * Main navigation by perfil. Everyone sees the participante pages, where whoever does not
- * participate yet asks to join; the gestor also sees theirs. The API still checks the perfil.
+ * Visão to show, or `undefined` while the gestor has not chosen one. Whoever is not gestor always
+ * sees the participante pages, where whoever does not participate yet asks to join. The gestor
+ * sees the visão of the page opened, else the one chosen. The API still checks the perfil.
  */
-export const navegacao = (perfis: readonly Perfil[]): readonly Item[] =>
-  perfis.includes('gestor') ? [...DO_PARTICIPANTE, ...DO_GESTOR] : DO_PARTICIPANTE;
+export const visaoAtual = (
+  perfis: readonly Perfil[],
+  escolhida: Visao | undefined,
+  caminho: string,
+): Visao | undefined => {
+  if (!perfis.includes('gestor')) return 'participante';
+  if (!escolhida) return undefined;
+  if (daVisao('gestor', caminho)) return 'gestor';
+  if (daVisao('participante', caminho)) return 'participante';
+  return escolhida;
+};
+
+/**
+ * Visão kept in the tab (`sessionStorage`), or `undefined` on a new login, when the gestor chooses
+ * again, and for anything that is not a visão.
+ */
+export const visaoGuardada = (novoLogin: boolean, guardada: string | null): Visao | undefined =>
+  !novoLogin && (guardada === 'gestor' || guardada === 'participante') ? guardada : undefined;
 
 /**
  * Page to open after the login: the path kept in the OIDC `state` when the login started.
