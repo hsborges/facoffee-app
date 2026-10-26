@@ -153,22 +153,19 @@ type Situacao = {
   readonly pendenteEmCentavos: number;
 };
 
-// Leitura *Crédito e pendentes* of every participante, by id, with the gestor's session (the token
-// the web keeps in sessionStorage). The page lists only who is a usuário, so it cannot tell who
-// Financeiro counts as ativo.
+// Reads the API with the page's session (the token the web keeps in sessionStorage).
+const lerApi = <T>(page: Page, caminho: string) =>
+  page.evaluate(async (caminho) => {
+    const chave = Object.keys(sessionStorage).find((k) => k.startsWith('oidc.user:')) ?? '';
+    const { access_token } = JSON.parse(sessionStorage.getItem(chave) ?? '{}');
+    const r = await fetch(caminho, { headers: { authorization: `Bearer ${access_token}` } });
+    return r.json();
+  }, caminho) as Promise<T>;
+
+// Leitura *Crédito e pendentes* of every participante, by id, with the gestor's session. The page
+// lists only who is a usuário, so it cannot tell who Financeiro counts as ativo.
 const creditoEPendentes = async (gestor: Page) =>
-  new Map(
-    (
-      await gestor.evaluate(async () => {
-        const chave = Object.keys(sessionStorage).find((k) => k.startsWith('oidc.user:')) ?? '';
-        const { access_token } = JSON.parse(sessionStorage.getItem(chave) ?? '{}');
-        const r = await fetch('/api/financeiro/participante', {
-          headers: { authorization: `Bearer ${access_token}` },
-        });
-        return (await r.json()) as Situacao[];
-      })
-    ).map((s) => [s.id, s]),
-  );
+  new Map((await lerApi<Situacao[]>(gestor, '/api/financeiro/participante')).map((s) => [s.id, s]));
 
 const saldo = (s?: Situacao) => (s ? s.creditoEmCentavos - s.pendenteEmCentavos : Number.NaN);
 
@@ -377,4 +374,106 @@ test('complemento: parte igual para cada participante ativo', async ({ browser }
       await expect(complementos.locator('tbody td').nth(1)).toHaveText(/^R\$\s1,50$/);
     }
   });
+});
+
+test('comprovante enviado: o gestor confirma com outro valor ou recusa com o motivo', {
+  tag: '@celular',
+}, async ({ browser }) => {
+  const pessoa = await novoUsuario();
+  const participante = await entrarNoFacoffee(browser, pessoa.usuario);
+  const gestor = await entrarNoFacoffee(browser, 'gestor', 'gestor');
+  await pedirEntrada(participante, pessoa.usuario);
+  // Financeiro learns of the entrada asynchronously; then the participante can send comprovantes.
+  const comprovantes = participante.getByRole('region', { name: 'Comprovantes' });
+  await recarregarAte(participante, comprovantes);
+  // PNG: the headless Chromium downloads a PDF instead of opening it.
+  const pix = {
+    name: 'pix.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]),
+  };
+  const enviados = comprovantes.getByRole('table', { name: 'Comprovantes enviados' });
+  const situacao = () =>
+    lerApi<{ creditoEmCentavos: number; pendenteEmCentavos: number }>(
+      participante,
+      '/api/financeiro/participante/eu',
+    ).then((s) => s.creditoEmCentavos - s.pendenteEmCentavos);
+
+  for (const valor of ['30', '10'])
+    await test.step(`${pessoa.usuario} envia um comprovante de R$ ${valor},00`, async () => {
+      // The first form is the envio; the others edit each comprovante a confirmar.
+      const envio = comprovantes.locator('form').first();
+      await envio.getByLabel('Valor pago (R$)').fill(valor);
+      await envio.getByLabel(/^Comprovante do PIX/).setInputFiles(pix);
+      await envio.getByRole('button', { name: 'Enviar comprovante' }).click();
+      await expect(participante.getByText(/^Comprovante enviado\./)).toBeVisible();
+      await expect(
+        enviados.getByRole('row').filter({ hasText: `R$\u00a0${valor},00` }),
+      ).toContainText('A confirmar');
+    });
+
+  await test.step(`${pessoa.usuario} corrige o de R$ 30,00 para R$ 25,00`, async () => {
+    await enviados.getByLabel(/^Editar comprovante de R\$\s30,00/).click();
+    const edicao = enviados
+      .getByRole('row')
+      .filter({ hasText: /R\$\s30,00/ })
+      .locator('form');
+    await edicao.getByLabel('Valor pago (R$)').fill('25');
+    await edicao.getByRole('button', { name: 'Salvar' }).click();
+    await expect(participante.getByText('Comprovante editado.')).toBeVisible();
+    await expect(enviados.getByRole('row').filter({ hasText: /R\$\s25,00/ })).toBeVisible();
+    await semRolagemHorizontal(participante);
+  });
+  const antes = await situacao();
+
+  const aConfirmar = gestor.getByRole('region', { name: 'Comprovantes a confirmar' });
+  const doComprovante = (valor: string) =>
+    aConfirmar.getByRole('row').filter({ hasText: pessoa.nome }).filter({ hasText: valor });
+  await test.step('Gestor vê os comprovantes a confirmar e abre o arquivo', async () => {
+    await gestor.goto('/participantes');
+    await expect(doComprovante('25,00')).toBeVisible();
+    const [aba] = await Promise.all([
+      gestor.waitForEvent('popup'),
+      doComprovante('25,00')
+        .getByRole('button', { name: /^Ver o comprovante/ })
+        .click(),
+    ]);
+    await expect.poll(() => aba.url()).toMatch(/^blob:/);
+    await aba.close();
+  });
+
+  await test.step('Gestor confirma o de R$ 25,00 com R$ 20,00', async () => {
+    await doComprovante('25,00')
+      .getByLabel(/^Confirmar ou recusar/)
+      .click();
+    await doComprovante('25,00').getByLabel('Valor confirmado (R$)').fill('20');
+    await semRolagemHorizontal(gestor);
+    await doComprovante('25,00').getByRole('button', { name: 'Confirmar', exact: true }).click();
+    await expect(gestor.getByText('Comprovante confirmado: pagamento recebido.')).toBeVisible();
+  });
+
+  await test.step('Gestor recusa o de R$ 10,00 com o motivo', async () => {
+    await doComprovante('10,00')
+      .getByLabel(/^Confirmar ou recusar/)
+      .click();
+    await doComprovante('10,00').getByLabel('Motivo da recusa').fill('Não achei o PIX');
+    await doComprovante('10,00').getByRole('button', { name: 'Recusar', exact: true }).click();
+    await expect(gestor.getByText('Comprovante recusado.')).toBeVisible();
+    await expect(doComprovante(pessoa.nome)).toHaveCount(0);
+  });
+
+  await test.step(`${pessoa.usuario} vê o valor confirmado e o motivo, e só R$ 20,00 conta`, async () => {
+    await participante.reload();
+    await expect(enviados.getByRole('row').filter({ hasText: /R\$\s25,00/ })).toContainText(
+      /Confirmado: R\$\s20,00/,
+    );
+    await expect(enviados.getByRole('row').filter({ hasText: /R\$\s10,00/ })).toContainText(
+      'Recusado: Não achei o PIX',
+    );
+    await expect(enviados.getByRole('button', { name: /^Cancelar o envio/ })).toHaveCount(0);
+    expect(await situacao()).toBe(antes + 2000);
+    await semRolagemHorizontal(participante);
+  });
+  await test.step(`E-mail "Pagamento recebido" chega a ${pessoa.email}`, () =>
+    expect.poll(() => assuntosDosEmails(pessoa.email), ESPERA).toContain('Pagamento recebido'));
 });

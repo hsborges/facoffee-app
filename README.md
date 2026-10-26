@@ -25,12 +25,13 @@ Os termos seguem o [glossário](docs/dominio/GLOSSARIO.md).
 - Ver se está em dia, pendente ou com crédito, sem perguntar ao gestor.
 - Ver o saldo da caixinha, o valor de cada tipo de cota do ano ao lado dos gastos do ano anterior por tipo de gasto, e o resumo do mês: o que entrou, o que saiu com cada tipo de gasto e quanto sobrou.
 - Registrar um gasto com o tipo e a nota e, se pagou do próprio bolso, receber o reembolso.
+- Enviar o comprovante do PIX ao gestor e acompanhar se foi confirmado ou recusado.
 - Receber avisos por e-mail: valor da cota definido, pagamento recebido, complemento solicitado e reembolso feito.
 
 **Para o gestor**
 
 - Ver todos os participantes, com crédito e pendências.
-- Receber pagamentos por PIX (com comprovante) ou em dinheiro. O que for pago a mais vira crédito e abate as próximas cotas sozinho.
+- Receber pagamentos por PIX (com comprovante) ou em dinheiro, ou confirmar o comprovante enviado pelo participante, corrigindo o valor se preciso. O que for pago a mais vira crédito e abate as próximas cotas sozinho.
 - Reembolsar gastos, solicitar complemento e definir o valor da cota.
 - Desativar e reativar o acesso de um participante.
 
@@ -46,7 +47,7 @@ O acesso é pelo Passaporte UFMS.
 1. Continua um combinado entre colegas: voluntário, sem multa e sem juros.
 2. Não dá mais trabalho a ninguém do que dá hoje.
 3. Ninguém é exposto: cada participante vê só a própria situação; a lista de pendentes é só do gestor.
-4. Só o gestor registra pagamento.
+4. Só o gestor registra pagamento: o comprovante enviado pelo participante vale quando o gestor confirma.
 5. A caixinha é de todos: o saldo e os gastos ficam visíveis a todos.
 6. O consumo não é medido nem controlado.
 

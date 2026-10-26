@@ -1,10 +1,13 @@
-import { type FormEvent, useState } from 'react';
+import { useState } from 'react';
 import {
+  abrirArquivo,
   type Caixinha as CaixinhaLida,
   type Comando,
+  type ComprovanteEnviado,
   type CreditoEPendente,
   comandar,
   type Gasto,
+  guardarAntes,
   type TipoDeCota,
   type UsuarioRegistrado,
 } from './api';
@@ -15,92 +18,16 @@ import {
   NOME_DO_TIPO_DE_COTA,
   NOME_DO_TIPO_DE_GASTO,
 } from './formato';
-import { Carregando, FalhaAoCarregar, GastosDoAnoAnterior, useLeitura } from './participante';
-
-const ERROS: ReadonlyMap<string, string> = new Map([
-  ['arquivo-vazio', 'O arquivo está vazio.'],
-  ['tipo-nao-aceito', 'Envie o arquivo em PDF, JPEG ou PNG.'],
-  ['arquivo-grande-demais', 'O arquivo passa de 5 MB.'],
-  ['pix-sem-comprovante', 'O pagamento por PIX exige o comprovante.'],
-  ['comprovante-so-no-pix', 'Só o pagamento por PIX tem comprovante.'],
-  ['comprovante-ja-usado', 'Esse comprovante já foi usado em outro pagamento.'],
-  ['nota-ja-usada', 'Essa nota já foi usada em outro gasto.'],
-  [
-    'participante-nao-encontrado',
-    'Participante não encontrado: só quem já pediu entrada tem pagamentos e gastos.',
-  ],
-  ['gasto-nao-encontrado', 'Gasto não encontrado.'],
-  ['gasto-ja-reembolsado', 'Esse gasto já foi reembolsado.'],
-  ['sem-participantes-ativos', 'Não há participante ativo para dividir o complemento.'],
-  ['parte-menor-que-um-centavo', 'O valor não dá um centavo para cada participante ativo.'],
-  ['ano-passado', 'Esse ano já passou.'],
-  ['valor-ja-definido', 'O valor desse tipo de cota já foi definido para esse ano.'],
-]);
-
-/** Explains an error of the API to the gestor; any other gets the comando's own message. */
-export const mensagemDaFalha = (erro: string | undefined, padrao: string) =>
-  ERROS.get(erro ?? '') ?? padrao;
-
-// Runs a comando, announces how it went and then reloads the page's leituras.
-const useComando = (recarregar: () => void) => {
-  const [enviando, setEnviando] = useState(false);
-  const [aviso, setAviso] = useState<{ readonly feito?: string; readonly falha?: string }>({});
-  const fazer = async (comando: () => Promise<Comando>, feito: string, falha: string) => {
-    setEnviando(true);
-    setAviso({});
-    const resultado = await comando();
-    setEnviando(false);
-    setAviso(resultado.feito ? { feito } : { falha: mensagemDaFalha(resultado.erro, falha) });
-    recarregar();
-    return resultado.feito;
-  };
-  const avisos = (
-    <>
-      {aviso.falha && <p role="alert">{aviso.falha}</p>}
-      <p role="status">{aviso.feito}</p>
-    </>
-  );
-  return { enviando, fazer, avisos };
-};
-
-// The form is read before any await: React lets go of the event right after the handler.
-const aoEnviar =
-  (enviar: (dados: FormData, form: HTMLFormElement) => unknown) =>
-  (evento: FormEvent<HTMLFormElement>) => {
-    evento.preventDefault();
-    enviar(new FormData(evento.currentTarget), evento.currentTarget);
-  };
-
-const CampoValor = ({ rotulo }: { rotulo: string }) => (
-  <label className="campo">
-    {rotulo}
-    <input
-      name="valor"
-      type="number"
-      min="0.01"
-      max="21474836.47"
-      step="0.01"
-      inputMode="decimal"
-      required
-    />
-  </label>
-);
-
-const ARQUIVOS = 'application/pdf,image/jpeg,image/png';
-
-// Guarda the arquivo first; the comando then references it by id.
-// ponytail: an arquivo guardado whose comando fails stays orphaned in the armazenamento; clean up if they pile up
-const guardarAntes = async (
-  token: string,
-  caminho: string,
-  campos: Readonly<Record<string, string | File>>,
-  comando: (id?: string) => Promise<Comando>,
-): Promise<Comando> => {
-  const form = new FormData();
-  for (const [nome, valor] of Object.entries(campos)) form.append(nome, valor);
-  const guardado = await comandar(token, caminho, form);
-  return guardado.feito ? comando(guardado.id) : guardado;
-};
+import {
+  ARQUIVOS,
+  aoEnviar,
+  CampoValor,
+  Carregando,
+  FalhaAoCarregar,
+  GastosDoAnoAnterior,
+  useComando,
+  useLeitura,
+} from './participante';
 
 /**
  * Receber pagamento: por PIX, guarda the comprovante first, and refuses a PIX without it before
@@ -130,6 +57,20 @@ export const receberPagamento = async (
   );
 };
 
+/**
+ * Confirmar comprovante, with the valor confirmado, for the arquivo the gestor saw: if the
+ * participante changed it meanwhile, the API refuses it.
+ */
+export const confirmarComprovante = (
+  token: string,
+  { id, comprovanteId }: Pick<ComprovanteEnviado, 'id' | 'comprovanteId'>,
+  valorEmCentavos: number,
+) =>
+  comandar(token, `/api/financeiro/comprovante-enviado/${id}/confirmar`, {
+    valorEmCentavos,
+    comprovanteId,
+  });
+
 /** Registrar gasto: guarda the nota first, then registers the gasto with it. */
 export const registrarGasto = (
   token: string,
@@ -158,9 +99,11 @@ export const creditoOuPendencia = (situacao: CreditoEPendente) =>
 const nomeDe = (usuario: UsuarioRegistrado) => usuario.nome || usuario.email;
 
 /**
- * *Participantes* (gestor): each usuário with their participação and crédito or pendência,
- * receber pagamento (PIX with comprovante, or dinheiro) and desativar or reativar access. The
- * gestor's own access is left out: once desativado, nobody could reativá-lo.
+ * *Participantes* (gestor): the comprovantes a confirmar, to confirmar (receiving the pagamento,
+ * with the valor corrected if needed) or recusar with the motivo; each usuário with their
+ * participação and crédito or pendência; receber pagamento (PIX with comprovante, or dinheiro)
+ * and desativar or reativar access. The gestor's own access is left out: once desativado, nobody
+ * could reativá-lo.
  */
 export const Participantes = ({ token, usuarioId }: { token: string; usuarioId: string }) => {
   const [usuarios, recarregarUsuarios] = useLeitura<readonly UsuarioRegistrado[]>(
@@ -171,15 +114,21 @@ export const Participantes = ({ token, usuarioId }: { token: string; usuarioId: 
     token,
     '/api/financeiro/participante',
   );
+  const [comprovantes, recarregarComprovantes] = useLeitura<readonly ComprovanteEnviado[]>(
+    token,
+    '/api/financeiro/comprovante-enviado',
+  );
   const recarregar = () => {
     recarregarUsuarios();
     recarregarSituacoes();
+    recarregarComprovantes();
   };
   const { enviando, fazer, avisos } = useComando(recarregar);
   const [pix, setPix] = useState(true);
+  const [falhaAoAbrir, setFalhaAoAbrir] = useState(false);
 
-  if (!usuarios || !situacoes) return <Carregando />;
-  if (usuarios.situacao !== 'ok' || situacoes.situacao !== 'ok')
+  if (!usuarios || !situacoes || !comprovantes) return <Carregando />;
+  if (usuarios.situacao !== 'ok' || situacoes.situacao !== 'ok' || comprovantes.situacao !== 'ok')
     return (
       <>
         {avisos}
@@ -189,6 +138,31 @@ export const Participantes = ({ token, usuarioId }: { token: string; usuarioId: 
 
   const situacaoDe = new Map(situacoes.valor.map((situacao) => [situacao.id, situacao]));
   const participantes = usuarios.valor.filter((usuario) => situacaoDe.has(usuario.id));
+  const nomes = new Map(usuarios.valor.map((usuario) => [usuario.id, nomeDe(usuario)]));
+
+  const abrir = async (comprovante: ComprovanteEnviado) =>
+    setFalhaAoAbrir(
+      !(await abrirArquivo(token, `/api/financeiro/comprovante/${comprovante.comprovanteId}`)),
+    );
+  const confirmar = (comprovante: ComprovanteEnviado) =>
+    aoEnviar((dados) =>
+      fazer(
+        () => confirmarComprovante(token, comprovante, emCentavos(String(dados.get('valor')))),
+        'Comprovante confirmado: pagamento recebido.',
+        'Não foi possível confirmar o comprovante.',
+      ),
+    );
+  const recusar = (comprovante: ComprovanteEnviado) =>
+    aoEnviar((dados) =>
+      fazer(
+        () =>
+          comandar(token, `/api/financeiro/comprovante-enviado/${comprovante.id}/recusar`, {
+            motivo: String(dados.get('motivo')),
+          }),
+        'Comprovante recusado.',
+        'Não foi possível recusar o comprovante.',
+      ),
+    );
 
   const receber = aoEnviar(async (dados, form) => {
     const feito = await fazer(
@@ -227,6 +201,73 @@ export const Participantes = ({ token, usuarioId }: { token: string; usuarioId: 
   return (
     <>
       {avisos}
+      <section aria-labelledby="comprovantes-a-confirmar">
+        <h2 id="comprovantes-a-confirmar">Comprovantes a confirmar</h2>
+        {falhaAoAbrir && <p role="alert">Não foi possível abrir o comprovante.</p>}
+        {comprovantes.valor.length === 0 ? (
+          <p>Nenhum comprovante a confirmar.</p>
+        ) : (
+          <table className="empilhada">
+            <thead>
+              <tr>
+                <th scope="col">Participante</th>
+                <th scope="col">Enviado em</th>
+                <th scope="col">Valor informado</th>
+                <th scope="col">Arquivo</th>
+                <th scope="col">Análise</th>
+              </tr>
+            </thead>
+            <tbody>
+              {comprovantes.valor.map((comprovante) => {
+                const quem = nomes.get(comprovante.participanteId) ?? 'Desconhecido';
+                const qual = `comprovante de ${quem}, ${emReais(comprovante.valorEmCentavos)}`;
+                return (
+                  <tr key={comprovante.id}>
+                    <th scope="row">{quem}</th>
+                    <td data-rotulo="Enviado em">{dataEmCampoGrande(comprovante.enviadoEm)}</td>
+                    <td data-rotulo="Valor informado">{emReais(comprovante.valorEmCentavos)}</td>
+                    <td data-rotulo="Arquivo">
+                      <button
+                        type="button"
+                        className="fantasma"
+                        aria-label={`Ver o ${qual}`}
+                        onClick={() => abrir(comprovante)}
+                      >
+                        Ver
+                      </button>
+                    </td>
+                    <td data-rotulo="Análise">
+                      <details>
+                        <summary aria-label={`Confirmar ou recusar o ${qual}`}>
+                          Confirmar ou recusar
+                        </summary>
+                        <form onSubmit={confirmar(comprovante)}>
+                          <CampoValor
+                            rotulo="Valor confirmado (R$)"
+                            inicial={comprovante.valorEmCentavos}
+                          />
+                          <button type="submit" disabled={enviando}>
+                            Confirmar
+                          </button>
+                        </form>
+                        <form onSubmit={recusar(comprovante)}>
+                          <label className="campo">
+                            Motivo da recusa
+                            <input name="motivo" maxLength={500} required />
+                          </label>
+                          <button type="submit" className="secundario" disabled={enviando}>
+                            Recusar
+                          </button>
+                        </form>
+                      </details>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </section>
       <section aria-labelledby="credito-e-pendentes">
         <h2 id="credito-e-pendentes">Crédito e pendentes</h2>
         <table className="empilhada">

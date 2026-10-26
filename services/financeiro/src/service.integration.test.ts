@@ -10,11 +10,13 @@ import {
   registrarSaida,
 } from './application/participantes.js';
 import { anoAnterior, type CaixinhaDoMes, FUSO } from './domain/caixinha.js';
+import { confirmar } from './domain/comprovante-enviado.js';
 import type { Event } from './domain/event.js';
 import { queues } from './infra/consumer.js';
+import { comprovanteEnviadoRepository } from './infra/db/comprovante-enviado-repository.js';
 import { connectDatabase } from './infra/db/database.js';
 import { participanteRepository } from './infra/db/participante-repository.js';
-import { gastos } from './infra/db/schema.js';
+import { comprovantesEnviados, gastos } from './infra/db/schema.js';
 import { createLogger } from './infra/logger.js';
 import { EXCHANGE } from './infra/rabbitmq.js';
 import { startService } from './service.js';
@@ -697,4 +699,216 @@ it('divides a complemento among the participantes ativos and abate the crédito 
   });
   expect(await situacao(entrouDepois)).toMatchObject({ pendenteEmCentavos: 0 });
   expect(await situacao(saiuAntes)).toMatchObject({ pendenteEmCentavos: 0 });
+});
+
+it('counts a comprovante enviado as pagamento only once confirmado, for the valor confirmado', async () => {
+  const { queue } = await channel.assertQueue('', { exclusive: true });
+  await channel.bindQueue(queue, EXCHANGE, 'finance.payment-received.v1');
+  const publicados: Event[] = [];
+  await channel.consume(
+    queue,
+    (msg) => msg && publicados.push(JSON.parse(msg.content.toString())),
+    { noAck: true },
+  );
+
+  const participante = randomUUID();
+  publicar(entrou(participante));
+  publicar(cotaDevida(participante, '2026-11'));
+  const doParticipante = { 'x-user-id': participante };
+  const gestor = { 'x-user-id': randomUUID(), 'x-user-roles': 'gestor' };
+  const url = `http://localhost:${running.port}`;
+  const ler = async <T>(caminho: string, headers: Record<string, string> = doParticipante) =>
+    (await (await fetch(`${url}${caminho}`, { headers })).json()) as T;
+  const situacao = () =>
+    ler<{ pendenteEmCentavos: number; creditoEmCentavos: number }>('/participante/eu');
+  expect(await eventually(async () => (await situacao()).pendenteEmCentavos === 3000)).toBe(true);
+  const comandar = (caminho: string, headers: Record<string, string>, body?: unknown) =>
+    fetch(`${url}${caminho}`, {
+      method: 'POST',
+      headers: { ...headers, 'content-type': 'application/json' },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  const enviarComprovante = async (valorEmCentavos: number) => {
+    const form = new FormData();
+    form.append('participanteId', participante);
+    form.append('arquivo', new Blob([new TextEncoder().encode('%PDF-1.7 pix')]), 'pix.pdf');
+    const guardado = await fetch(`${url}/guardar-comprovante`, {
+      method: 'POST',
+      headers: doParticipante,
+      body: form,
+    });
+    expect(guardado.status).toBe(201);
+    const { id: comprovanteId } = (await guardado.json()) as { id: string };
+    const enviado = await comandar('/enviar-comprovante', doParticipante, {
+      valorEmCentavos,
+      comprovanteId,
+    });
+    expect(enviado.status).toBe(201);
+    return { comprovanteId, id: ((await enviado.json()) as { id: string }).id };
+  };
+  const saldo = async () => (await ler<{ saldoEmCentavos: number }>('/caixinha')).saldoEmCentavos;
+
+  const confirmado = await enviarComprovante(9000);
+  const recusado = await enviarComprovante(3000);
+  const cancelado = await enviarComprovante(1000);
+  const disputado = await enviarComprovante(1000);
+  const repetido = await comandar('/enviar-comprovante', doParticipante, {
+    valorEmCentavos: 1000,
+    comprovanteId: confirmado.comprovanteId,
+  });
+  expect(repetido.status).toBe(409);
+  const editar = (comprovanteId: string) =>
+    comandar(`/comprovante-enviado/${confirmado.id}/editar`, doParticipante, {
+      valorEmCentavos: 6000,
+      comprovanteId,
+    });
+  expect((await editar(cancelado.comprovanteId)).status).toBe(409);
+  expect((await editar(confirmado.comprovanteId)).status).toBe(204);
+  const cancelar = (id: string) => comandar(`/comprovante-enviado/${id}/cancelar`, doParticipante);
+  expect((await cancelar(cancelado.id)).status).toBe(204);
+  const aConfirmar = (await ler<{ id: string }[]>('/comprovante-enviado', gestor)).map((c) => c.id);
+  expect(aConfirmar).toEqual(expect.arrayContaining([confirmado.id, recusado.id, disputado.id]));
+  expect(aConfirmar).not.toContain(cancelado.id);
+  // Before the confirmação, neither the situação nor the saldo changes.
+  const saldoAntes = await saldo();
+  expect(await situacao()).toMatchObject({ pendenteEmCentavos: 3000 });
+
+  const confirmou = await comandar(`/comprovante-enviado/${confirmado.id}/confirmar`, gestor, {
+    valorEmCentavos: 5000,
+    comprovanteId: confirmado.comprovanteId,
+  });
+  expect(confirmou.status).toBe(201);
+  const { id: pagamentoId } = (await confirmou.json()) as { id: string };
+  const recusar = (id: string, motivo: string) =>
+    comandar(`/comprovante-enviado/${id}/recusar`, gestor, { motivo });
+  expect((await recusar(recusado.id, '')).status).toBe(400);
+  expect((await recusar(recusado.id, 'Valor diferente do PIX')).status).toBe(204);
+  expect((await cancelar(confirmado.id)).status).toBe(409);
+  // Confirmar and recusar at the same time: only one happens.
+  const disputa = await Promise.all([
+    comandar(`/comprovante-enviado/${disputado.id}/confirmar`, gestor, {
+      valorEmCentavos: 1000,
+      comprovanteId: disputado.comprovanteId,
+    }),
+    recusar(disputado.id, 'Repetido'),
+  ]);
+  expect(disputa.filter((r) => r.status === 409)).toHaveLength(1);
+  const extra = disputa[0]?.status === 201 ? 1000 : 0;
+
+  expect(await situacao()).toMatchObject({
+    creditoEmCentavos: 2000 + extra,
+    pendenteEmCentavos: 0,
+  });
+  expect((await saldo()) - saldoAntes).toBe(5000 + extra);
+  expect(await ler('/comprovante-enviado/eu')).toMatchObject([
+    { id: disputado.id, situacao: extra ? 'confirmado' : 'recusado' },
+    { id: recusado.id, situacao: 'recusado', motivo: 'Valor diferente do PIX' },
+    {
+      id: confirmado.id,
+      situacao: 'confirmado',
+      valorEmCentavos: 6000,
+      valorConfirmadoEmCentavos: 5000,
+    },
+  ]);
+  expect(
+    (await fetch(`${url}/comprovante/${confirmado.comprovanteId}`, { headers: gestor })).status,
+  ).toBe(200);
+
+  expect(await eventually(async () => publicados.length > 0)).toBe(true);
+  await sleep(1000);
+  expect(publicados).toHaveLength(extra ? 2 : 1);
+  expect(publicados[0]).toMatchObject({
+    type: 'finance.payment-received',
+    payload: { paymentId: pagamentoId, participantId: participante, amountInCents: 5000 },
+  });
+});
+
+it('keeps a comprovante enviado to an arquivo no pagamento used and to the version the gestor saw', async () => {
+  const participante = randomUUID();
+  publicar(entrou(participante));
+  expect(await eventually(async () => (await repository.buscar(participante)) !== undefined)).toBe(
+    true,
+  );
+  const doParticipante = { 'x-user-id': participante };
+  const gestor = { 'x-user-id': randomUUID(), 'x-user-roles': 'gestor' };
+  const url = `http://localhost:${running.port}`;
+  const guardar = async (headers: Record<string, string>) => {
+    const form = new FormData();
+    form.append('participanteId', participante);
+    form.append('arquivo', new Blob([new TextEncoder().encode('%PDF-1.7 pix')]), 'pix.pdf');
+    const guardado = await fetch(`${url}/guardar-comprovante`, {
+      method: 'POST',
+      headers,
+      body: form,
+    });
+    return ((await guardado.json()) as { id: string }).id;
+  };
+  const comandar = (caminho: string, headers: Record<string, string>, body: unknown) =>
+    fetch(`${url}${caminho}`, {
+      method: 'POST',
+      headers: { ...headers, 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+  // An arquivo the gestor already received a pagamento with is not sent again.
+  const recebido = await guardar(gestor);
+  const pagamento = await comandar('/receber-pagamento', gestor, {
+    participanteId: participante,
+    valorEmCentavos: 3000,
+    forma: 'pix',
+    comprovanteId: recebido,
+  });
+  expect(pagamento.status).toBe(201);
+  const reenviado = await comandar('/enviar-comprovante', doParticipante, {
+    valorEmCentavos: 3000,
+    comprovanteId: recebido,
+  });
+  expect(reenviado.status).toBe(409);
+  expect(await reenviado.json()).toEqual({ error: 'comprovante-ja-usado' });
+  const enviado = await comandar('/enviar-comprovante', doParticipante, {
+    valorEmCentavos: 3000,
+    comprovanteId: await guardar(doParticipante),
+  });
+  const { id } = (await enviado.json()) as { id: string };
+  const editar = (comprovanteId: string) =>
+    comandar(`/comprovante-enviado/${id}/editar`, doParticipante, {
+      valorEmCentavos: 3000,
+      comprovanteId,
+    });
+  const trocado = await editar(recebido);
+  expect(trocado.status).toBe(409);
+  expect(await trocado.json()).toEqual({ error: 'comprovante-ja-usado' });
+
+  // An edição saved while the gestor confirms: the confirmação changes nothing.
+  const comprovantes = comprovanteEnviadoRepository(database.db);
+  const lido = await comprovantes.buscar(id);
+  if (!lido) throw new Error('comprovante enviado not saved');
+  expect((await editar(await guardar(doParticipante))).status).toBe(204);
+  const confirmado = confirmar(
+    { perfis: ['gestor'] },
+    lido,
+    { valorConfirmadoEmCentavos: 3000, comprovanteId: lido.comprovanteId },
+    { pagamentoId: randomUUID(), eventId: randomUUID(), agora: new Date() },
+  );
+  if (!confirmado.ok) throw new Error(confirmado.error);
+  const { comprovante, pagamento: novo, evento } = confirmado.value;
+  expect(await comprovantes.confirmar(comprovante, novo, [evento])).toEqual({
+    ok: false,
+    error: 'comprovante-alterado',
+  });
+  expect(await comprovantes.buscar(id)).toMatchObject({ situacao: 'a-confirmar' });
+
+  // A confirmado has the valor confirmado and a recusado the motivo, or the row is not saved.
+  for (const situacao of ['confirmado', 'recusado'] as const) {
+    await expect(
+      database.db.insert(comprovantesEnviados).values({
+        id: randomUUID(),
+        participanteId: participante,
+        comprovanteId: randomUUID(),
+        valorEmCentavos: 3000,
+        enviadoEm: new Date(),
+        situacao,
+      }),
+    ).rejects.toThrow();
+  }
 });

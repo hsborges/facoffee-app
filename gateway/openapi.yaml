@@ -377,9 +377,10 @@ paths:
       operationId: guardarComprovante
       summary: Guardar comprovante
       description: |
-        Guarda o comprovante de um pagamento por PIX de um participante. Só o gestor guarda, já
-        que só ele recebe pagamentos. Devolve o identificador do comprovante, usado ao receber o
-        pagamento.
+        Guarda o comprovante de um pagamento por PIX de um participante. O gestor guarda para
+        qualquer participante, ao receber o pagamento; o participante guarda só para si mesmo, para
+        enviá-lo ao gestor. Devolve o identificador do comprovante, usado ao receber o pagamento ou
+        ao enviar o comprovante.
       requestBody:
         required: true
         content:
@@ -404,7 +405,19 @@ paths:
         '401':
           $ref: '#/components/responses/NaoAutorizado'
         '403':
-          $ref: '#/components/responses/SomenteGestor'
+          description: |
+            Quem não é gestor guardando comprovante de outro participante, ou acesso desativado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              examples:
+                semPermissao:
+                  value:
+                    error: sem-permissao
+                acessoDesativado:
+                  value:
+                    error: acesso-desativado
         '413':
           $ref: '#/components/responses/ArquivoGrandeDemais'
         '500':
@@ -536,6 +549,315 @@ paths:
                 $ref: '#/components/schemas/Erro'
               example:
                 error: comprovante-ja-usado
+        '500':
+          $ref: '#/components/responses/ErroInterno'
+  /api/financeiro/enviar-comprovante:
+    post:
+      tags: [financeiro]
+      operationId: enviarComprovante
+      summary: Enviar comprovante
+      description: |
+        O usuário logado envia ao gestor o comprovante do PIX que fez, com o valor pago. O
+        comprovante fica a confirmar e não conta como pagamento até o gestor confirmar; até lá, não
+        muda o crédito, a pendência nem o saldo da caixinha. O arquivo é guardado antes em
+        `guardar-comprovante`, para o próprio usuário logado; cada arquivo é enviado uma vez só.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PedidoDeComprovante'
+      responses:
+        '201':
+          description: Comprovante enviado, a confirmar.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id]
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    description: Identificador do comprovante enviado.
+        '400':
+          $ref: '#/components/responses/PedidoInvalido'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/AcessoDesativado'
+        '404':
+          description: Arquivo não guardado para o usuário logado, ou ele nunca participou.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              examples:
+                comprovanteNaoEncontrado:
+                  value:
+                    error: comprovante-nao-encontrado
+                participanteNaoEncontrado:
+                  value:
+                    error: participante-nao-encontrado
+        '409':
+          description: O arquivo já foi enviado em outro comprovante ou usado em outro pagamento.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              example:
+                error: comprovante-ja-usado
+        '500':
+          $ref: '#/components/responses/ErroInterno'
+  /api/financeiro/comprovante-enviado:
+    get:
+      tags: [financeiro]
+      operationId: listarComprovantesAConfirmar
+      summary: Comprovantes a confirmar
+      description: |
+        Os comprovantes enviados pelos participantes que ainda estão a confirmar, do mais antigo ao
+        mais recente. Só o gestor lista.
+      responses:
+        '200':
+          description: Comprovantes a confirmar.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ComprovanteEnviado'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/SomenteGestor'
+        '500':
+          $ref: '#/components/responses/ErroInterno'
+  /api/financeiro/comprovante-enviado/eu:
+    get:
+      tags: [financeiro]
+      operationId: listarMeusComprovantes
+      summary: Meus comprovantes enviados
+      description: |
+        Os comprovantes que o usuário logado enviou, do mais recente ao mais antigo, com a
+        situação de cada um: a confirmar, confirmado (com o valor confirmado) ou recusado (com o
+        motivo). O envio cancelado não aparece.
+      responses:
+        '200':
+          description: Comprovantes enviados pelo usuário logado.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ComprovanteEnviado'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/AcessoDesativado'
+        '500':
+          $ref: '#/components/responses/ErroInterno'
+  /api/financeiro/comprovante-enviado/{id}/editar:
+    post:
+      tags: [financeiro]
+      operationId: editarComprovante
+      summary: Editar comprovante
+      description: |
+        O usuário logado troca o valor pago e o arquivo de um comprovante que enviou, enquanto
+        está a confirmar. O arquivo pode ser o mesmo ou outro, guardado antes em
+        `guardar-comprovante` para o próprio usuário logado.
+      parameters:
+        - $ref: '#/components/parameters/IdDoComprovanteEnviado'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PedidoDeComprovante'
+      responses:
+        '204':
+          description: Comprovante editado.
+        '400':
+          $ref: '#/components/responses/PedidoInvalido'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/AcessoDesativado'
+        '404':
+          description: |
+            Comprovante que não existe ou não é do usuário logado, ou arquivo não guardado para ele.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              examples:
+                comprovanteEnviadoNaoEncontrado:
+                  value:
+                    error: comprovante-enviado-nao-encontrado
+                comprovanteNaoEncontrado:
+                  value:
+                    error: comprovante-nao-encontrado
+        '409':
+          description: |
+            O comprovante já foi confirmado ou recusado, ou o arquivo já foi enviado em outro
+            comprovante ou usado em outro pagamento.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              examples:
+                comprovanteJaAnalisado:
+                  value:
+                    error: comprovante-ja-analisado
+                comprovanteJaUsado:
+                  value:
+                    error: comprovante-ja-usado
+        '500':
+          $ref: '#/components/responses/ErroInterno'
+  /api/financeiro/comprovante-enviado/{id}/cancelar:
+    post:
+      tags: [financeiro]
+      operationId: cancelarComprovante
+      summary: Cancelar comprovante
+      description: |
+        O usuário logado cancela o envio de um comprovante, enquanto está a confirmar. O
+        comprovante cancelado não conta como pagamento e deixa de aparecer.
+      parameters:
+        - $ref: '#/components/parameters/IdDoComprovanteEnviado'
+      responses:
+        '204':
+          description: Envio cancelado.
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/AcessoDesativado'
+        '404':
+          $ref: '#/components/responses/ComprovanteEnviadoNaoEncontrado'
+        '409':
+          $ref: '#/components/responses/ComprovanteJaAnalisado'
+        '500':
+          $ref: '#/components/responses/ErroInterno'
+  /api/financeiro/comprovante-enviado/{id}/confirmar:
+    post:
+      tags: [financeiro]
+      operationId: confirmarComprovante
+      summary: Confirmar comprovante
+      description: |
+        O gestor confere o comprovante e recebe o pagamento por PIX, com o valor confirmado, que
+        pode corrigir o valor informado pelo participante. Vale o valor confirmado: o pagamento
+        quita as cotas do participante e entra na caixinha, como o pagamento recebido em
+        `receber-pagamento`. Cada comprovante é confirmado ou recusado uma vez só. Só o gestor
+        confirma. O pedido informa o arquivo que o gestor conferiu; se o participante trocou o
+        arquivo depois disso, a confirmação é recusada.
+      parameters:
+        - $ref: '#/components/parameters/IdDoComprovanteEnviado'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [valorEmCentavos, comprovanteId]
+              properties:
+                valorEmCentavos:
+                  type: integer
+                  minimum: 1
+                  maximum: 2147483647
+                  description: Valor confirmado em centavos de real.
+                  example: 3000
+                comprovanteId:
+                  type: string
+                  format: uuid
+                  description: Arquivo do comprovante que o gestor conferiu.
+      responses:
+        '201':
+          description: Comprovante confirmado e pagamento recebido.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id]
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    description: Identificador do pagamento.
+        '400':
+          $ref: '#/components/responses/PedidoInvalido'
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/SomenteGestor'
+        '404':
+          $ref: '#/components/responses/ComprovanteEnviadoNaoEncontrado'
+        '409':
+          description: |
+            O comprovante já foi confirmado ou recusado, o participante trocou o arquivo depois
+            que o gestor o conferiu, ou o arquivo já foi usado em outro pagamento.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              examples:
+                comprovanteJaAnalisado:
+                  value:
+                    error: comprovante-ja-analisado
+                comprovanteAlterado:
+                  value:
+                    error: comprovante-alterado
+                comprovanteJaUsado:
+                  value:
+                    error: comprovante-ja-usado
+        '500':
+          $ref: '#/components/responses/ErroInterno'
+  /api/financeiro/comprovante-enviado/{id}/recusar:
+    post:
+      tags: [financeiro]
+      operationId: recusarComprovante
+      summary: Recusar comprovante
+      description: |
+        O gestor recusa o comprovante, informando o motivo, que o participante vê. O comprovante
+        recusado não conta como pagamento. Cada comprovante é confirmado ou recusado uma vez só.
+        Só o gestor recusa.
+      parameters:
+        - $ref: '#/components/parameters/IdDoComprovanteEnviado'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [motivo]
+              properties:
+                motivo:
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+                  description: Por que o comprovante foi recusado; não pode ficar em branco.
+                  example: O valor não bate com o PIX.
+      responses:
+        '204':
+          description: Comprovante recusado.
+        '400':
+          description: Pedido inválido ou acima de 4 KB, ou motivo em branco.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              examples:
+                pedidoInvalido:
+                  value:
+                    error: pedido-invalido
+                recusaSemMotivo:
+                  value:
+                    error: recusa-sem-motivo
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/SomenteGestor'
+        '404':
+          $ref: '#/components/responses/ComprovanteEnviadoNaoEncontrado'
+        '409':
+          $ref: '#/components/responses/ComprovanteJaAnalisado'
         '500':
           $ref: '#/components/responses/ErroInterno'
   /api/financeiro/registrar-gasto:
@@ -1006,6 +1328,14 @@ components:
       bearerFormat: JWT
       description: Access token obtido ao entrar no FACOFFEE.
   parameters:
+    IdDoComprovanteEnviado:
+      name: id
+      in: path
+      required: true
+      description: Identificador do comprovante enviado.
+      schema:
+        type: string
+        format: uuid
     IdDoArquivo:
       name: id
       in: path
@@ -1059,6 +1389,30 @@ components:
             error: nao-participando
     ErroInterno:
       description: Erro interno.
+    PedidoInvalido:
+      description: Pedido inválido ou acima de 4 KB.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          example:
+            error: pedido-invalido
+    ComprovanteEnviadoNaoEncontrado:
+      description: Comprovante enviado que não existe ou que o usuário não pode ver.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          example:
+            error: comprovante-enviado-nao-encontrado
+    ComprovanteJaAnalisado:
+      description: O comprovante já foi confirmado ou recusado.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          example:
+            error: comprovante-ja-analisado
     ArquivoGuardado:
       description: Arquivo guardado.
       content:
@@ -1202,6 +1556,65 @@ components:
         notaId: 9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d
         feitoEm: '2026-11-20T15:00:00.000Z'
         reembolsado: false
+    PedidoDeComprovante:
+      type: object
+      required: [valorEmCentavos, comprovanteId]
+      properties:
+        valorEmCentavos:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          description: Valor pago em centavos de real.
+          example: 18000
+        comprovanteId:
+          type: string
+          format: uuid
+          description: Arquivo do comprovante, guardado em `guardar-comprovante` para o usuário logado.
+    ComprovanteEnviado:
+      type: object
+      required: [id, participanteId, comprovanteId, valorEmCentavos, enviadoEm, situacao]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador do comprovante enviado.
+        participanteId:
+          type: string
+          format: uuid
+          description: Quem enviou, cujas cotas o pagamento quita.
+        comprovanteId:
+          type: string
+          format: uuid
+          description: Arquivo do comprovante, baixado em `/api/financeiro/comprovante/{id}`.
+        valorEmCentavos:
+          type: integer
+          minimum: 1
+          description: Valor pago informado pelo participante, em centavos de real.
+        enviadoEm:
+          type: string
+          format: date-time
+          description: Quando o comprovante foi enviado.
+        situacao:
+          type: string
+          enum: [a-confirmar, confirmado, recusado]
+          description: |
+            `a-confirmar` até o gestor analisar; `confirmado`, quando vale como pagamento;
+            `recusado`, quando não vale.
+        valorConfirmadoEmCentavos:
+          type: integer
+          minimum: 1
+          description: Só no confirmado; o valor que vale como pagamento, em centavos de real.
+        motivo:
+          type: string
+          description: Só no recusado; por que o gestor recusou.
+      example:
+        id: 5d4c3b2a-1f0e-4d9c-8b7a-6f5e4d3c2b1a
+        participanteId: 4f1c2a9e-8b7d-4c3a-9e2f-1a2b3c4d5e6f
+        comprovanteId: 9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d
+        valorEmCentavos: 18000
+        enviadoEm: '2026-11-03T13:00:00.000Z'
+        situacao: confirmado
+        valorConfirmadoEmCentavos: 15000
     CreditoEPendente:
       type: object
       required: [id, ativo, creditoEmCentavos, pendenteEmCentavos]

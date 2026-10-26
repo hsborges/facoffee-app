@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { creditoOuPendencia, mensagemDaFalha, receberPagamento, registrarGasto } from './gestor';
+import {
+  confirmarComprovante,
+  creditoOuPendencia,
+  receberPagamento,
+  registrarGasto,
+} from './gestor';
 
 const participanteId = '11111111-1111-4111-8111-111111111111';
 const arquivo = new File(['%PDF'], 'arquivo.pdf');
@@ -108,6 +113,21 @@ describe('registrarGasto', () => {
   });
 });
 
+describe('confirmarComprovante', () => {
+  it('confirms the valor for the arquivo the gestor saw', async () => {
+    const chamadas = responde(Response.json({ id: 'pagamento' }, { status: 201 }));
+    expect(
+      await confirmarComprovante('token', { id: 'enviado', comprovanteId: 'arquivo' }, 2500),
+    ).toEqual({ feito: true, id: 'pagamento' });
+    const [confirmar] = chamadas();
+    expect(confirmar?.caminho).toBe('/api/financeiro/comprovante-enviado/enviado/confirmar');
+    expect(JSON.parse(confirmar?.corpo as string)).toEqual({
+      valorEmCentavos: 2500,
+      comprovanteId: 'arquivo',
+    });
+  });
+});
+
 describe('creditoOuPendencia', () => {
   const situacao = { id: participanteId, ativo: true, creditoEmCentavos: 0, pendenteEmCentavos: 0 };
 
@@ -119,15 +139,5 @@ describe('creditoOuPendencia', () => {
       'Crédito: R$\u00a060,00',
     );
     expect(creditoOuPendencia(situacao)).toBe('Em dia');
-  });
-});
-
-describe('mensagemDaFalha', () => {
-  it('explains a known error of the API, and falls back to the comando message', () => {
-    expect(mensagemDaFalha('valor-ja-definido', 'Falhou.')).toBe(
-      'O valor desse tipo de cota já foi definido para esse ano.',
-    );
-    expect(mensagemDaFalha('internal-error', 'Falhou.')).toBe('Falhou.');
-    expect(mensagemDaFalha(undefined, 'Falhou.')).toBe('Falhou.');
   });
 });

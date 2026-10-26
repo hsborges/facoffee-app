@@ -5,10 +5,10 @@
 | **Escopo** | Divisão de custos da copa da FACOM |
 | **Sistema** | FACOFFEE |
 | **Disciplina** | Técnicas Avançadas de Desenvolvimento de Software (2026/2) |
-| **Versão** | 2.10 |
+| **Versão** | 2.11 |
 | **Data** | 2026-10-26 |
 | **Status** | Aprovado |
-| **Base** | [Glossário da Linguagem Ubíqua](GLOSSARIO.md) (versão 2.7) e arquitetura do FACOFFEE ([arquitetura/visao-geral.png](../arquitetura/visao-geral.png)) |
+| **Base** | [Glossário da Linguagem Ubíqua](GLOSSARIO.md) (versão 2.8) e arquitetura do FACOFFEE ([arquitetura/visao-geral.png](../arquitetura/visao-geral.png)) |
 
 ## Propósito
 
@@ -42,6 +42,7 @@ flowchart TB
 
     Participante -- "tem as cotas quitadas por" --> Pagamento(["Pagamento"])
     Pagamento -- "por PIX tem" --> Comprovante(["Comprovante"])
+    Participante -- "envia ao gestor" --> Comprovante
     Pagamento -- "quita" --> Cota
     Pagamento -- "quita" --> Complemento(["Complemento"])
     Pagamento -- "pago a mais vira" --> Credito(["Crédito"])
@@ -83,6 +84,7 @@ flowchart TB
 | Um gasto pago do próprio bolso só sai da caixinha no **Reembolso**. | Assim o mesmo dinheiro não sai da caixinha duas vezes: uma no gasto e outra no reembolso. |
 | **Cota** e **Complemento** são quitados por pagamento ou abatidos do **Crédito**. | O crédito é abatido automaticamente; para o participante deixar de estar pendente, basta a cota ou o complemento ser pago ou abatido. |
 | O **Pagamento** pertence ao participante cujas cotas ele quita, não a quem entregou o dinheiro. | Às vezes alguém paga pelo outro; quem entregou não é guardado, e o nome no comprovante basta para o gestor conferir. Se alguém paga por mais de uma pessoa, o gestor registra um pagamento para cada uma. |
+| O **Comprovante** enviado pelo participante só vira **Pagamento** quando o gestor confirma. | O gestor continua conferindo o comprovante, como faz hoje; o participante só deixa de depender dele para registrar o envio. |
 | **Participante** e **Cota** são tratados em dois contextos. | Em Participação importa se a pessoa participa e com qual tipo de cota; em Financeiro importa o que ela deve, o que foi quitado e o que tem de crédito. |
 | O mapa mostra só as relações essenciais. | Ações do gestor, como receber pagamentos, solicitar complementos e fazer reembolsos, estão no glossário e no [Event Storming](#2-event-storming). |
 
@@ -126,6 +128,9 @@ flowchart LR
 
     P1["⚙ Todo início de mês"] --> G1["▣ Participante (Participação)"] --> E1["⚡ Cota devida"]
     A1["👤 Gestor"] --> C1["▶ Receber pagamento por PIX ou em dinheiro"] --> G2["▣ Participante (Financeiro)"] --> E2["⚡ Pagamento recebido"]
+    A2["👤 Participante"] --> C2["▶ Enviar, editar ou cancelar comprovante"] --> G3["▣ Comprovante enviado (Financeiro)"] --> R4["👁 Comprovantes enviados (Financeiro)"]
+    R4 --> A3["👤 Gestor"] --> C3["▶ Confirmar comprovante"] --> G3 --> G2
+    A3 --> C4["▶ Recusar comprovante"] --> G3
     E1 --> R1["👁 Crédito e pendentes (Financeiro)"]
     E2 --> R1
     E2 --> R2["👁 Saldo da caixinha (Financeiro)"]
@@ -135,7 +140,7 @@ flowchart LR
 
 A cota passa a ser devida em Participação, que sabe o tipo de cota do participante naquele mês. Quem entra durante o mês também deve a cota daquele mês. Financeiro recebe o evento *Cota devida* com o valor e passa a cobrá-la.
 
-O comando de pagamento é do gestor: é ele quem recebe o dinheiro, entregue pelo participante ou por outra pessoa em nome dele, no agregado Participante (Financeiro) de quem tem as cotas quitadas.
+O pagamento é sempre recebido pelo gestor, no agregado Participante (Financeiro) de quem tem as cotas quitadas: diretamente, com o dinheiro ou o comprovante entregue pelo participante ou por outra pessoa em nome dele, ou ao confirmar o comprovante que o participante enviou ([ADR 0030](../adr/0030-pagamento-iniciado-pelo-participante.md)). O comprovante enviado fica a confirmar e não conta como pagamento; enquanto isso, o participante pode editar o valor e o arquivo ou cancelar o envio. O gestor analisa cada comprovante uma vez só: ao confirmar, pode corrigir o valor, e vale o valor confirmado; ao recusar, informa o motivo, que o participante vê.
 
 O crédito é abatido automaticamente: cada nova cota ou parte de complemento consome primeiro o crédito do participante, sem comando de ninguém.
 
@@ -195,7 +200,7 @@ A coluna **Publicado para** indica quais contextos recebem o evento. Os eventos 
 | 3 | **Tipo de cota trocado** | O participante mudou de só café para completa, ou o contrário. | Participação: Participante | *Trocar tipo de cota* | *interno* |
 | 4 | **Participante saiu** | O participante pediu a saída ou teve o acesso desativado. | Participação: Participante | *Pedir saída* ou *Usuário desativado* | Financeiro |
 | 5 | **Cota devida** | O participante passou a dever a cota do mês, com o valor do seu tipo de cota. | Participação: Participante | Início do mês | Financeiro |
-| 6 | **Pagamento recebido** | O gestor recebeu dinheiro para as cotas de um participante, por PIX com comprovante ou em mãos. | Financeiro: Participante | *Receber pagamento por PIX ou em dinheiro* | Notificação |
+| 6 | **Pagamento recebido** | O gestor recebeu dinheiro para as cotas de um participante, por PIX com comprovante ou em mãos. | Financeiro: Participante | *Receber pagamento por PIX ou em dinheiro* ou *Confirmar comprovante* | Notificação |
 | 7 | **Complemento solicitado** | O gestor pediu um complemento; cada participante ativo passou a dever uma parte igual. | Financeiro: Complemento | Saldo da caixinha insuficiente | Notificação |
 | 8 | **Gasto feito** | Alguém pagou uma compra, um conserto, uma manutenção ou uma reposição, com dinheiro da caixinha ou do próprio bolso, e guardou a nota, com o tipo de gasto. | Financeiro: Caixinha | *Pagar compra, conserto, manutenção ou reposição* | *interno* |
 | 9 | **Reembolso feito** | O gestor devolveu o valor a quem pagou um gasto do próprio bolso. | Financeiro: Caixinha | Gasto pago do próprio bolso | Notificação |
@@ -215,6 +220,7 @@ O contexto Participação também recebe um evento do contexto Usuário:
 | **Caixinha do mês** | Financeiro | Saldo da caixinha no início do mês, pagamentos recebidos no mês, o que saiu no mês por tipo de gasto (gastos pagos pela caixinha e reembolsos feitos) e o saldo no fim do mês, que é o do início mais o que entrou menos o que saiu. | Todos os participantes, para acompanhar quanto entrou, quanto saiu com cada coisa e quanto sobrou. Mostra só totais, sem a situação de ninguém. |
 | **Gastos do ano anterior** | Financeiro | Soma dos gastos feitos no ano anterior, no total e por tipo de gasto. | O gestor, para definir o valor da cota; todos os participantes, para entender de onde vem o valor de cada tipo de cota. Mostra só totais, sem a situação de ninguém. |
 | **Valores da cota** | Participação | O valor de cada tipo de cota no ano atual. | Todos os participantes, para saber quanto custa cada tipo de cota e compará-lo com os gastos do ano anterior. |
+| **Comprovantes enviados** | Financeiro | Os comprovantes enviados pelos participantes, com a situação de cada um: a confirmar, confirmado (com o valor confirmado) ou recusado (com o motivo). | O gestor, só os a confirmar, para analisar; o participante, só os próprios, para acompanhar. |
 | **Participantes ativos** | Financeiro | Quem entrou e ainda não saiu, segundo os eventos de Participação. | O complemento, para ser dividido em partes iguais. |
 
 ### Agregados
@@ -224,6 +230,7 @@ O contexto Participação também recebe um evento do contexto Usuário:
 | **Participante** | Participação | Situação, tipo de cota e cotas devidas | A troca de tipo vale a partir do mês seguinte. A cota é devida enquanto a pessoa participa, com o valor do tipo de cota naquele mês. A participação termina quando a pessoa pede a saída ou tem o acesso desativado. |
 | **Tipo de cota** | Participação | Valor de cada ano | O valor não muda durante o ano. |
 | **Participante** | Financeiro | Cotas devidas, pagamentos, partes de complementos e crédito | O que for pago a mais fica como crédito e abate automaticamente o que vier depois. Na saída, o que foi pago adiantado fica como crédito, e o crédito ou a pendência continuam valendo quando a pessoa retornar. |
+| **Comprovante enviado** | Financeiro | Valor informado, arquivo e situação | Fica a confirmar até o gestor confirmar ou recusar, uma vez só. Só é editado ou cancelado pelo participante enquanto a confirmar. A recusa tem motivo. Confirmado, vira o pagamento, com o valor confirmado. |
 | **Caixinha** | Financeiro | Gastos e reembolsos | Todo gasto tem um tipo de gasto. Um gasto pago do próprio bolso gera reembolso. O dinheiro desse gasto só sai da caixinha no reembolso. |
 | **Complemento** | Financeiro | Valor total e valor por participante | É dividido em partes iguais entre todos os participantes ativos no momento da solicitação. |
 
@@ -238,6 +245,7 @@ O contexto Participação também recebe um evento do contexto Usuário:
 | Retornar é entrar de novo. | Saiu *Participante retornou*. |
 | A compra é um tipo de gasto. | *Compra feita* e *Gasto pago* viraram um só evento: *Gasto feito*. |
 | O complemento já define a parte de cada participante. | *Complemento solicitado* e *Complemento devido* viraram um só evento. |
+| Só a confirmação do comprovante enviado mexe no dinheiro. | Enviar, editar, cancelar e recusar comprovante não geram evento: mudam só a situação do comprovante enviado. Confirmar gera *Pagamento recebido*, o mesmo evento do pagamento recebido diretamente. |
 | Lembrar um pendente não muda nada no domínio. | Saiu *Pendente cobrado*. Lembrar os pendentes é uma política de Notificação sobre a leitura *Crédito e pendentes* ([ADR 0027](../adr/0027-lembrete-aos-pendentes.md)). |
 | A desativação do acesso acontece no contexto Usuário, mas tem efeito em Participação. | *Usuário desativado* vem do contexto Usuário e é traduzido em *Participante saiu*. |
 | Só vai para outros contextos o evento que alguém usa. | *Tipo de cota trocado* e *Gasto feito* ficam internos. *Cota devida* já leva o valor do tipo de cota, e o saldo da caixinha é calculado no próprio Financeiro. |
@@ -300,3 +308,4 @@ Nenhum no momento.
 | 2.8 | 2026-10-26 | Decisão: o pagamento pertence ao participante cujas cotas ele quita, mesmo quando outra pessoa paga; um pagamento por participante (ponto crítico 2 fechado, #74). Base atualizada para o glossário 2.6. |
 | 2.9 | 2026-10-26 | A leitura *Gastos do ano anterior* passa a ser por tipo de gasto e serve também aos participantes. Nova leitura *Valores da cota* (Participação), com o valor de cada tipo de cota no ano (#77). |
 | 2.10 | 2026-10-26 | Nova política de Notificação: avisar a cota devida e lembrar os pendentes, a partir da leitura *Crédito e pendentes*, que Notificação consulta em Financeiro ([ADR 0027](../adr/0027-lembrete-aos-pendentes.md)). Ponto crítico 1 fechado (#72). Base atualizada para o glossário 2.7. |
+| 2.11 | 2026-10-26 | O participante envia o próprio comprovante, que o gestor confirma, recebendo o pagamento, ou recusa. Novos comandos *Enviar, editar ou cancelar comprovante*, *Confirmar comprovante* e *Recusar comprovante*, agregado *Comprovante enviado* e leitura *Comprovantes enviados*; *Pagamento recebido* também vem da confirmação, sem mudar o contrato ([ADR 0030](../adr/0030-pagamento-iniciado-pelo-participante.md), #87). Base atualizada para o glossário 2.8. |

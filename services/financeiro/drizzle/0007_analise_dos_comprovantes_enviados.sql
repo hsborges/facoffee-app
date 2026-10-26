@@ -1,0 +1,3 @@
+ALTER TABLE "comprovantes_enviados" ADD CONSTRAINT "analise" CHECK (("comprovantes_enviados"."situacao" = 'a-confirmar' and "comprovantes_enviados"."valor_confirmado_em_centavos" is null and "comprovantes_enviados"."motivo" is null)
+        or ("comprovantes_enviados"."situacao" = 'confirmado' and "comprovantes_enviados"."valor_confirmado_em_centavos" is not null and "comprovantes_enviados"."motivo" is null)
+        or ("comprovantes_enviados"."situacao" = 'recusado' and "comprovantes_enviados"."motivo" is not null and "comprovantes_enviados"."valor_confirmado_em_centavos" is null));
