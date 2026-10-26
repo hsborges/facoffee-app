@@ -4,6 +4,7 @@ import nodemailer from 'nodemailer';
 import { createApp } from './api/app.js';
 import { avisar, type BuscarContato, type BuscarGestores } from './application/avisos.js';
 import { type BuscarPendentes, lembrarPendentes } from './application/lembretes.js';
+import type { Contato } from './domain/aviso.js';
 import { pendentesDe } from './domain/lembrete.js';
 import type { Config } from './infra/config.js';
 import { type Handler, startConsumer } from './infra/consumer.js';
@@ -13,38 +14,34 @@ import { buscarRegistrados, registrar } from './infra/lembretes.js';
 import type { Logger } from './infra/logger.js';
 import { connectRabbitmq } from './infra/rabbitmq.js';
 
-// Internal route of Usuário, kept out of the gateway (ADR 0020).
+// GET on an internal route, kept out of the gateway: undefined on 404, rejects on any other failure.
+const getJson = async (url: URL): Promise<unknown> => {
+  const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
+  if (response.status === 404) return undefined;
+  if (!response.ok) throw new Error(`${url} answered ${response.status}`);
+  return response.json();
+};
+
+// ADR 0020.
 const buscarContato =
   (usuarioUrl: string): BuscarContato =>
-  async (id) => {
-    const response = await fetch(new URL(`/contato/${id}`, usuarioUrl), {
-      signal: AbortSignal.timeout(5000),
-    });
-    if (response.status === 404) return undefined;
-    if (!response.ok) throw new Error(`usuario answered ${response.status}`);
-    return response.json();
-  };
+  async (id) =>
+    (await getJson(new URL(`/contato/${id}`, usuarioUrl))) as Contato | undefined;
 
-// Internal route of Usuário, kept out of the gateway (ADR 0031).
+// ADR 0031.
 const buscarGestores =
   (usuarioUrl: string): BuscarGestores =>
   async () => {
-    const response = await fetch(new URL('/contato/gestor', usuarioUrl), {
-      signal: AbortSignal.timeout(5000),
-    });
-    if (!response.ok) throw new Error(`usuario answered ${response.status}`);
-    return response.json();
+    const gestores = await getJson(new URL('/contato/gestor', usuarioUrl));
+    if (!Array.isArray(gestores)) throw new Error('usuario answered invalid gestores');
+    return gestores;
   };
 
-// Internal route of Financeiro, kept out of the gateway (ADR 0027).
+// ADR 0027.
 const buscarPendentes =
   (financeiroUrl: string): BuscarPendentes =>
   async () => {
-    const response = await fetch(new URL('/pendente', financeiroUrl), {
-      signal: AbortSignal.timeout(5000),
-    });
-    if (!response.ok) throw new Error(`financeiro answered ${response.status}`);
-    const pendentes = pendentesDe(await response.json());
+    const pendentes = pendentesDe(await getJson(new URL('/pendente', financeiroUrl)));
     if (!pendentes) throw new Error('financeiro answered invalid pendentes');
     return pendentes;
   };
