@@ -1,9 +1,9 @@
 # Financeiro
 
-Contexto de negócio. Pagamentos, crédito, pendências, complementos, gastos, reembolsos e caixinha.
+Contexto de negócio. Pagamentos, comprovantes enviados, crédito, pendências, complementos, gastos, reembolsos e caixinha.
 
-- **Agregados:** Participante, Caixinha, Complemento
-- **Leituras:** Crédito e pendentes, Saldo da caixinha, Caixinha do mês, Gastos do ano anterior, Participantes ativos
+- **Agregados:** Participante, Comprovante enviado, Caixinha, Complemento
+- **Leituras:** Crédito e pendentes, Saldo da caixinha, Caixinha do mês, Gastos do ano anterior, Participantes ativos, Comprovantes enviados
 - **Publica:** Pagamento recebido, Complemento solicitado, Reembolso feito
 - **Consome:** Cota devida, Participante entrou, Participante saiu
 - **Arquivos:** Comprovante, Nota
@@ -16,7 +16,7 @@ Guardados num bucket S3 ([ADR 0018](../../docs/adr/0018-armazenamento-de-comprov
 
 | Rota | Quem |
 |---|---|
-| `POST /guardar-comprovante` (com `participanteId`) → `201 { id }` | só o gestor |
+| `POST /guardar-comprovante` (com `participanteId`) → `201 { id }` | o gestor, para qualquer participante; o participante, só para si ([ADR 0030](../../docs/adr/0030-pagamento-iniciado-pelo-participante.md)) |
 | `POST /guardar-nota` → `201 { id }` | qualquer participante |
 | `GET /comprovante/:id` | o participante do comprovante e o gestor; outros recebem 404 |
 | `GET /nota/:id` | qualquer participante |
@@ -32,6 +32,29 @@ Guardados num bucket S3 ([ADR 0018](../../docs/adr/0018-armazenamento-de-comprov
 | comprovante não guardado para esse participante (`comprovante-nao-encontrado`) | 404 |
 | participante que Financeiro não conhece (`participante-nao-encontrado`) | 404 |
 | comprovante já usado em outro pagamento (`comprovante-ja-usado`) | 409 |
+
+## Comprovante enviado
+
+O participante envia o próprio comprovante, que fica a confirmar até o gestor confirmar ou recusar ([ADR 0030](../../docs/adr/0030-pagamento-iniciado-pelo-participante.md)). Antes da confirmação, não conta em *Crédito e pendentes* nem no *Saldo da caixinha*. Fica na tabela `comprovantes_enviados`, com o `comprovante_id` único (um arquivo, um envio); o cancelado é apagado. Toda mudança só vale se o comprovante ainda está a confirmar, então confirmar e recusar ao mesmo tempo dá um 2xx e um 409.
+
+| Rota | Quem | Resposta |
+|---|---|---|
+| `POST /enviar-comprovante`, JSON `{ valorEmCentavos, comprovanteId }` (o `id` de `/guardar-comprovante`, guardado para si) | o participante | `201 { id }` |
+| `POST /comprovante-enviado/:id/editar`, JSON `{ valorEmCentavos, comprovanteId }` (o mesmo ou outro arquivo guardado para si) | o participante do comprovante | `204` |
+| `POST /comprovante-enviado/:id/cancelar` | o participante do comprovante | `204` |
+| `POST /comprovante-enviado/:id/confirmar`, JSON `{ valorEmCentavos }` (o valor confirmado, que pode corrigir o informado) | só o gestor | `201 { id }` do pagamento; publica *Pagamento recebido* pela outbox |
+| `POST /comprovante-enviado/:id/recusar`, JSON `{ motivo }` (até 500 caracteres) | só o gestor | `204` |
+| `GET /comprovante-enviado` → `200 [{ id, participanteId, comprovanteId, valorEmCentavos, enviadoEm, situacao }]`, os a confirmar, do mais antigo ao mais recente | só o gestor (os demais, 403) | |
+| `GET /comprovante-enviado/eu` → `200 [...]`, os próprios, do mais recente ao mais antigo, com `valorConfirmadoEmCentavos` no confirmado e `motivo` no recusado | o participante | |
+
+| Recusa | Status |
+|---|---|
+| sem valor inteiro positivo, sem `comprovanteId` ou recusa sem `motivo` (`pedido-invalido`); motivo em branco (`recusa-sem-motivo`) | 400 |
+| confirmar ou recusar sem ser o gestor (`sem-permissao`) | 403 |
+| arquivo não guardado para quem envia (`comprovante-nao-encontrado`); quem envia não é um participante que Financeiro conhece (`participante-nao-encontrado`) | 404 |
+| comprovante que não existe ou, ao editar e cancelar, de outro participante (`comprovante-enviado-nao-encontrado`) | 404 |
+| comprovante já confirmado ou recusado (`comprovante-ja-analisado`) | 409 |
+| arquivo já enviado em outro comprovante ou já usado em outro pagamento (`comprovante-ja-usado`) | 409 |
 
 ## Registrar gasto
 

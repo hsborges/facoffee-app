@@ -13,6 +13,15 @@ import {
 import { consultarCaixinha, consultarCaixinhaDoMes } from './application/caixinha.js';
 import { solicitarComplemento } from './application/complementos.js';
 import {
+  cancelarComprovante,
+  confirmarComprovante,
+  editarComprovante,
+  enviarComprovante,
+  listarComprovantesAConfirmar,
+  listarMeusComprovantes,
+  recusarComprovante,
+} from './application/comprovantes-enviados.js';
+import {
   consultarCreditoEPendente,
   listarCreditoEPendentes,
   listarPendentes,
@@ -34,6 +43,7 @@ import type { Config } from './infra/config.js';
 import { type Handler, startConsumer } from './infra/consumer.js';
 import { caixinhaRepository } from './infra/db/caixinha-repository.js';
 import { complementoRepository } from './infra/db/complemento-repository.js';
+import { comprovanteEnviadoRepository } from './infra/db/comprovante-enviado-repository.js';
 import { buscarDevido, buscarTotais } from './infra/db/credito-repository.js';
 import { connectDatabase } from './infra/db/database.js';
 import { buscarGastos, gastoRepository } from './infra/db/gasto-repository.js';
@@ -56,7 +66,7 @@ const handler =
 
 /**
  * Composition root: wires domain, application and infrastructure (including the S3 armazenamento
- * of comprovantes and notas), then starts the HTTP server, the outbox relay and the consumer of
+ * of comprovantes and notas and the comprovantes enviados), then starts the HTTP server, the outbox relay and the consumer of
  * *Participante entrou*, *Participante saiu* and *Cota devida*.
  * `stop` closes the server first, then the relay, consumer and connections.
  */
@@ -78,6 +88,8 @@ export const startService = async (config: Config, logger: Logger) => {
     },
   });
 
+  const clock = { now: () => new Date(), newId: randomUUID };
+  const comprovantesEnviados = comprovanteEnviadoRepository(database.db);
   const app = createApp({
     guardarComprovante: guardarComprovante(armazem, randomUUID),
     guardarNota: guardarNota(armazem, randomUUID),
@@ -88,6 +100,17 @@ export const startService = async (config: Config, logger: Logger) => {
       comprovanteDoParticipante(armazem),
       { now: () => new Date(), newId: randomUUID },
     ),
+    enviarComprovante: enviarComprovante(
+      comprovantesEnviados,
+      comprovanteDoParticipante(armazem),
+      clock,
+    ),
+    editarComprovante: editarComprovante(comprovantesEnviados, comprovanteDoParticipante(armazem)),
+    cancelarComprovante: cancelarComprovante(comprovantesEnviados),
+    confirmarComprovante: confirmarComprovante(comprovantesEnviados, clock),
+    recusarComprovante: recusarComprovante(comprovantesEnviados),
+    listarComprovantesAConfirmar: listarComprovantesAConfirmar(comprovantesEnviados.aConfirmar),
+    listarMeusComprovantes: listarMeusComprovantes(comprovantesEnviados.doParticipante),
     registrarGasto: registrarGasto(gastoRepository(database.db), notaDoParticipante(armazem), {
       now: () => new Date(),
       newId: randomUUID,

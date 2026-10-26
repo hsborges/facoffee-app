@@ -29,9 +29,12 @@ export const validar = (conteudo: Uint8Array): Result<TipoDeArquivo, ArquivoInva
   return tipo ? ok(tipo[0]) : fail('tipo-nao-aceito');
 };
 
-/** Only the gestor receives pagamentos, so only the gestor guarda a comprovante. */
-export const podeGuardarComprovante = (solicitante: Pick<Solicitante, 'perfis'>) =>
-  solicitante.perfis.includes('gestor');
+/**
+ * The gestor guarda the comprovante of a pagamento they receive; the participante guarda only
+ * their own, to send it to the gestor.
+ */
+export const podeGuardarComprovante = (solicitante: Solicitante, participanteId: string) =>
+  solicitante.id === participanteId || solicitante.perfis.includes('gestor');
 
 /** A comprovante is seen only by the participante whose cotas the pagamento quita and by the gestor. */
 export const podeVerComprovante = (solicitante: Solicitante, participanteId: string) =>

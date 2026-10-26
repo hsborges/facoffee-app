@@ -43,15 +43,18 @@ const guardar = async (
   return ok(undefined);
 };
 
-/** The gestor guarda the comprovante of a pagamento por PIX of the participante; gives its id. */
+/**
+ * Guarda the comprovante of a pagamento por PIX of the participante, by the gestor or by the
+ * participante themself; gives its id.
+ */
 export const guardarComprovante =
   (armazem: Armazem, newId: () => string) =>
   async (
-    solicitante: Pick<Solicitante, 'perfis'>,
+    solicitante: Solicitante,
     participanteId: string,
     conteudo: Uint8Array,
   ): Promise<Result<string, GuardarComprovanteErro>> => {
-    if (!podeGuardarComprovante(solicitante)) return fail('sem-permissao');
+    if (!podeGuardarComprovante(solicitante, participanteId)) return fail('sem-permissao');
     const id = newId();
     const guardado = await guardar(armazem, `comprovante/${id}`, conteudo, participanteId);
     return guardado.ok ? ok(id) : guardado;

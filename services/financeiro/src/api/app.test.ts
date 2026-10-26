@@ -11,6 +11,16 @@ import {
 } from '../application/arquivos.js';
 import { solicitarComplemento } from '../application/complementos.js';
 import {
+  type ComprovantesEnviados,
+  cancelarComprovante,
+  confirmarComprovante,
+  editarComprovante,
+  enviarComprovante,
+  listarComprovantesAConfirmar,
+  listarMeusComprovantes,
+  recusarComprovante,
+} from '../application/comprovantes-enviados.js';
+import {
   consultarCreditoEPendente,
   listarCreditoEPendentes,
   listarPendentes,
@@ -19,6 +29,7 @@ import { listarGastos, registrarGasto } from '../application/gastos.js';
 import { receberPagamento } from '../application/pagamentos.js';
 import { reembolsarGasto } from '../application/reembolsos.js';
 import { TAMANHO_MAXIMO } from '../domain/arquivo.js';
+import type { ComprovanteEnviado } from '../domain/comprovante-enviado.js';
 import type { Gasto } from '../domain/gasto.js';
 import { fail, ok } from '../domain/result.js';
 import { createLogger } from '../infra/logger.js';
@@ -67,6 +78,29 @@ const app = (deps: Partial<ApiDependencies> = {}) => {
   let ids = 0;
   const newId = () => `0000000${++ids}-0000-4000-8000-000000000000`;
   const reembolsados = new Set<string>();
+  const enviados = new Map<string, ComprovanteEnviado>();
+  const seAConfirmar = async (c: ComprovanteEnviado) => {
+    if (enviados.get(c.id)?.situacao !== 'a-confirmar') return fail('comprovante-ja-analisado');
+    enviados.set(c.id, c);
+    return ok(undefined);
+  };
+  const comprovantesEnviados: ComprovantesEnviados = {
+    buscar: async (id) => enviados.get(id),
+    aConfirmar: async () => [...enviados.values()].filter((c) => c.situacao === 'a-confirmar'),
+    doParticipante: async (id) => [...enviados.values()].filter((c) => c.participanteId === id),
+    salvar: async (c) => {
+      enviados.set(c.id, c);
+      return ok(undefined);
+    },
+    editar: seAConfirmar,
+    recusar: seAConfirmar,
+    remover: async (id) => {
+      if (enviados.get(id)?.situacao !== 'a-confirmar') return fail('comprovante-ja-analisado');
+      enviados.delete(id);
+      return ok(undefined);
+    },
+    confirmar: seAConfirmar,
+  };
   return createApp({
     guardarComprovante: guardarComprovante(armazem, newId),
     guardarNota: guardarNota(armazem, newId),
@@ -96,6 +130,19 @@ const app = (deps: Partial<ApiDependencies> = {}) => {
       },
       { now: () => new Date(), newId },
     ),
+    enviarComprovante: enviarComprovante(comprovantesEnviados, comprovanteDoParticipante(armazem), {
+      now: () => new Date(),
+      newId,
+    }),
+    editarComprovante: editarComprovante(comprovantesEnviados, comprovanteDoParticipante(armazem)),
+    cancelarComprovante: cancelarComprovante(comprovantesEnviados),
+    confirmarComprovante: confirmarComprovante(comprovantesEnviados, {
+      now: () => new Date(),
+      newId,
+    }),
+    recusarComprovante: recusarComprovante(comprovantesEnviados),
+    listarComprovantesAConfirmar: listarComprovantesAConfirmar(comprovantesEnviados.aConfirmar),
+    listarMeusComprovantes: listarMeusComprovantes(comprovantesEnviados.doParticipante),
     solicitarComplemento: solicitarComplemento(
       { ativos: async () => [participante, outro], salvar: async () => {} },
       { now: () => new Date(), newId },
@@ -202,9 +249,11 @@ describe('comprovante', () => {
     expect((await enviar(api, '/guardar-comprovante', {}, form)).status).toBe(401);
   });
 
-  it('403 when not the gestor', async () => {
-    const form = formulario({ arquivo: PNG, participanteId: participante });
-    const response = await enviar(app(), '/guardar-comprovante', doParticipante, form);
+  it('is guardado by the participante for themself, but 403 for someone else', async () => {
+    const proprio = formulario({ arquivo: PNG, participanteId: participante });
+    expect((await enviar(app(), '/guardar-comprovante', doParticipante, proprio)).status).toBe(201);
+    const alheio = formulario({ arquivo: PNG, participanteId: outro });
+    const response = await enviar(app(), '/guardar-comprovante', doParticipante, alheio);
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({ error: 'sem-permissao' });
   });
@@ -343,6 +392,169 @@ describe('POST /receber-pagamento', () => {
   it('403 when not the gestor and 401 without the logged-in person', async () => {
     expect((await receber(app(), doParticipante, emDinheiro)).status).toBe(403);
     expect((await receber(app(), {}, emDinheiro)).status).toBe(401);
+  });
+});
+
+describe('comprovante enviado', () => {
+  const json = (api: ReturnType<typeof app>, path: string, headers: object, body?: unknown) =>
+    enviar(
+      api,
+      path,
+      { ...headers, 'content-type': 'application/json' } as Record<string, string>,
+      body === undefined ? '' : JSON.stringify(body),
+    );
+  const guardar = async (api: ReturnType<typeof app>) => {
+    const form = formulario({ arquivo: PNG, participanteId: participante });
+    const guardado = await enviar(api, '/guardar-comprovante', doParticipante, form);
+    return ((await guardado.json()) as { id: string }).id;
+  };
+  const enviado = async () => {
+    const api = app();
+    const comprovanteId = await guardar(api);
+    const response = await json(api, '/enviar-comprovante', doParticipante, {
+      valorEmCentavos: 3000,
+      comprovanteId: comprovanteId.toUpperCase(),
+    });
+    expect(response.status).toBe(201);
+    const { id } = (await response.json()) as { id: string };
+    return { api, id, comprovanteId };
+  };
+  const ler = async (api: ReturnType<typeof app>, path: string, headers: object) =>
+    (await api.request(path, { headers: headers as Record<string, string> })).json();
+
+  it('is sent by the participante a confirmar, for them and the gestor to see', async () => {
+    const { api, id, comprovanteId } = await enviado();
+    const esperado = {
+      id,
+      participanteId: participante,
+      comprovanteId,
+      valorEmCentavos: 3000,
+      enviadoEm: expect.any(String),
+      situacao: 'a-confirmar',
+    };
+    expect(await ler(api, '/comprovante-enviado/eu', doParticipante)).toEqual([esperado]);
+    expect(await ler(api, '/comprovante-enviado/eu', doOutro)).toEqual([]);
+    expect(await ler(api, '/comprovante-enviado', gestor)).toEqual([esperado]);
+    const response = await api.request('/comprovante-enviado', { headers: doParticipante });
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ error: 'sem-permissao' });
+  });
+
+  it('400 without a positive valor or an arquivo, and 404 for an arquivo of someone else', async () => {
+    const api = app();
+    const comprovanteId = await guardar(api);
+    for (const body of [
+      { valorEmCentavos: 0, comprovanteId },
+      { valorEmCentavos: -100, comprovanteId },
+      { valorEmCentavos: 10.5, comprovanteId },
+      { comprovanteId },
+      { valorEmCentavos: 3000 },
+      { valorEmCentavos: 3000, comprovanteId: 'abc' },
+      'nao-e-objeto',
+    ]) {
+      const response = await json(api, '/enviar-comprovante', doParticipante, body);
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ error: 'pedido-invalido' });
+    }
+    const alheio = await json(api, '/enviar-comprovante', doOutro, {
+      valorEmCentavos: 3000,
+      comprovanteId,
+    });
+    expect(alheio.status).toBe(404);
+    expect(await alheio.json()).toEqual({ error: 'comprovante-nao-encontrado' });
+  });
+
+  it('is edited and cancelled by the participante while a confirmar', async () => {
+    const { api, id } = await enviado();
+    const outroArquivo = await guardar(api);
+    const editado = await json(api, `/comprovante-enviado/${id}/editar`, doParticipante, {
+      valorEmCentavos: 2500,
+      comprovanteId: outroArquivo,
+    });
+    expect(editado.status).toBe(204);
+    expect(await ler(api, '/comprovante-enviado/eu', doParticipante)).toMatchObject([
+      { valorEmCentavos: 2500, comprovanteId: outroArquivo },
+    ]);
+    const doOutroParticipante = await json(api, `/comprovante-enviado/${id}/cancelar`, doOutro);
+    expect(doOutroParticipante.status).toBe(404);
+
+    const cancelar = () =>
+      json(api, `/comprovante-enviado/${id.toUpperCase()}/cancelar`, doParticipante);
+    expect((await cancelar()).status).toBe(204);
+    expect(await ler(api, '/comprovante-enviado/eu', doParticipante)).toEqual([]);
+    const repetido = await cancelar();
+    expect(repetido.status).toBe(404);
+    expect(await repetido.json()).toEqual({ error: 'comprovante-enviado-nao-encontrado' });
+  });
+
+  it('is confirmed by the gestor once, with the valor confirmado; then nobody changes it', async () => {
+    const { api, id, comprovanteId } = await enviado();
+    const confirmar = (headers: object, body?: unknown) =>
+      json(api, `/comprovante-enviado/${id}/confirmar`, headers, body);
+    const comValor = { valorEmCentavos: 2000 };
+    expect((await confirmar(doParticipante, comValor)).status).toBe(403);
+    for (const body of [{}, { valorEmCentavos: 0 }, undefined]) {
+      const invalido = await confirmar(gestor, body);
+      expect(invalido.status).toBe(400);
+    }
+
+    const confirmado = await confirmar(gestor, comValor);
+    expect(confirmado.status).toBe(201);
+    expect(await confirmado.json()).toEqual({ id: expect.any(String) });
+    expect(await ler(api, '/comprovante-enviado/eu', doParticipante)).toMatchObject([
+      { situacao: 'confirmado', valorEmCentavos: 3000, valorConfirmadoEmCentavos: 2000 },
+    ]);
+    expect(await ler(api, '/comprovante-enviado', gestor)).toEqual([]);
+
+    for (const tentativa of [
+      confirmar(gestor, comValor),
+      json(api, `/comprovante-enviado/${id}/recusar`, gestor, { motivo: 'Ilegível' }),
+      json(api, `/comprovante-enviado/${id}/editar`, doParticipante, {
+        valorEmCentavos: 2500,
+        comprovanteId,
+      }),
+      json(api, `/comprovante-enviado/${id}/cancelar`, doParticipante),
+    ]) {
+      const response = await tentativa;
+      expect(response.status).toBe(409);
+      expect(await response.json()).toEqual({ error: 'comprovante-ja-analisado' });
+    }
+  });
+
+  it('is recusado by the gestor only with a motivo, which the participante sees', async () => {
+    const { api, id } = await enviado();
+    const recusar = (headers: object, body: unknown) =>
+      json(api, `/comprovante-enviado/${id}/recusar`, headers, body);
+    expect((await recusar(doParticipante, { motivo: 'Ilegível' })).status).toBe(403);
+    for (const [body, error] of [
+      [{}, 'pedido-invalido'],
+      [{ motivo: 'x'.repeat(501) }, 'pedido-invalido'],
+      [{ motivo: '  ' }, 'recusa-sem-motivo'],
+    ] as const) {
+      const response = await recusar(gestor, body);
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ error });
+    }
+
+    expect((await recusar(gestor, { motivo: 'Valor diferente do PIX' })).status).toBe(204);
+    expect(await ler(api, '/comprovante-enviado/eu', doParticipante)).toMatchObject([
+      { situacao: 'recusado', motivo: 'Valor diferente do PIX' },
+    ]);
+  });
+
+  it('404 for an unknown comprovante and 401 without the logged-in person', async () => {
+    for (const id of [outro, 'abc']) {
+      const response = await json(app(), `/comprovante-enviado/${id}/confirmar`, gestor, {
+        valorEmCentavos: 3000,
+      });
+      expect(response.status).toBe(404);
+      expect(await response.json()).toEqual({ error: 'comprovante-enviado-nao-encontrado' });
+    }
+    const api = app();
+    expect((await json(api, '/enviar-comprovante', {}, {})).status).toBe(401);
+    expect((await json(api, `/comprovante-enviado/${outro}/cancelar`, {})).status).toBe(401);
+    expect((await api.request('/comprovante-enviado')).status).toBe(401);
+    expect((await api.request('/comprovante-enviado/eu')).status).toBe(401);
   });
 });
 

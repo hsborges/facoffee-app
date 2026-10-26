@@ -40,9 +40,18 @@ describe('guardarComprovante', () => {
     });
   });
 
-  it('refuses whoever is not the gestor', async () => {
+  it('guarda the comprovante the participante sends for themself', async () => {
     const { armazem, arquivos } = emMemoria();
     expect(await guardarComprovante(armazem, newId)(participante, participante.id, PDF)).toEqual({
+      ok: true,
+      value: 'arquivo-1',
+    });
+    expect(arquivos.get('comprovante/arquivo-1')?.participanteId).toBe(participante.id);
+  });
+
+  it('refuses a participante guardando for someone else', async () => {
+    const { armazem, arquivos } = emMemoria();
+    expect(await guardarComprovante(armazem, newId)(participante, gestor.id, PDF)).toEqual({
       ok: false,
       error: 'sem-permissao',
     });

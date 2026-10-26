@@ -1,6 +1,12 @@
 import { type Context, Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import type { Arquivo, GuardarComprovanteErro, NaoEncontrado } from '../application/arquivos.js';
+import type {
+  ConfirmarComprovanteErro,
+  EditarComprovanteErro,
+  EnviarComprovanteErro,
+  RecusarComprovanteErro,
+} from '../application/comprovantes-enviados.js';
 import type { Pendente } from '../application/credito.js';
 import type { GastoListado, RegistrarGastoErro } from '../application/gastos.js';
 import type { ReceberPagamentoErro } from '../application/pagamentos.js';
@@ -8,6 +14,11 @@ import type { ReembolsarGastoErro } from '../application/reembolsos.js';
 import { type ArquivoInvalido, type Solicitante, TAMANHO_MAXIMO } from '../domain/arquivo.js';
 import type { Caixinha, CaixinhaDoMes, Mes } from '../domain/caixinha.js';
 import type { SolicitarErro } from '../domain/complemento.js';
+import type {
+  ComprovanteEnviado,
+  ComprovanteErro,
+  PedidoDeComprovante,
+} from '../domain/comprovante-enviado.js';
 import type { MinhaSituacao, Situacao } from '../domain/credito.js';
 import {
   ORIGENS,
@@ -23,7 +34,7 @@ import type { Logger } from '../infra/logger.js';
 /** Use cases and infrastructure the HTTP API calls; injected so tests can replace them. */
 export type ApiDependencies = {
   readonly guardarComprovante: (
-    solicitante: Pick<Solicitante, 'perfis'>,
+    solicitante: Solicitante,
     participanteId: string,
     conteudo: Uint8Array,
   ) => Promise<Result<string, GuardarComprovanteErro>>;
@@ -40,6 +51,35 @@ export type ApiDependencies = {
     solicitante: Pick<Solicitante, 'perfis'>,
     pedido: PedidoDePagamento,
   ) => Promise<Result<string, ReceberPagamentoErro>>;
+  readonly enviarComprovante: (
+    solicitante: Pick<Solicitante, 'id'>,
+    pedido: PedidoDeComprovante,
+  ) => Promise<Result<string, EnviarComprovanteErro>>;
+  readonly editarComprovante: (
+    solicitante: Pick<Solicitante, 'id'>,
+    id: string,
+    pedido: PedidoDeComprovante,
+  ) => Promise<Result<void, EditarComprovanteErro>>;
+  readonly cancelarComprovante: (
+    solicitante: Pick<Solicitante, 'id'>,
+    id: string,
+  ) => Promise<Result<void, ComprovanteErro>>;
+  readonly confirmarComprovante: (
+    solicitante: Pick<Solicitante, 'perfis'>,
+    id: string,
+    valorConfirmadoEmCentavos: number,
+  ) => Promise<Result<string, ConfirmarComprovanteErro>>;
+  readonly recusarComprovante: (
+    solicitante: Pick<Solicitante, 'perfis'>,
+    id: string,
+    motivo: string,
+  ) => Promise<Result<void, RecusarComprovanteErro>>;
+  readonly listarComprovantesAConfirmar: (
+    solicitante: Pick<Solicitante, 'perfis'>,
+  ) => Promise<Result<readonly ComprovanteEnviado[], 'sem-permissao'>>;
+  readonly listarMeusComprovantes: (
+    solicitante: Pick<Solicitante, 'id'>,
+  ) => Promise<readonly ComprovanteEnviado[]>;
   readonly registrarGasto: (
     solicitante: Pick<Solicitante, 'id'>,
     pedido: PedidoDeGasto,
@@ -88,6 +128,9 @@ const STATUS_DO_ERRO = {
   'comprovante-nao-encontrado': 404,
   'participante-nao-encontrado': 404,
   'comprovante-ja-usado': 409,
+  'comprovante-enviado-nao-encontrado': 404,
+  'comprovante-ja-analisado': 409,
+  'recusa-sem-motivo': 400,
   'nota-nao-encontrada': 404,
   'nota-ja-usada': 409,
   'gasto-nao-encontrado': 404,
@@ -119,6 +162,20 @@ const pedidoDePagamento = async (c: Context): Promise<PedidoDePagamento | undefi
       }
     : undefined;
 };
+
+const corpoJson = async (c: Context) =>
+  (await c.req.json().catch(() => undefined)) as Record<string, unknown> | undefined;
+
+const pedidoDeComprovante = async (c: Context): Promise<PedidoDeComprovante | undefined> => {
+  const { valorEmCentavos, comprovanteId } = (await corpoJson(c)) ?? {};
+  return inteiroPositivo(valorEmCentavos) &&
+    typeof comprovanteId === 'string' &&
+    UUID.test(comprovanteId)
+    ? { valorEmCentavos, comprovanteId: comprovanteId.toLowerCase() }
+    : undefined;
+};
+
+const MOTIVO_MAXIMO = 500;
 
 const pedidoDeGasto = async (c: Context): Promise<PedidoDeGasto | undefined> => {
   const corpo = (await c.req.json().catch(() => undefined)) as Record<string, unknown> | undefined;
@@ -165,6 +222,9 @@ const criado = (c: Context, result: Result<string, keyof typeof STATUS_DO_ERRO>)
     ? c.json({ id: result.value }, 201)
     : c.json({ error: result.error }, STATUS_DO_ERRO[result.error]);
 
+const feito = (c: Context, result: Result<void, keyof typeof STATUS_DO_ERRO>) =>
+  result.ok ? c.body(null, 204) : c.json({ error: result.error }, STATUS_DO_ERRO[result.error]);
+
 const baixado = (c: Context, result: Result<Arquivo, NaoEncontrado>) =>
   result.ok
     ? c.body(result.value.conteudo as Uint8Array<ArrayBuffer>, 200, {
@@ -174,11 +234,17 @@ const baixado = (c: Context, result: Result<Arquivo, NaoEncontrado>) =>
     : c.json({ error: 'not-found' }, 404);
 
 /**
- * HTTP API of the Financeiro context. The gestor guarda comprovantes with
- * `POST /guardar-comprovante` and any participante guarda notas with `POST /guardar-nota`
- * (multipart, up to 5 MB, PDF, JPEG or PNG); `GET /comprovante/:id` serves only the participante
- * and the gestor, and `GET /nota/:id` any participante. The gestor receives pagamentos with
- * `POST /receber-pagamento` (JSON; a pagamento por PIX references its comprovante). Any
+ * HTTP API of the Financeiro context. The gestor, or the participante for themself, guarda
+ * comprovantes with `POST /guardar-comprovante` and any participante guarda notas with
+ * `POST /guardar-nota` (multipart, up to 5 MB, PDF, JPEG or PNG); `GET /comprovante/:id` serves only
+ * the participante and the gestor, and `GET /nota/:id` any participante. The gestor receives
+ * pagamentos with `POST /receber-pagamento` (JSON; a pagamento por PIX references its comprovante).
+ * The participante sends a comprovante with `POST /enviar-comprovante` (JSON, the valor and the
+ * comprovante guardado) and, while a confirmar, edits or cancels it with
+ * `POST /comprovante-enviado/:id/editar` and `/cancelar`; the gestor confirms it (receiving the
+ * pagamento) or recusa it with `/confirmar` and `/recusar`. Leituras: `GET /comprovante-enviado`,
+ * the comprovantes a confirmar, only for the gestor; `GET /comprovante-enviado/eu`, the
+ * participante's own, with the situação of each. Any
  * participante registers a gasto with `POST /registrar-gasto` (JSON, with its tipo and referencing a
  * nota they guardaram).
  * The gestor reembolsa a gasto pago do próprio bolso with `POST /gasto/:id/reembolsar` and
@@ -200,6 +266,13 @@ export const createApp = ({
   baixarComprovante,
   baixarNota,
   receberPagamento,
+  enviarComprovante,
+  editarComprovante,
+  cancelarComprovante,
+  confirmarComprovante,
+  recusarComprovante,
+  listarComprovantesAConfirmar,
+  listarMeusComprovantes,
   registrarGasto,
   reembolsarGasto,
   solicitarComplemento,
@@ -268,6 +341,62 @@ export const createApp = ({
       const pedido = await pedidoDePagamento(c);
       if (!pedido) return c.json({ error: 'pedido-invalido' }, 400);
       return criado(c, await receberPagamento(quem, pedido));
+    })
+    .post('/enviar-comprovante', limiteDoPedido, async (c) => {
+      const quem = solicitante(c);
+      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      const pedido = await pedidoDeComprovante(c);
+      if (!pedido) return c.json({ error: 'pedido-invalido' }, 400);
+      return criado(c, await enviarComprovante(quem, pedido));
+    })
+    .get('/comprovante-enviado', async (c) => {
+      const quem = solicitante(c);
+      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      const result = await listarComprovantesAConfirmar(quem);
+      return result.ok
+        ? c.json(result.value)
+        : c.json({ error: result.error }, STATUS_DO_ERRO[result.error]);
+    })
+    .get('/comprovante-enviado/eu', async (c) => {
+      const quem = solicitante(c);
+      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      return c.json(await listarMeusComprovantes(quem));
+    })
+    .post('/comprovante-enviado/:id/editar', limiteDoPedido, async (c) => {
+      const quem = solicitante(c);
+      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      const id = c.req.param('id');
+      if (!UUID.test(id)) return c.json({ error: 'comprovante-enviado-nao-encontrado' }, 404);
+      const pedido = await pedidoDeComprovante(c);
+      if (!pedido) return c.json({ error: 'pedido-invalido' }, 400);
+      return feito(c, await editarComprovante(quem, id.toLowerCase(), pedido));
+    })
+    .post('/comprovante-enviado/:id/cancelar', async (c) => {
+      const quem = solicitante(c);
+      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      const id = c.req.param('id');
+      if (!UUID.test(id)) return c.json({ error: 'comprovante-enviado-nao-encontrado' }, 404);
+      return feito(c, await cancelarComprovante(quem, id.toLowerCase()));
+    })
+    .post('/comprovante-enviado/:id/confirmar', limiteDoPedido, async (c) => {
+      const quem = solicitante(c);
+      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      const id = c.req.param('id');
+      if (!UUID.test(id)) return c.json({ error: 'comprovante-enviado-nao-encontrado' }, 404);
+      const valor = (await corpoJson(c))?.valorEmCentavos;
+      if (!inteiroPositivo(valor)) return c.json({ error: 'pedido-invalido' }, 400);
+      return criado(c, await confirmarComprovante(quem, id.toLowerCase(), valor));
+    })
+    .post('/comprovante-enviado/:id/recusar', limiteDoPedido, async (c) => {
+      const quem = solicitante(c);
+      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      const id = c.req.param('id');
+      if (!UUID.test(id)) return c.json({ error: 'comprovante-enviado-nao-encontrado' }, 404);
+      const motivo = (await corpoJson(c))?.motivo;
+      if (typeof motivo !== 'string' || motivo.length > MOTIVO_MAXIMO) {
+        return c.json({ error: 'pedido-invalido' }, 400);
+      }
+      return feito(c, await recusarComprovante(quem, id.toLowerCase(), motivo));
     })
     .post('/registrar-gasto', limiteDoPedido, async (c) => {
       const quem = solicitante(c);

@@ -9,6 +9,7 @@ import {
   timestamp,
   uuid,
 } from 'drizzle-orm/pg-core';
+import type { Analise } from '../../domain/comprovante-enviado.js';
 import type { Origem, TipoDeGasto } from '../../domain/gasto.js';
 import type { Forma } from '../../domain/pagamento.js';
 import type { TipoDeCota } from '../../domain/participante.js';
@@ -45,6 +46,24 @@ export const pagamentos = pgTable('pagamentos', {
   forma: text('forma').$type<Forma>().notNull(),
   comprovanteId: uuid('comprovante_id').unique(),
   recebidoEm: instant('recebido_em').notNull(),
+});
+
+/**
+ * Comprovantes the participantes enviaram; an arquivo is sent once only, and a comprovante
+ * cancelado is deleted. `valor_confirmado_em_centavos` is set only when confirmado, `motivo` only
+ * when recusado.
+ */
+export const comprovantesEnviados = pgTable('comprovantes_enviados', {
+  id: uuid('id').primaryKey(),
+  participanteId: uuid('participante_id')
+    .notNull()
+    .references(() => participantes.id),
+  comprovanteId: uuid('comprovante_id').notNull().unique(),
+  valorEmCentavos: integer('valor_em_centavos').notNull(),
+  enviadoEm: instant('enviado_em').notNull(),
+  situacao: text('situacao').$type<Analise['situacao']>().notNull(),
+  valorConfirmadoEmCentavos: integer('valor_confirmado_em_centavos'),
+  motivo: text('motivo'),
 });
 
 /** Gastos feitos; a nota belongs to one gasto only. */
