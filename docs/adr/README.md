@@ -26,3 +26,4 @@ Registros de decisões de arquitetura. Um arquivo por decisão: `NNNN-titulo.md`
 | [0020](0020-envio-de-e-mails-da-notificacao.md) | Envio de e-mails da Notificação | Aceito |
 | [0021](0021-front-end-servido-pelo-gateway.md) | Front-end servido pelo gateway | Aceito |
 | [0022](0022-http-no-ambiente-local.md) | HTTP no ambiente local | Aceito |
+| [0023](0023-teste-ponta-a-ponta-com-playwright.md) | Teste ponta a ponta com Playwright e Testcontainers | Aceito |

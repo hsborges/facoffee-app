@@ -38,6 +38,10 @@ O realm `facoffee` é importado de [`keycloak/facoffee-realm.json`](keycloak/fac
 
 `docker compose down -v` apaga tudo, inclusive os dados.
 
+## Stack do teste ponta a ponta
+
+[`docker-compose.test.yml`](docker-compose.test.yml) vai por cima do `docker-compose.yml` e só muda as portas: o gateway, o Keycloak e o Mailpit em portas aleatórias de `127.0.0.1`, sem publicar o restante, para rodar ao lado desta stack. O `pnpm test:e2e` a sobe e remove sozinho, com Testcontainers ([ADR 0023](../docs/adr/0023-teste-ponta-a-ponta-com-playwright.md)).
+
 ## Serviço de exemplo
 
 O [template de serviço](../templates/service/) sobe no perfil `example` e publica e consome um evento pelo RabbitMQ:
