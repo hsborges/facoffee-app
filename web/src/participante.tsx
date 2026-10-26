@@ -8,7 +8,13 @@ import {
   type Situacao,
   type TipoDeCota,
 } from './api';
-import { dataEmCampoGrande, emReais, mesPorExtenso, NOME_DO_TIPO_DE_COTA } from './formato';
+import {
+  dataEmCampoGrande,
+  emReais,
+  ITENS_DO_TIPO_DE_COTA,
+  mesPorExtenso,
+  NOME_DO_TIPO_DE_COTA,
+} from './formato';
 
 /** Reads a recurso when mounted; gives the leitura (undefined while loading) and how to reload it. */
 export const useLeitura = <T,>(token: string, caminho: string) => {
@@ -38,11 +44,6 @@ export const FalhaAoCarregar = ({ tentarDeNovo }: { tentarDeNovo: () => void }) 
     </button>
   </>
 );
-
-const ITENS_DO_TIPO_DE_COTA: Readonly<Record<TipoDeCota, string>> = {
-  'so-cafe': 'Café.',
-  completa: 'Café, bolachas, chás e os demais itens da copa.',
-};
 
 const EscolhaDoTipoDeCota = ({
   legenda,

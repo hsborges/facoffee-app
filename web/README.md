@@ -22,6 +22,7 @@ Entre com um usuário de teste do [realm local](../infra/README.md#keycloak) (`g
 | `src/navegacao.ts` | Menu (e rotas) por perfil |
 | `src/api.ts` | Chamadas à API pelo gateway |
 | `src/formato.ts` | Valores, meses e datas em português |
+| `src/inicial.tsx` | Página inicial de quem não está logado |
 | `src/participante.tsx` | Páginas do participante: Minha situação e Caixinha |
 | `src/gestor.tsx` | Páginas do gestor: Participantes, Gastos, Valor da cota e o complemento na Caixinha |
-| `src/app.tsx` | Página inicial, login, layout e rotas |
+| `src/app.tsx` | Login, layout e rotas |

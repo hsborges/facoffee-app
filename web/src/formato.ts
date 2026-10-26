@@ -25,3 +25,9 @@ export const NOME_DO_TIPO_DE_COTA: Readonly<Record<TipoDeCota, string>> = {
   'so-cafe': 'Só café',
   completa: 'Completa',
 };
+
+/** What each tipo de cota includes. */
+export const ITENS_DO_TIPO_DE_COTA: Readonly<Record<TipoDeCota, string>> = {
+  'so-cafe': 'Café.',
+  completa: 'Café, bolachas, chás e os demais itens da copa.',
+};

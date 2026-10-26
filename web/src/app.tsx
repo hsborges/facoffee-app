@@ -4,6 +4,7 @@ import { NavLink, Route, Routes } from 'react-router';
 import logo from '../../infra/keycloak/themes/facoffee/login/resources/img/facoffee-logo.svg';
 import { obterUsuarioLogado, type UsuarioLogado } from './api';
 import { Gastos, Participantes, SolicitarComplemento, ValorDaCota } from './gestor';
+import { PaginaInicial } from './inicial';
 import { navegacao } from './navegacao';
 import { Caixinha, MinhaSituacao } from './participante';
 
@@ -63,14 +64,7 @@ export const App = () => {
       </Aviso>
     );
   if (!isAuthenticated && !isLoading)
-    return (
-      <Aviso>
-        <p>Divisão dos custos da copa da FACOM.</p>
-        <button type="button" onClick={() => auth.signinRedirect(entrar)}>
-          Entrar
-        </button>
-      </Aviso>
-    );
+    return <PaginaInicial entrar={() => auth.signinRedirect(entrar)} />;
   if (!isAuthenticated || !token || !eu)
     return (
       <Aviso>
