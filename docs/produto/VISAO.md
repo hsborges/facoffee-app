@@ -5,7 +5,7 @@
 | **Escopo** | Divisão de custos da copa da FACOM |
 | **Sistema** | FACOFFEE |
 | **Disciplina** | Técnicas Avançadas de Desenvolvimento de Software (2026/2) |
-| **Versão** | 1.1 |
+| **Versão** | 1.2 |
 | **Data** | 2026-10-26 |
 | **Status** | Proposto |
 | **Base** | [Glossário](../dominio/GLOSSARIO.md) (versão 2.5) e [Modelos de Domínio](../dominio/MODELOS.md) (versão 2.7) |
@@ -133,7 +133,7 @@ Cada necessidade aponta para onde o domínio já a trata.
 | Registrar gastos com nota e reembolsar quem pagou | Gestor | [Gasto](../dominio/GLOSSARIO.md#gasto), [Nota](../dominio/GLOSSARIO.md#nota), [Reembolso](../dominio/GLOSSARIO.md#reembolso) |
 | Resumo do mês: entrou, saiu e sobrou | Todos | Leitura *Caixinha do mês* (Financeiro), com o que saiu por [Tipo de gasto](../dominio/GLOSSARIO.md#tipo-de-gasto) |
 | Pedir complemento quando a caixinha não dá conta | Gestor | [Complemento](../dominio/GLOSSARIO.md#complemento) |
-| Embasar o valor da cota do ano | Gestor e participantes | Leitura *Gastos do ano anterior*. **Lacuna:** hoje só o gestor a usa ([#77](../../../../issues/77)) |
+| Embasar o valor da cota do ano | Gestor e participantes | Leituras *Gastos do ano anterior* (Financeiro), por [Tipo de gasto](../dominio/GLOSSARIO.md#tipo-de-gasto), e *Valores da cota* (Participação), visíveis a todos |
 
 ## Fora do escopo
 
@@ -163,3 +163,4 @@ Cada necessidade aponta para onde o domínio já a trata.
 |---|---|---|
 | 1.0 | 2026-10-25 | Primeira versão, a partir de entrevista com o gestor da copa. |
 | 1.1 | 2026-10-26 | Decidida a questão do gasto por tipo (#73): o resumo do mês é a leitura *Caixinha do mês*. |
+| 1.2 | 2026-10-26 | Fechada a lacuna da explicação dos valores (#77): todos veem os gastos do ano anterior por tipo de gasto e o valor de cada tipo de cota do ano. |
