@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   type ComprovanteEnviado,
@@ -8,9 +9,15 @@ import {
   recusar,
 } from './comprovante-enviado.js';
 
-const participante = { id: 'participante-1', perfis: ['participante'] };
+const contrato = (type: string) =>
+  JSON.parse(
+    readFileSync(new URL(`../../../../contracts/events/${type}.v1.json`, import.meta.url), 'utf8'),
+  ).examples[0];
+const enviado = contrato('finance.receipt-sent');
+
+const participante = { id: enviado.payload.participantId, perfis: ['participante'] };
 const gestor = { id: 'gestor-1', perfis: ['participante', 'gestor'] };
-const agora = new Date('2026-11-10T15:00:00Z');
+const agora = new Date(enviado.occurredAt);
 const contexto = { pagamentoId: 'pagamento-1', eventId: 'evento-1', agora };
 const pedido = (valorConfirmadoEmCentavos: number, comprovanteId = 'arquivo-1') => ({
   valorConfirmadoEmCentavos,
@@ -19,8 +26,8 @@ const pedido = (valorConfirmadoEmCentavos: number, comprovanteId = 'arquivo-1') 
 
 const envio = enviar(
   participante,
-  { comprovanteId: 'arquivo-1', valorEmCentavos: 3000 },
-  { id: 'comprovante-1', eventId: 'evento-0', agora },
+  { comprovanteId: 'arquivo-1', valorEmCentavos: enviado.payload.amountInCents },
+  { id: enviado.payload.receiptId, eventId: enviado.id, agora },
 );
 const aConfirmar = envio.comprovante;
 const recusado: ComprovanteEnviado = { ...aConfirmar, situacao: 'recusado', motivo: 'Ilegível' };
@@ -31,27 +38,17 @@ const confirmado: ComprovanteEnviado = {
 };
 
 describe('enviar', () => {
-  it('leaves the comprovante of the participante a confirmar, producing Comprovante enviado', () => {
+  it('leaves the comprovante of the participante a confirmar, producing Comprovante enviado as in the contract', () => {
     expect(envio).toEqual({
       comprovante: {
-        id: 'comprovante-1',
-        participanteId: 'participante-1',
+        id: enviado.payload.receiptId,
+        participanteId: participante.id,
         comprovanteId: 'arquivo-1',
         valorEmCentavos: 3000,
         enviadoEm: agora,
         situacao: 'a-confirmar',
       },
-      evento: {
-        id: 'evento-0',
-        type: 'finance.receipt-sent',
-        version: 1,
-        occurredAt: agora.toISOString(),
-        payload: {
-          receiptId: 'comprovante-1',
-          participantId: 'participante-1',
-          amountInCents: 3000,
-        },
-      },
+      evento: { ...enviado, occurredAt: agora.toISOString() },
     });
   });
 });
@@ -104,7 +101,7 @@ describe('confirmar', () => {
         comprovante: confirmado,
         pagamento: {
           id: 'pagamento-1',
-          participanteId: 'participante-1',
+          participanteId: participante.id,
           valorEmCentavos: 3000,
           forma: 'pix',
           comprovanteId: 'arquivo-1',
@@ -117,7 +114,7 @@ describe('confirmar', () => {
           occurredAt: agora.toISOString(),
           payload: {
             paymentId: 'pagamento-1',
-            participantId: 'participante-1',
+            participantId: participante.id,
             amountInCents: 3000,
             method: 'pix',
           },
@@ -159,25 +156,16 @@ describe('confirmar', () => {
 });
 
 describe('recusar', () => {
-  const contexto = { eventId: 'evento-2', agora };
+  const recusadoNoContrato = contrato('finance.receipt-rejected');
+  const contexto = { eventId: recusadoNoContrato.id, agora };
 
-  it('keeps the motivo for the participante to see, producing Comprovante recusado', () => {
-    expect(recusar(gestor, aConfirmar, '  Valor diferente do PIX ', contexto)).toEqual({
+  it('keeps the motivo for the participante to see, producing Comprovante recusado as in the contract', () => {
+    const { reason } = recusadoNoContrato.payload;
+    expect(recusar(gestor, aConfirmar, `  ${reason} `, contexto)).toEqual({
       ok: true,
       value: {
-        comprovante: { ...aConfirmar, situacao: 'recusado', motivo: 'Valor diferente do PIX' },
-        evento: {
-          id: 'evento-2',
-          type: 'finance.receipt-rejected',
-          version: 1,
-          occurredAt: agora.toISOString(),
-          payload: {
-            receiptId: 'comprovante-1',
-            participantId: 'participante-1',
-            amountInCents: 3000,
-            reason: 'Valor diferente do PIX',
-          },
-        },
+        comprovante: { ...aConfirmar, situacao: 'recusado', motivo: reason },
+        evento: { ...recusadoNoContrato, occurredAt: agora.toISOString() },
       },
     });
   });
