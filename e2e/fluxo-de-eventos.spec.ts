@@ -90,8 +90,6 @@ const participarNaTelaDoGestor = (gestor: Page, nome: string) =>
     await recarregarAte(gestor, linhaDe(gestor, nome).getByText('Participa', { exact: true }));
   });
 
-const centavos = (reais: string) => Number(reais.replace(/\D/g, ''));
-
 type Situacao = {
   readonly id: string;
   readonly ativo: boolean;
@@ -140,22 +138,21 @@ test('entrar, cota devida e pagamento recebido: crédito correto e e-mail enviad
     await expect(gestor.getByText(/^Valor da cota Só café em \d+ definido\.$/)).toBeVisible();
   });
 
-  const valorDaCota = await test.step('Todo início de mês: a cota fica devida', async () => {
+  await test.step('Todo início de mês: a cota de R$ 20,00 fica devida', async () => {
     // The agendador fires *Todo início de mês* on start (ADR 0017); the trigger is internal.
     execFileSync('docker', ['restart', E2E_AGENDADOR]);
     const cotas = participante.getByRole('table', { name: 'Cotas' });
     await recarregarAte(participante, cotas);
-    return (await cotas.locator('tbody td').nth(2).textContent()) ?? '';
+    await expect(cotas.locator('tbody td').nth(2)).toHaveText(/^R\$\s20,00$/);
   });
 
-  await test.step(`${pessoa.usuario} vê o pendente: ${valorDaCota}`, () =>
-    expect(participante.getByText(`Pendente: ${valorDaCota}`)).toBeVisible());
+  await test.step(`${pessoa.usuario} vê o pendente: R$ 20,00`, () =>
+    expect(participante.getByText(/Pendente: R\$\s20,00/)).toBeVisible());
 
   await participarNaTelaDoGestor(gestor, pessoa.nome);
-  const valorPago = ((centavos(valorDaCota) + 500) / 100).toFixed(2);
-  await test.step(`Gestor recebe R$ ${valorPago} em dinheiro de ${pessoa.nome}`, async () => {
+  await test.step(`Gestor recebe R$ 25,00 em dinheiro de ${pessoa.nome}`, async () => {
     await gestor.getByRole('combobox').selectOption({ label: pessoa.nome });
-    await gestor.getByLabel('Valor (R$)').fill(valorPago);
+    await gestor.getByLabel('Valor (R$)').fill('25');
     await gestor.getByLabel('Dinheiro').check();
     await gestor.getByRole('button', { name: 'Receber pagamento' }).click();
     await expect(gestor.getByText('Pagamento recebido.')).toBeVisible();
@@ -190,9 +187,10 @@ test('complemento: parte igual para cada participante ativo', async ({ browser }
   const gestor = await entrarNoFacoffee(browser, 'gestor');
   const participantes: Page[] = [];
   for (const pessoa of [await novoUsuario(), await novoUsuario()]) {
-    participantes.push(await entrarNoFacoffee(browser, pessoa.usuario));
-    await pedirEntrada(participantes[participantes.length - 1], pessoa.usuario);
+    const participante = await entrarNoFacoffee(browser, pessoa.usuario);
+    await pedirEntrada(participante, pessoa.usuario);
     await participarNaTelaDoGestor(gestor, pessoa.nome);
+    participantes.push(participante);
   }
 
   const antes = await creditoEPendentes(gestor);

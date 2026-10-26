@@ -13,6 +13,17 @@ const projeto = 'facoffee-e2e';
 
 const log = (mensagem: string) => console.log(`[e2e] ${mensagem}`);
 
+// Kept for a failure, since the stack is gone after the run.
+const guardarLogs = () => {
+  mkdirSync(RESULTADOS, { recursive: true });
+  writeFileSync(
+    `${RESULTADOS}/compose.log`,
+    execFileSync('docker', ['compose', '-p', projeto, 'logs', '--no-color'], {
+      maxBuffer: 256 * 1024 * 1024,
+    }),
+  );
+};
+
 export default async () => {
   const inicio = Date.now();
   // An interrupted run (Ctrl+C, a crash) leaves the volumes behind; the tests need a clean stack.
@@ -30,7 +41,13 @@ export default async () => {
     .withBuild()
     // Waits for the healthchecks, as docker compose up --wait.
     .withClientOptions({ commandOptions: ['--wait'] })
-    .up();
+    .up()
+    .catch((erro) => {
+      // A container that never got healthy: its logs say why. Ryuk removes the stack.
+      log('A stack não subiu; os logs dos contêineres ficam em test-results/compose.log');
+      guardarLogs();
+      throw erro;
+    });
   process.env.E2E_PORTA_WEB = String(stack.getContainer('gateway-1').getMappedPort(80));
   process.env.E2E_PORTA_KEYCLOAK = String(stack.getContainer('keycloak-1').getMappedPort(8080));
   process.env.E2E_PORTA_MAILPIT = String(stack.getContainer('mailpit-1').getMappedPort(8025));
@@ -45,14 +62,7 @@ export default async () => {
   return async () => {
     log('Removendo a stack; os logs dos contêineres ficam em test-results/compose.log');
     try {
-      // Kept for a failure in the CI, where the stack is gone after the run.
-      mkdirSync(RESULTADOS, { recursive: true });
-      writeFileSync(
-        `${RESULTADOS}/compose.log`,
-        execFileSync('docker', ['compose', '-p', projeto, 'logs', '--no-color'], {
-          maxBuffer: 256 * 1024 * 1024,
-        }),
-      );
+      guardarLogs();
     } finally {
       await stack.down();
     }
