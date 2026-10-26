@@ -12,6 +12,10 @@ const participante = { id: 'participante-1', perfis: ['participante'] };
 const gestor = { id: 'gestor-1', perfis: ['participante', 'gestor'] };
 const agora = new Date('2026-11-10T15:00:00Z');
 const contexto = { pagamentoId: 'pagamento-1', eventId: 'evento-1', agora };
+const pedido = (valorConfirmadoEmCentavos: number, comprovanteId = 'arquivo-1') => ({
+  valorConfirmadoEmCentavos,
+  comprovanteId,
+});
 
 const aConfirmar = enviar(
   participante,
@@ -80,7 +84,7 @@ describe('cancelar', () => {
 
 describe('confirmar', () => {
   it('receives the pagamento por PIX with the comprovante, producing Pagamento recebido', () => {
-    expect(confirmar(gestor, aConfirmar, 3000, contexto)).toEqual({
+    expect(confirmar(gestor, aConfirmar, pedido(3000), contexto)).toEqual({
       ok: true,
       value: {
         comprovante: confirmado,
@@ -109,7 +113,7 @@ describe('confirmar', () => {
   });
 
   it('with the valor corrected by the gestor, the valor confirmado is what counts', () => {
-    expect(confirmar(gestor, aConfirmar, 2000, contexto)).toMatchObject({
+    expect(confirmar(gestor, aConfirmar, pedido(2000), contexto)).toMatchObject({
       ok: true,
       value: {
         comprovante: { valorEmCentavos: 3000, valorConfirmadoEmCentavos: 2000 },
@@ -120,16 +124,23 @@ describe('confirmar', () => {
   });
 
   it('only the gestor confirms, and only once', () => {
-    expect(confirmar(participante, aConfirmar, 3000, contexto)).toEqual({
+    expect(confirmar(participante, aConfirmar, pedido(3000), contexto)).toEqual({
       ok: false,
       error: 'sem-permissao',
     });
     for (const analisado of [confirmado, recusado]) {
-      expect(confirmar(gestor, analisado, 3000, contexto)).toEqual({
+      expect(confirmar(gestor, analisado, pedido(3000), contexto)).toEqual({
         ok: false,
         error: 'comprovante-ja-analisado',
       });
     }
+  });
+
+  it('refuses when the arquivo the gestor saw is no longer the one sent', () => {
+    expect(confirmar(gestor, aConfirmar, pedido(3000, 'arquivo-2'), contexto)).toEqual({
+      ok: false,
+      error: 'comprovante-alterado',
+    });
   });
 });
 

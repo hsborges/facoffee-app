@@ -18,6 +18,7 @@ import type {
   ComprovanteEnviado,
   ComprovanteErro,
   PedidoDeComprovante,
+  PedidoDeConfirmacao,
 } from '../domain/comprovante-enviado.js';
 import type { MinhaSituacao, Situacao } from '../domain/credito.js';
 import {
@@ -67,7 +68,7 @@ export type ApiDependencies = {
   readonly confirmarComprovante: (
     solicitante: Pick<Solicitante, 'perfis'>,
     id: string,
-    valorConfirmadoEmCentavos: number,
+    pedido: PedidoDeConfirmacao,
   ) => Promise<Result<string, ConfirmarComprovanteErro>>;
   readonly recusarComprovante: (
     solicitante: Pick<Solicitante, 'perfis'>,
@@ -130,6 +131,7 @@ const STATUS_DO_ERRO = {
   'comprovante-ja-usado': 409,
   'comprovante-enviado-nao-encontrado': 404,
   'comprovante-ja-analisado': 409,
+  'comprovante-alterado': 409,
   'recusa-sem-motivo': 400,
   'nota-nao-encontrada': 404,
   'nota-ja-usada': 409,
@@ -242,9 +244,9 @@ const baixado = (c: Context, result: Result<Arquivo, NaoEncontrado>) =>
  * The participante sends a comprovante with `POST /enviar-comprovante` (JSON, the valor and the
  * comprovante guardado) and, while a confirmar, edits or cancels it with
  * `POST /comprovante-enviado/:id/editar` and `/cancelar`; the gestor confirms it (receiving the
- * pagamento) or recusa it with `/confirmar` and `/recusar`. Leituras: `GET /comprovante-enviado`,
- * the comprovantes a confirmar, only for the gestor; `GET /comprovante-enviado/eu`, the
- * participante's own, with the situação of each. Any
+ * pagamento, for the arquivo they saw) or recusa it with `/confirmar` and `/recusar`. Leituras:
+ * `GET /comprovante-enviado`, the comprovantes a confirmar, only for the gestor;
+ * `GET /comprovante-enviado/eu`, the participante's own, with the situação of each. Any
  * participante registers a gasto with `POST /registrar-gasto` (JSON, with its tipo and referencing a
  * nota they guardaram).
  * The gestor reembolsa a gasto pago do próprio bolso with `POST /gasto/:id/reembolsar` and
@@ -383,9 +385,16 @@ export const createApp = ({
       if (!quem) return c.json({ error: 'unauthorized' }, 401);
       const id = c.req.param('id');
       if (!UUID.test(id)) return c.json({ error: 'comprovante-enviado-nao-encontrado' }, 404);
-      const valor = (await corpoJson(c))?.valorEmCentavos;
-      if (!inteiroPositivo(valor)) return c.json({ error: 'pedido-invalido' }, 400);
-      return criado(c, await confirmarComprovante(quem, id.toLowerCase(), valor));
+      const pedido = await pedidoDeComprovante(c);
+      if (!pedido) return c.json({ error: 'pedido-invalido' }, 400);
+      const { valorEmCentavos: valorConfirmadoEmCentavos, comprovanteId } = pedido;
+      return criado(
+        c,
+        await confirmarComprovante(quem, id.toLowerCase(), {
+          valorConfirmadoEmCentavos,
+          comprovanteId,
+        }),
+      );
     })
     .post('/comprovante-enviado/:id/recusar', limiteDoPedido, async (c) => {
       const quem = solicitante(c);

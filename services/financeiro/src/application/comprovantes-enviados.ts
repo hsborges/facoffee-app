@@ -8,6 +8,7 @@ import {
   editar,
   enviar,
   type PedidoDeComprovante,
+  type PedidoDeConfirmacao,
   type RecusarErro,
   recusar,
 } from '../domain/comprovante-enviado.js';
@@ -35,12 +36,15 @@ export type ComprovantesEnviados = {
   ) => Promise<Result<void, JaAnalisado | 'comprovante-ja-usado'>>;
   readonly recusar: (comprovante: ComprovanteEnviado) => Promise<Result<void, JaAnalisado>>;
   readonly remover: (id: string) => Promise<Result<void, JaAnalisado>>;
-  /** Saves the confirmação, the pagamento and its events (outbox) in the same transaction. */
+  /**
+   * Saves the confirmação, the pagamento and its events (outbox) in the same transaction; nothing
+   * if the arquivo changed since `comprovante` was read.
+   */
   readonly confirmar: (
     comprovante: ComprovanteEnviado,
     pagamento: Pagamento,
     events: readonly Event[],
-  ) => Promise<Result<void, JaAnalisado | SalvarPagamentoErro>>;
+  ) => Promise<Result<void, JaAnalisado | 'comprovante-alterado' | SalvarPagamentoErro>>;
 };
 
 type ArquivoDoParticipante = (participanteId: string, id: string) => Promise<boolean>;
@@ -117,20 +121,21 @@ export type ConfirmarComprovanteErro = ConfirmarErro | NaoEncontrado | SalvarPag
 
 /**
  * Use case: *Confirmar comprovante*. The gestor receives the pagamento with the valor confirmado,
- * once per comprovante. Stores *Pagamento recebido* in the outbox and gives the id of the pagamento.
+ * once per comprovante and only for the arquivo they saw. Stores *Pagamento recebido* in the outbox
+ * and gives the id of the pagamento.
  */
 export const confirmarComprovante =
   (comprovantes: ComprovantesEnviados, clock: Clock) =>
   async (
     solicitante: Pick<Solicitante, 'perfis'>,
     id: string,
-    valorConfirmadoEmCentavos: number,
+    pedido: PedidoDeConfirmacao,
   ): Promise<Result<string, ConfirmarComprovanteErro>> => {
     // Before the lookup, so only the gestor learns whether a comprovante exists.
     if (!solicitante.perfis.includes('gestor')) return fail('sem-permissao');
     const atual = await comprovantes.buscar(id);
     if (!atual) return fail('comprovante-enviado-nao-encontrado');
-    const result = confirmar(solicitante, atual, valorConfirmadoEmCentavos, {
+    const result = confirmar(solicitante, atual, pedido, {
       pagamentoId: clock.newId(),
       eventId: clock.newId(),
       agora: clock.now(),

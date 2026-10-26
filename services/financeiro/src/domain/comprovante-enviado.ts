@@ -67,18 +67,25 @@ export const cancelar = (
   comprovante: ComprovanteEnviado,
 ): Result<void, ComprovanteErro> => aConfirmarDo(solicitante, comprovante);
 
+/** What the gestor informs when confirming: the valor confirmado and the arquivo they saw. */
+export type PedidoDeConfirmacao = {
+  readonly valorConfirmadoEmCentavos: number;
+  readonly comprovanteId: string;
+};
+
 /** Why the gestor could not confirm a comprovante enviado. */
-export type ConfirmarErro = ReceberErro | 'comprovante-ja-analisado';
+export type ConfirmarErro = ReceberErro | 'comprovante-ja-analisado' | 'comprovante-alterado';
 
 /**
  * *Confirmar comprovante*: the gestor receives the pagamento por PIX with the comprovante, for the
  * valor confirmado, which may correct the valor informed. Produces *Pagamento recebido*, as when
- * the gestor receives the pagamento directly.
+ * the gestor receives the pagamento directly. Refused if the participante changed the arquivo
+ * since the gestor saw it.
  */
 export const confirmar = (
   solicitante: Pick<Solicitante, 'perfis'>,
   comprovante: ComprovanteEnviado,
-  valorConfirmadoEmCentavos: number,
+  { valorConfirmadoEmCentavos, comprovanteId: visto }: PedidoDeConfirmacao,
   contexto: { readonly pagamentoId: string; readonly eventId: string; readonly agora: Date },
 ): Result<
   {
@@ -96,6 +103,7 @@ export const confirmar = (
   );
   if (!recebido.ok) return recebido;
   if (comprovante.situacao !== 'a-confirmar') return fail('comprovante-ja-analisado');
+  if (comprovanteId !== visto) return fail('comprovante-alterado');
   return ok({
     ...recebido.value,
     comprovante: { ...comprovante, situacao: 'confirmado', valorConfirmadoEmCentavos },

@@ -4,7 +4,7 @@ import type { ComprovanteEnviado } from '../../domain/comprovante-enviado.js';
 import { fail, ok } from '../../domain/result.js';
 import type { Executor } from './database.js';
 import { pagamentoRepository } from './pagamento-repository.js';
-import { participantes, comprovantesEnviados as tabela } from './schema.js';
+import { pagamentos, participantes, comprovantesEnviados as tabela } from './schema.js';
 
 const doBanco = ({
   situacao,
@@ -12,12 +12,25 @@ const doBanco = ({
   motivo,
   ...comprovante
 }: typeof tabela.$inferSelect): ComprovanteEnviado => {
+  // The `analise` check guarantees the valor confirmado of a confirmado and the motivo of a recusado.
   if (situacao === 'confirmado') {
-    return { ...comprovante, situacao, valorConfirmadoEmCentavos: valorConfirmadoEmCentavos ?? 0 };
+    return {
+      ...comprovante,
+      situacao,
+      valorConfirmadoEmCentavos: valorConfirmadoEmCentavos as number,
+    };
   }
-  if (situacao === 'recusado') return { ...comprovante, situacao, motivo: motivo ?? '' };
+  if (situacao === 'recusado') return { ...comprovante, situacao, motivo: motivo as string };
   return { ...comprovante, situacao };
 };
+
+const usadoEmPagamento = async (db: Executor, comprovanteId: string) =>
+  (
+    await db
+      .select({ id: pagamentos.id })
+      .from(pagamentos)
+      .where(eq(pagamentos.comprovanteId, comprovanteId))
+  ).length > 0;
 
 const aConfirmar = (id: string) => and(eq(tabela.id, id), eq(tabela.situacao, 'a-confirmar'));
 
@@ -48,7 +61,8 @@ export const comprovanteEnviadoRepository = (db: Executor): ComprovantesEnviados
         .where(eq(tabela.participanteId, participanteId))
         .orderBy(desc(tabela.enviadoEm), desc(tabela.id))
     ).map(doBanco),
-  // The unique comprovante_id makes an arquivo sent twice save nothing.
+  // The unique comprovante_id makes an arquivo sent twice save nothing; nor does an arquivo already
+  // used in a pagamento, which could never be confirmado.
   salvar: (comprovante) =>
     db.transaction(async (tx) => {
       const [conhecido] = await tx
@@ -56,6 +70,9 @@ export const comprovanteEnviadoRepository = (db: Executor): ComprovantesEnviados
         .from(participantes)
         .where(eq(participantes.id, comprovante.participanteId));
       if (!conhecido) return fail('participante-nao-encontrado' as const);
+      if (await usadoEmPagamento(tx, comprovante.comprovanteId)) {
+        return fail('comprovante-ja-usado' as const);
+      }
       const saved = await tx
         .insert(tabela)
         .values(comprovante)
@@ -69,7 +86,9 @@ export const comprovanteEnviadoRepository = (db: Executor): ComprovantesEnviados
         .select({ id: tabela.id })
         .from(tabela)
         .where(and(eq(tabela.comprovanteId, comprovanteId), ne(tabela.id, id)));
-      if (usado) return fail('comprovante-ja-usado' as const);
+      if (usado || (await usadoEmPagamento(tx, comprovanteId))) {
+        return fail('comprovante-ja-usado' as const);
+      }
       const saved = await tx
         .update(tabela)
         .set({ comprovanteId, valorEmCentavos })
@@ -90,15 +109,19 @@ export const comprovanteEnviadoRepository = (db: Executor): ComprovantesEnviados
     const removed = await db.delete(tabela).where(aConfirmar(id)).returning({ id: tabela.id });
     return removed.length === 0 ? fail('comprovante-ja-analisado') : ok(undefined);
   },
-  // The row lock holds any other change until the pagamento is saved, or nothing is.
+  // The row lock holds any other change until the pagamento is saved, or nothing is; an edição
+  // saved since `comprovante` was read changes nothing.
   confirmar: (comprovante, pagamento, events) =>
     db.transaction(async (tx) => {
       const [atual] = await tx
-        .select({ situacao: tabela.situacao })
+        .select({ situacao: tabela.situacao, comprovanteId: tabela.comprovanteId })
         .from(tabela)
         .where(eq(tabela.id, comprovante.id))
         .for('update');
       if (atual?.situacao !== 'a-confirmar') return fail('comprovante-ja-analisado' as const);
+      if (atual.comprovanteId !== comprovante.comprovanteId) {
+        return fail('comprovante-alterado' as const);
+      }
       const salvo = await pagamentoRepository(tx).salvar(pagamento, events);
       if (!salvo.ok) return salvo;
       await tx

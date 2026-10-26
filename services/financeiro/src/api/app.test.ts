@@ -491,9 +491,15 @@ describe('comprovante enviado', () => {
     const { api, id, comprovanteId } = await enviado();
     const confirmar = (headers: object, body?: unknown) =>
       json(api, `/comprovante-enviado/${id}/confirmar`, headers, body);
-    const comValor = { valorEmCentavos: 2000 };
+    const comValor = { valorEmCentavos: 2000, comprovanteId: comprovanteId.toUpperCase() };
     expect((await confirmar(doParticipante, comValor)).status).toBe(403);
-    for (const body of [{}, { valorEmCentavos: 0 }, undefined]) {
+    for (const body of [
+      {},
+      { valorEmCentavos: 0, comprovanteId },
+      { valorEmCentavos: 2000 },
+      { valorEmCentavos: 2000, comprovanteId: 'abc' },
+      undefined,
+    ]) {
       const invalido = await confirmar(gestor, body);
       expect(invalido.status).toBe(400);
     }
@@ -521,6 +527,24 @@ describe('comprovante enviado', () => {
     }
   });
 
+  it('409 when the participante changed the arquivo after the gestor saw it', async () => {
+    const { api, id, comprovanteId } = await enviado();
+    const outroArquivo = await guardar(api);
+    await json(api, `/comprovante-enviado/${id}/editar`, doParticipante, {
+      valorEmCentavos: 3000,
+      comprovanteId: outroArquivo,
+    });
+    const response = await json(api, `/comprovante-enviado/${id}/confirmar`, gestor, {
+      valorEmCentavos: 3000,
+      comprovanteId,
+    });
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: 'comprovante-alterado' });
+    expect(await ler(api, '/comprovante-enviado', gestor)).toMatchObject([
+      { id, comprovanteId: outroArquivo, situacao: 'a-confirmar' },
+    ]);
+  });
+
   it('is recusado by the gestor only with a motivo, which the participante sees', async () => {
     const { api, id } = await enviado();
     const recusar = (headers: object, body: unknown) =>
@@ -546,6 +570,7 @@ describe('comprovante enviado', () => {
     for (const id of [outro, 'abc']) {
       const response = await json(app(), `/comprovante-enviado/${id}/confirmar`, gestor, {
         valorEmCentavos: 3000,
+        comprovanteId: outro,
       });
       expect(response.status).toBe(404);
       expect(await response.json()).toEqual({ error: 'comprovante-enviado-nao-encontrado' });

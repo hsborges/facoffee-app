@@ -50,6 +50,13 @@
       "when": 1793043251780,
       "tag": "0006_comprovantes_enviados",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793046627548,
+      "tag": "0007_analise_dos_comprovantes_enviados",
+      "breakpoints": true
     }
   ]
 }

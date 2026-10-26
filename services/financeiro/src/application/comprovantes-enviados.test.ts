@@ -59,6 +59,9 @@ const inMemory = () => {
     },
     confirmar: async (comprovante, pagamento, newEvents) => {
       if (!aConfirmar(comprovante.id)) return fail('comprovante-ja-analisado');
+      if (salvos.get(comprovante.id)?.comprovanteId !== comprovante.comprovanteId) {
+        return fail('comprovante-alterado');
+      }
       salvos.set(comprovante.id, comprovante);
       pagamentos.push(pagamento);
       events.push(...newEvents);
@@ -83,6 +86,10 @@ const inMemory = () => {
 };
 
 const pedido = { comprovanteId: 'arquivo-1', valorEmCentavos: 3000 };
+const confirmacao = (valorConfirmadoEmCentavos: number) => ({
+  valorConfirmadoEmCentavos,
+  comprovanteId: 'arquivo-1',
+});
 
 describe('enviarComprovante', () => {
   it('saves the comprovante a confirmar, without any pagamento', async () => {
@@ -155,7 +162,7 @@ describe('editarComprovante and cancelarComprovante', () => {
     const { enviar, editar, cancelar, confirmar, recusar } = inMemory();
     await enviar(participante, pedido);
     await enviar(participante, { ...pedido, comprovanteId: 'arquivo-2' });
-    await confirmar(gestor, 'id-1', 3000);
+    await confirmar(gestor, 'id-1', confirmacao(3000));
     await recusar(gestor, 'id-2', 'Ilegível');
     for (const id of ['id-1', 'id-2']) {
       expect(await editar(participante, id, pedido)).toEqual({
@@ -174,7 +181,7 @@ describe('confirmarComprovante', () => {
   it('receives the pagamento with the valor confirmado and stores Pagamento recebido', async () => {
     const { salvos, pagamentos, events, enviar, confirmar } = inMemory();
     await enviar(participante, pedido);
-    expect(await confirmar(gestor, 'id-1', 2000)).toEqual({ ok: true, value: 'id-2' });
+    expect(await confirmar(gestor, 'id-1', confirmacao(2000))).toEqual({ ok: true, value: 'id-2' });
     expect(salvos.get('id-1')).toMatchObject({
       situacao: 'confirmado',
       valorConfirmadoEmCentavos: 2000,
@@ -197,8 +204,8 @@ describe('confirmarComprovante', () => {
   it('confirms once only', async () => {
     const { pagamentos, enviar, confirmar, recusar } = inMemory();
     await enviar(participante, pedido);
-    await confirmar(gestor, 'id-1', 3000);
-    expect(await confirmar(gestor, 'id-1', 3000)).toEqual({
+    await confirmar(gestor, 'id-1', confirmacao(3000));
+    expect(await confirmar(gestor, 'id-1', confirmacao(3000))).toEqual({
       ok: false,
       error: 'comprovante-ja-analisado',
     });
@@ -209,11 +216,22 @@ describe('confirmarComprovante', () => {
     expect(pagamentos).toHaveLength(1);
   });
 
+  it('refuses an arquivo the participante changed after the gestor saw it', async () => {
+    const { pagamentos, enviar, editar, confirmar } = inMemory();
+    await enviar(participante, pedido);
+    await editar(participante, 'id-1', { ...pedido, comprovanteId: 'arquivo-2' });
+    expect(await confirmar(gestor, 'id-1', confirmacao(3000))).toEqual({
+      ok: false,
+      error: 'comprovante-alterado',
+    });
+    expect(pagamentos).toEqual([]);
+  });
+
   it('refuses someone other than the gestor before looking for the comprovante', async () => {
     const { enviar, confirmar, recusar } = inMemory();
     await enviar(participante, pedido);
     for (const id of ['id-1', 'nao-existe']) {
-      expect(await confirmar(participante, id, 3000)).toEqual({
+      expect(await confirmar(participante, id, confirmacao(3000))).toEqual({
         ok: false,
         error: 'sem-permissao',
       });
@@ -222,7 +240,7 @@ describe('confirmarComprovante', () => {
         error: 'sem-permissao',
       });
     }
-    expect(await confirmar(gestor, 'nao-existe', 3000)).toEqual({
+    expect(await confirmar(gestor, 'nao-existe', confirmacao(3000))).toEqual({
       ok: false,
       error: 'comprovante-enviado-nao-encontrado',
     });
@@ -245,7 +263,7 @@ describe('leituras', () => {
     const { repositorio, enviar, confirmar } = inMemory();
     await enviar(participante, pedido);
     await enviar(participante, { ...pedido, comprovanteId: 'arquivo-2' });
-    await confirmar(gestor, 'id-1', 3000);
+    await confirmar(gestor, 'id-1', confirmacao(3000));
 
     expect(await listarComprovantesAConfirmar(repositorio.aConfirmar)(gestor)).toMatchObject({
       ok: true,

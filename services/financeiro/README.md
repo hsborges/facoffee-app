@@ -35,14 +35,14 @@ Guardados num bucket S3 ([ADR 0018](../../docs/adr/0018-armazenamento-de-comprov
 
 ## Comprovante enviado
 
-O participante envia o próprio comprovante, que fica a confirmar até o gestor confirmar ou recusar ([ADR 0030](../../docs/adr/0030-pagamento-iniciado-pelo-participante.md)). Antes da confirmação, não conta em *Crédito e pendentes* nem no *Saldo da caixinha*. Fica na tabela `comprovantes_enviados`, com o `comprovante_id` único (um arquivo, um envio); o cancelado é apagado. Toda mudança só vale se o comprovante ainda está a confirmar, então confirmar e recusar ao mesmo tempo dá um 2xx e um 409.
+O participante envia o próprio comprovante, que fica a confirmar até o gestor confirmar ou recusar ([ADR 0030](../../docs/adr/0030-pagamento-iniciado-pelo-participante.md)). Antes da confirmação, não conta em *Crédito e pendentes* nem no *Saldo da caixinha*. Fica na tabela `comprovantes_enviados`, com o `comprovante_id` único (um arquivo, um envio); o cancelado é apagado. Toda mudança só vale se o comprovante ainda está a confirmar, então confirmar e recusar ao mesmo tempo dá um 2xx e um 409. A confirmação informa o arquivo que o gestor conferiu e é recusada se o participante o trocou depois. Uma restrição `analise` garante o valor confirmado no confirmado e o motivo no recusado.
 
 | Rota | Quem | Resposta |
 |---|---|---|
 | `POST /enviar-comprovante`, JSON `{ valorEmCentavos, comprovanteId }` (o `id` de `/guardar-comprovante`, guardado para si) | o participante | `201 { id }` |
 | `POST /comprovante-enviado/:id/editar`, JSON `{ valorEmCentavos, comprovanteId }` (o mesmo ou outro arquivo guardado para si) | o participante do comprovante | `204` |
 | `POST /comprovante-enviado/:id/cancelar` | o participante do comprovante | `204` |
-| `POST /comprovante-enviado/:id/confirmar`, JSON `{ valorEmCentavos }` (o valor confirmado, que pode corrigir o informado) | só o gestor | `201 { id }` do pagamento; publica *Pagamento recebido* pela outbox |
+| `POST /comprovante-enviado/:id/confirmar`, JSON `{ valorEmCentavos, comprovanteId }` (o valor confirmado, que pode corrigir o informado, e o arquivo conferido) | só o gestor | `201 { id }` do pagamento; publica *Pagamento recebido* pela outbox |
 | `POST /comprovante-enviado/:id/recusar`, JSON `{ motivo }` (até 500 caracteres) | só o gestor | `204` |
 | `GET /comprovante-enviado` → `200 [{ id, participanteId, comprovanteId, valorEmCentavos, enviadoEm, situacao }]`, os a confirmar, do mais antigo ao mais recente | só o gestor (os demais, 403) | |
 | `GET /comprovante-enviado/eu` → `200 [...]`, os próprios, do mais recente ao mais antigo, com `valorConfirmadoEmCentavos` no confirmado e `motivo` no recusado | o participante | |
@@ -54,6 +54,7 @@ O participante envia o próprio comprovante, que fica a confirmar até o gestor 
 | arquivo não guardado para quem envia (`comprovante-nao-encontrado`); quem envia não é um participante que Financeiro conhece (`participante-nao-encontrado`) | 404 |
 | comprovante que não existe ou, ao editar e cancelar, de outro participante (`comprovante-enviado-nao-encontrado`) | 404 |
 | comprovante já confirmado ou recusado (`comprovante-ja-analisado`) | 409 |
+| ao confirmar, arquivo trocado pelo participante depois que o gestor o conferiu (`comprovante-alterado`) | 409 |
 | arquivo já enviado em outro comprovante ou já usado em outro pagamento (`comprovante-ja-usado`) | 409 |
 
 ## Registrar gasto

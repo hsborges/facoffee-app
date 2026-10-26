@@ -1,6 +1,8 @@
+import { sql } from 'drizzle-orm';
 import {
   bigint,
   boolean,
+  check,
   integer,
   jsonb,
   pgTable,
@@ -51,20 +53,31 @@ export const pagamentos = pgTable('pagamentos', {
 /**
  * Comprovantes the participantes enviaram; an arquivo is sent once only, and a comprovante
  * cancelado is deleted. `valor_confirmado_em_centavos` is set only when confirmado, `motivo` only
- * when recusado.
+ * when recusado, as the `analise` check enforces.
  */
-export const comprovantesEnviados = pgTable('comprovantes_enviados', {
-  id: uuid('id').primaryKey(),
-  participanteId: uuid('participante_id')
-    .notNull()
-    .references(() => participantes.id),
-  comprovanteId: uuid('comprovante_id').notNull().unique(),
-  valorEmCentavos: integer('valor_em_centavos').notNull(),
-  enviadoEm: instant('enviado_em').notNull(),
-  situacao: text('situacao').$type<Analise['situacao']>().notNull(),
-  valorConfirmadoEmCentavos: integer('valor_confirmado_em_centavos'),
-  motivo: text('motivo'),
-});
+export const comprovantesEnviados = pgTable(
+  'comprovantes_enviados',
+  {
+    id: uuid('id').primaryKey(),
+    participanteId: uuid('participante_id')
+      .notNull()
+      .references(() => participantes.id),
+    comprovanteId: uuid('comprovante_id').notNull().unique(),
+    valorEmCentavos: integer('valor_em_centavos').notNull(),
+    enviadoEm: instant('enviado_em').notNull(),
+    situacao: text('situacao').$type<Analise['situacao']>().notNull(),
+    valorConfirmadoEmCentavos: integer('valor_confirmado_em_centavos'),
+    motivo: text('motivo'),
+  },
+  (t) => [
+    check(
+      'analise',
+      sql`(${t.situacao} = 'a-confirmar' and ${t.valorConfirmadoEmCentavos} is null and ${t.motivo} is null)
+        or (${t.situacao} = 'confirmado' and ${t.valorConfirmadoEmCentavos} is not null and ${t.motivo} is null)
+        or (${t.situacao} = 'recusado' and ${t.motivo} is not null and ${t.valorConfirmadoEmCentavos} is null)`,
+    ),
+  ],
+);
 
 /** Gastos feitos; a nota belongs to one gasto only. */
 export const gastos = pgTable('gastos', {
