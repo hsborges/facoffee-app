@@ -28,7 +28,7 @@ const PERFIS = [
     itens: [
       'Entrar, trocar de tipo de cota e sair.',
       'Ver o saldo da caixinha e o total gasto no ano anterior.',
-      'Registrar um gasto com a nota e receber o reembolso.',
+      'Registrar um gasto com a nota e, se pagou do próprio bolso, receber o reembolso.',
       'Receber avisos por e-mail: valor da cota, pagamento recebido, complemento e reembolso.',
     ],
   },
@@ -63,15 +63,15 @@ export const PaginaInicial = ({ entrar }: { entrar: () => void }) => (
           <h1 id="heroi-titulo">A copa organizada, sem ninguém precisar cobrar.</h1>
           <p className="destaque">
             Professores e técnicos administrativos da FACOM dividem o custo do café e dos demais
-            itens da copa. O FACOFFEE mostra quem participa, quem pagou e quanto tem na caixinha.
+            itens da copa. O FACOFFEE organiza quem participa, quem pagou e quanto tem na caixinha.
           </p>
           <button type="button" className="grande" onClick={entrar}>
             Entrar
           </button>
           <p className="nota">Acesso pelo Passaporte UFMS.</p>
         </div>
-        <aside className="cartao" aria-labelledby="tipos-titulo">
-          <h2 id="tipos-titulo">Tipos de cota</h2>
+        <div className="cartao">
+          <h2>Tipos de cota</h2>
           <dl>
             {(['so-cafe', 'completa'] as const).map((tipo) => (
               <div key={tipo}>
@@ -84,7 +84,7 @@ export const PaginaInicial = ({ entrar }: { entrar: () => void }) => (
             O gestor define o valor de cada tipo no início do ano, com base nos gastos do ano
             anterior.
           </p>
-        </aside>
+        </div>
       </section>
 
       <section aria-labelledby="passos-titulo">
