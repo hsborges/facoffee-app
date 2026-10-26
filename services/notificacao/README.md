@@ -28,7 +28,7 @@ Participante sem contato fica sem e-mail, com um aviso no log. Payload inválido
 | *Cota de \<mês\>* | O pendente cuja cota mais recente, em Financeiro, é a do mês atual. Quem tem a cota abatida do crédito não está pendente e não recebe. |
 | *Lembrete da copa* | A partir do dia 10, cada pendente, uma vez no mês. Quem recebe o aviso da cota devida do dia 10 em diante não recebe outro. |
 
-Cada e-mail cita só a pendência do próprio participante. A tabela `lembretes` tem chave única (participante, mês, tipo): disparos repetidos ou simultâneos não duplicam e-mail. Responde `{ lembretes }`, quantos foram registrados agora. Financeiro ou Usuário fora do ar: 500, e o agendador tenta de novo na hora seguinte. O dia do lembrete é `DIA_DO_LEMBRETE`, em `src/domain/lembrete.ts`.
+Cada e-mail cita só a pendência do próprio participante. A tabela `lembretes` tem chave única (participante, mês, tipo): disparos repetidos ou simultâneos não duplicam e-mail. Responde `{ lembretes }`, quantos foram registrados agora. Financeiro ou Usuário fora do ar: 500, e o agendador tenta de novo na hora seguinte. Nada sai antes das 8h (`HORA_DOS_LEMBRETES`). O dia do lembrete é `DIA_DO_LEMBRETE`, em `src/domain/lembrete.ts`.
 
 ## Envio
 
@@ -46,6 +46,7 @@ Um processo à parte envia os e-mails devidos a cada segundo. Falha no envio nã
 | `FINANCEIRO_URL` | `http://financeiro:3000` |
 | `SMTP_URL` | `smtp://localhost:1025` (Mailpit); no Gmail, `smtps://<conta>:<senha-de-app>@smtp.gmail.com:465` |
 | `SMTP_FROM` | `FACOFFEE <facoffee@localhost>` |
+| `HORA_DOS_LEMBRETES` | `8` (padrão; hora de Campo Grande, de 0 a 23, a partir da qual saem o aviso da cota devida e o lembrete; o teste e2e usa `0`) |
 
 ## Comandos
 

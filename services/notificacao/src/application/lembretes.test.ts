@@ -62,4 +62,18 @@ describe('lembrarPendentes', () => {
     );
     await expect(lembrar(dia10)).rejects.toThrow('financeiro fora do ar');
   });
+
+  it('usa a hora dos lembretes configurada', async () => {
+    const madrugada = new Date('2026-11-10T05:00:00Z'); // 1h em Campo Grande.
+    const lembrar = (hora?: number) =>
+      lembrarPendentes(
+        async () => pendentes,
+        async () => [],
+        buscarContato,
+        async (_, lista) => lista.length,
+        hora,
+      )(madrugada);
+    expect(await lembrar()).toMatchObject({ lembretes: 0 });
+    expect(await lembrar(0)).toMatchObject({ lembretes: 4 });
+  });
 });

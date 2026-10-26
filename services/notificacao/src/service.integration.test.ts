@@ -8,7 +8,6 @@ import { eq, TransactionRollbackError } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Contato } from './domain/aviso.js';
-import { diaEmCampoGrande } from './domain/lembrete.js';
 import { queues } from './infra/consumer.js';
 import { connectDatabase, type Executor } from './infra/db/database.js';
 import { emails } from './infra/db/schema.js';
@@ -124,7 +123,9 @@ describe('service', () => {
     }).fetch,
     port: 0,
   });
-  const cota = { mes: diaEmCampoGrande(new Date()).mes, valorEmCentavos: 3000 };
+  // 10 de novembro, 9h em Campo Grande: the cota devida of the month and the lembrete are due.
+  const agora = new Date('2026-11-10T13:00:00Z');
+  const cota = { mes: '2026-11', valorEmCentavos: 3000 };
   const financeiro = serve({
     fetch: new Hono().get('/pendente', (c) =>
       c.json([{ id: cia.id, pendenteEmCentavos: 3000, cota }]),
@@ -142,8 +143,14 @@ describe('service', () => {
 
   beforeAll(async () => {
     running = await startService(
-      { ...config, usuarioUrl: await urlDe(usuario), financeiroUrl: await urlDe(financeiro) },
+      {
+        ...config,
+        usuarioUrl: await urlDe(usuario),
+        financeiroUrl: await urlDe(financeiro),
+        horaDosLembretes: 8,
+      },
       logger,
+      () => agora,
     );
     await running.ready();
   });
@@ -187,9 +194,8 @@ describe('service', () => {
         r.json(),
       );
     const respostas = await Promise.all([lembrar(), lembrar()]);
-    expect(respostas.map((r) => r.lembretes).sort()).toEqual(
-      diaEmCampoGrande(new Date()).dia >= 10 ? [0, 2] : [0, 1],
-    );
+    // The cota devida from the dia 10 on is already the lembrete: two registered, one e-mail.
+    expect(respostas.map((r) => r.lembretes).sort()).toEqual([0, 2]);
 
     const assuntos = await eventually(async () => {
       const caixa = await caixaDe(cia.email);

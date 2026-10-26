@@ -17,17 +17,27 @@ const deAntes: Pendente = {
 
 // Intl puts a non-breaking space after R$.
 const reais = (texto: string | undefined) => texto?.replaceAll('\u00a0', ' ');
+// The dia of November 2026, at 9h in Campo Grande unless said.
+const em = (dia: number, hora = 9) => ({ mes: '2026-11', dia, hora });
 
 describe('diaEmCampoGrande', () => {
   it('vira o mês à meia-noite de Campo Grande, não de UTC', () => {
-    expect(diaEmCampoGrande(new Date('2026-11-01T03:59:00Z'))).toEqual({ mes: '2026-10', dia: 31 });
-    expect(diaEmCampoGrande(new Date('2026-11-01T04:00:00Z'))).toEqual({ mes: '2026-11', dia: 1 });
+    expect(diaEmCampoGrande(new Date('2026-11-01T03:59:00Z'))).toEqual({
+      mes: '2026-10',
+      dia: 31,
+      hora: 23,
+    });
+    expect(diaEmCampoGrande(new Date('2026-11-01T04:00:00Z'))).toEqual({
+      mes: '2026-11',
+      dia: 1,
+      hora: 0,
+    });
   });
 });
 
 describe('lembretesDevidos', () => {
   it('no início do mês avisa a cota devida só a quem tem a cota do mês pendente', () => {
-    const lembretes = lembretesDevidos([comCotaDoMes, deAntes], '2026-11', 1, []);
+    const lembretes = lembretesDevidos([comCotaDoMes, deAntes], em(1), []);
     expect(lembretes).toEqual([
       {
         participanteId: ana,
@@ -46,7 +56,7 @@ describe('lembretesDevidos', () => {
   });
 
   it('a partir do dia 10 lembra cada pendente uma vez no mês, sem expor ninguém', () => {
-    const lembretes = lembretesDevidos([comCotaDoMes, deAntes], '2026-11', 10, [
+    const lembretes = lembretesDevidos([comCotaDoMes, deAntes], em(10), [
       { participanteId: ana, tipo: 'cota-devida' },
     ]);
     expect(lembretes.map(({ participanteId, tipo }) => [participanteId, tipo])).toEqual([
@@ -65,21 +75,26 @@ describe('lembretesDevidos', () => {
       { participanteId: ana, tipo: 'cota-devida' as const },
       { participanteId: ana, tipo: 'lembrete' as const },
     ];
-    expect(lembretesDevidos([comCotaDoMes], '2026-11', 20, registrados)).toEqual([]);
+    expect(lembretesDevidos([comCotaDoMes], em(20), registrados)).toEqual([]);
   });
 
   it('a cota devida avisada a partir do dia 10 já é o lembrete do mês: um e-mail só', () => {
-    const lembretes = lembretesDevidos([comCotaDoMes], '2026-11', 15, []);
+    const lembretes = lembretesDevidos([comCotaDoMes], em(15), []);
     expect(lembretes.map(({ tipo, aviso }) => [tipo, aviso?.assunto])).toEqual([
       ['cota-devida', 'Cota de novembro de 2026'],
       ['lembrete', undefined],
     ]);
   });
 
+  it('não manda nada de madrugada: espera as 8h de Campo Grande', () => {
+    expect(lembretesDevidos([comCotaDoMes, deAntes], em(10, 7), [])).toEqual([]);
+    expect(lembretesDevidos([comCotaDoMes, deAntes], em(10, 8), [])).toHaveLength(3);
+  });
+
   it('lembra também quem está pendente sem cota, por um complemento', () => {
     const soComplemento = { id: ana, pendenteEmCentavos: 500, cota: null };
-    expect(lembretesDevidos([soComplemento], '2026-11', 1, [])).toEqual([]);
-    expect(lembretesDevidos([soComplemento], '2026-11', 10, [])).toMatchObject([
+    expect(lembretesDevidos([soComplemento], em(1), [])).toEqual([]);
+    expect(lembretesDevidos([soComplemento], em(10), [])).toMatchObject([
       { participanteId: ana, tipo: 'lembrete' },
     ]);
   });

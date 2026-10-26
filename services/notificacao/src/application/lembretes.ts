@@ -26,7 +26,7 @@ export type Registrar = (
  * Policy *Lembrar os pendentes*, fired by the agendador (ADR 0027): avisa the cota devida and
  * lembra each pendente once a month, only them and only about their own pendência. Resolves with
  * how many lembretes were registered and the participantes left without e-mail for having no
- * contato.
+ * contato. Before `horaDosLembretes`, in Campo Grande, none is due.
  */
 export const lembrarPendentes =
   (
@@ -34,18 +34,22 @@ export const lembrarPendentes =
     buscarRegistrados: BuscarRegistrados,
     buscarContato: BuscarContato,
     registrar: Registrar,
+    horaDosLembretes?: number,
   ) =>
   async (agora: Date) => {
-    const { mes, dia } = diaEmCampoGrande(agora);
-    const [pendentes, registrados] = await Promise.all([buscarPendentes(), buscarRegistrados(mes)]);
-    const devidos = lembretesDevidos(pendentes, mes, dia, registrados);
+    const quando = diaEmCampoGrande(agora);
+    const [pendentes, registrados] = await Promise.all([
+      buscarPendentes(),
+      buscarRegistrados(quando.mes),
+    ]);
+    const devidos = lembretesDevidos(pendentes, quando, registrados, horaDosLembretes);
     const ids = devidos.flatMap(({ aviso }) => (aviso ? [aviso.participanteId] : []));
     const contatos = (await Promise.all(ids.map(buscarContato))).filter(
       (c): c is Contato => c !== undefined,
     );
     const porId = new Map(contatos.map((c) => [c.id, c]));
     const lembretes = await registrar(
-      mes,
+      quando.mes,
       devidos.map(({ participanteId, tipo, aviso }) => {
         const contato = porId.get(participanteId);
         return {

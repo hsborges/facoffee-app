@@ -13,6 +13,10 @@ services:
   mailpit:
     ports: !override
       - "127.0.0.1::8025"
+  # The e2e test checks the e-mail of the cota devida at any hour, not only from 8h (ADR 0027).
+  notificacao:
+    environment:
+      HORA_DOS_LEMBRETES: "0"
   rabbitmq:
     ports: !reset []
   postgres:

@@ -28,7 +28,7 @@ Complementa o ADR 0001, o ADR 0017 e o ADR 0020, sem substituí-los. Nenhum even
 - **Aviso da cota devida**: quando a cota mais recente é do mês atual. Antes de Financeiro registrar a cota do mês, ela ainda é a do mês anterior, e o aviso espera o próximo disparo; assim não há corrida com *Cota devida*.
 - **Lembrete**: a partir do dia 10, uma vez no mês. A cota devida avisada do dia 10 em diante (quem entrou no meio do mês) já conta como o lembrete do mês: um e-mail só.
 
-Cada e-mail vai só ao próprio participante e cita só a pendência dele. Responde `{ lembretes }`.
+Nada sai antes das 8h de Campo Grande, para ninguém receber cobrança de madrugada. Cada e-mail vai só ao próprio participante e cita só a pendência dele. Responde `{ lembretes }`.
 
 **Idempotência**: a tabela `lembretes` tem chave única (participante, mês, tipo), `tipo` `cota-devida` ou `lembrete`. Os lembretes de um disparo entram numa transação com `on conflict do nothing`, e só o lembrete gravado ali guarda o seu e-mail na tabela `emails`, enviado como os demais (ADR 0020), com o id do lembrete em `evento_id`. Disparos repetidos ou simultâneos não duplicam e-mail.
 
@@ -41,12 +41,12 @@ Ganhos:
 - O pendente é lembrado sem ação do gestor, e ninguém vê a pendência de outro.
 - Quem tem crédito não recebe aviso nem lembrete; a conta continua só em Financeiro, sem cópia em Notificação.
 - Sem contrato de evento novo e sem mudança no modelo de domínio: lembrar continua sem evento.
-- Frequência e dia do lembrete ficam em Notificação (`DIA_DO_LEMBRETE`, em `src/domain/lembrete.ts`).
+- Frequência, dia e hora do lembrete ficam em Notificação (`DIA_DO_LEMBRETE` e `HORA_DOS_LEMBRETES`, em `src/domain/lembrete.ts`); a hora também na variável `HORA_DOS_LEMBRETES`, que o teste e2e zera para rodar a qualquer hora.
 
 Custos:
 
 - Nova dependência síncrona, Notificação → Financeiro: com Financeiro fora, o disparo falha e é refeito na hora seguinte.
-- O aviso da cota devida chega até uma ou duas horas depois da virada do mês: o disparo seguinte ao registro da cota em Financeiro.
+- O aviso da cota devida chega no dia 1 a partir das 8h, no primeiro disparo depois do registro da cota em Financeiro.
 - Uma consulta a Financeiro por hora, quase sempre sem e-mail; uma consulta a Usuário por e-mail a enviar.
 - Falha em Participação também atrasa o lembrete, porque o agendador para no primeiro gatilho que falha.
 

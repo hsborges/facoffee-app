@@ -42,10 +42,14 @@ const buscarPendentes =
  * Composition root: consumes *Pagamento recebido*, *Complemento solicitado* and *Reembolso
  * feito*, stores their e-mails in the event's transaction, and sends them by SMTP apart, retrying
  * failures (ADR 0020). *Valor da cota definido* is consumed but sends nothing yet. The agendador's
- * `POST /lembrar-pendentes` avisa the cota devida and lembra the pendentes (ADR 0027).
- * `stop` closes the server first, then the consumer, the sending and the connections.
+ * `POST /lembrar-pendentes` avisa the cota devida and lembra the pendentes (ADR 0027), at `agora`;
+ * tests pass a fixed clock. `stop` closes the server first, then the consumer, the sending and the connections.
  */
-export const startService = async (config: Config, logger: Logger) => {
+export const startService = async (
+  config: Config,
+  logger: Logger,
+  agora: () => Date = () => new Date(),
+) => {
   const database = await connectDatabase(config.databaseUrl);
   const connection = connectRabbitmq(config.rabbitmqUrl, logger);
   // Nodemailer waits up to 10 minutes by default, holding the e-mail's row lock meanwhile.
@@ -89,6 +93,7 @@ export const startService = async (config: Config, logger: Logger) => {
     buscarRegistrados(database.db),
     buscarContato(config.usuarioUrl),
     registrar(database.db),
+    config.horaDosLembretes,
   );
   const app = createApp({
     health: async () => ({
@@ -96,7 +101,7 @@ export const startService = async (config: Config, logger: Logger) => {
       rabbitmq: connection.isConnected(),
     }),
     lembrarPendentes: async () => {
-      const { lembretes, semContato } = await lembrar(new Date());
+      const { lembretes, semContato } = await lembrar(agora());
       if (semContato.length > 0)
         logger.warn('participantes without contato get no lembrete', { participantes: semContato });
       return { lembretes };
