@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useState } from 'react';
-import { useAuth, useAutoSignin } from 'react-oidc-context';
+import { useAuth } from 'react-oidc-context';
 import { NavLink, Route, Routes } from 'react-router';
 import logo from '../../infra/keycloak/themes/facoffee/login/resources/img/facoffee-logo.svg';
 import { obterUsuarioLogado, type UsuarioLogado } from './api';
@@ -21,20 +21,23 @@ const Pagina = ({ titulo, children }: { titulo: string; children: ReactNode }) =
 
 const Aviso = ({ children }: { children: ReactNode }) => (
   <main className="aviso">
-    <img src={logo} alt="FACOFFEE" width={240} />
+    <h1>
+      <img src={logo} alt="FACOFFEE" width={240} />
+    </h1>
     {children}
   </main>
 );
 
 /**
- * Signs in through the Keycloak (OIDC, ADR 0019), reads the logged-in usuário from the gateway
- * and shows the layout with the navigation of their perfis.
+ * Shows the start page to whoever is not logged in (ADR 0025); after the login through the
+ * Keycloak (OIDC, ADR 0019), reads the logged-in usuário from the gateway and shows the layout
+ * with the navigation of their perfis.
  */
 export const App = () => {
   const auth = useAuth();
   // Keeps the page asked for, to return to it after the login (destinoDoLogin).
   const entrar = { state: location.pathname + location.search };
-  const { isAuthenticated, error } = useAutoSignin({ signinArgs: entrar });
+  const { isAuthenticated, isLoading, error } = auth;
   const token = auth.user?.access_token;
   const [eu, setEu] = useState<UsuarioLogado>();
 
@@ -56,6 +59,15 @@ export const App = () => {
         <p role="alert">Não foi possível entrar no FACOFFEE.</p>
         <button type="button" onClick={() => auth.signinRedirect(entrar)}>
           Tentar de novo
+        </button>
+      </Aviso>
+    );
+  if (!isAuthenticated && !isLoading)
+    return (
+      <Aviso>
+        <p>Divisão dos custos da copa da FACOM.</p>
+        <button type="button" onClick={() => auth.signinRedirect(entrar)}>
+          Entrar
         </button>
       </Aviso>
     );
