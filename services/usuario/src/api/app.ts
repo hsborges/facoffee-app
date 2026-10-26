@@ -16,12 +16,13 @@ export type ApiDependencies = {
     usuarioId: string,
   ) => Promise<Result<void, DesativarErro>>;
   readonly registrarAcesso: (
-    usuario: Pick<Usuario, 'id' | 'nome' | 'email'>,
+    usuario: Pick<Usuario, 'id' | 'nome' | 'email' | 'perfis'>,
   ) => Promise<'ativo' | 'desativado'>;
   readonly listar: (
     solicitante: Pick<Usuario, 'perfis'>,
   ) => Promise<Result<readonly UsuarioRegistrado[], SemPermissao>>;
   readonly contato: (id: string) => Promise<Pick<Usuario, 'id' | 'nome' | 'email'> | undefined>;
+  readonly gestores: () => Promise<readonly Pick<Usuario, 'id' | 'nome' | 'email'>[]>;
   readonly reativar: (
     solicitante: Pick<Usuario, 'perfis'>,
     usuarioId: string,
@@ -48,7 +49,8 @@ const usuarioLogado = (c: Context): Usuario | undefined => {
  * HTTP API of the Usuário context: `GET /eu` (ADR 0008), `POST /:id/desativar`,
  * `GET /acesso`, the gateway access check that also registers the usuário (ADR 0011, 0012),
  * `GET /` and `POST /:id/reativar` (ADR 0013). Without `X-User-Id`, 401.
- * `GET /contato/:id` is internal, for Notificação, and kept out of the gateway (ADR 0020).
+ * `GET /contato/:id` (ADR 0020) and `GET /contato/gestor` (ADR 0031) are internal, for
+ * Notificação, and kept out of the gateway.
  * Logs every request except health probes and access checks; unhandled errors become 500.
  */
 export const createApp = ({
@@ -56,6 +58,7 @@ export const createApp = ({
   registrarAcesso,
   listar,
   contato,
+  gestores,
   reativar,
   health,
   logger,
@@ -103,6 +106,9 @@ export const createApp = ({
     })
     // Internal: the gateway has no route here and always sends X-User-Id, so a request carrying
     // it came through the gateway somehow and is refused.
+    .get('/contato/gestor', async (c) =>
+      c.req.header('x-user-id') ? c.json({ error: 'not-found' }, 404) : c.json(await gestores()),
+    )
     .get('/contato/:id', async (c) => {
       const id = c.req.param('id');
       const encontrado =

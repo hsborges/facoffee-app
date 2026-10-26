@@ -1,0 +1,1 @@
+ALTER TABLE "usuarios" ADD COLUMN "perfis" text[] DEFAULT '{}' NOT NULL;

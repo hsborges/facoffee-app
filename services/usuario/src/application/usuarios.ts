@@ -15,11 +15,13 @@ export type Repository = {
   readonly estaDesativado: (id: string) => Promise<boolean>;
   /** Persists the desativação and its events (outbox) in the same transaction. */
   readonly salvar: (desativacao: Desativacao, events: readonly Event[]) => Promise<void>;
-  /** Inserts the usuário, or updates nome and email if they changed. */
-  readonly registrar: (usuario: Pick<Usuario, 'id' | 'nome' | 'email'>) => Promise<void>;
+  /** Inserts the usuário, or updates nome, email and perfis if they changed. */
+  readonly registrar: (usuario: Pick<Usuario, 'id' | 'nome' | 'email' | 'perfis'>) => Promise<void>;
   readonly listar: () => Promise<readonly UsuarioRegistrado[]>;
   /** Nome and email of one usuário, if registered. */
   readonly buscar: (id: string) => Promise<Pick<Usuario, 'id' | 'nome' | 'email'> | undefined>;
+  /** Nome and email of the usuários ativos whose latest access had the perfil gestor. */
+  readonly gestores: () => Promise<readonly Pick<Usuario, 'id' | 'nome' | 'email'>[]>;
   /** Removes the desativação, if any. */
   readonly reativar: (id: string) => Promise<void>;
 };
@@ -48,12 +50,14 @@ export const desativarAcesso =
   };
 
 /**
- * Use case run on every access: registers the usuário (or refreshes nome and email from the
- * Passaporte UFMS) and tells whether the access is active.
+ * Use case run on every access: registers the usuário (or refreshes nome, email and perfis from
+ * the Passaporte UFMS) and tells whether the access is active.
  */
 export const registrarAcesso =
   (repository: Repository) =>
-  async (usuario: Pick<Usuario, 'id' | 'nome' | 'email'>): Promise<'ativo' | 'desativado'> => {
+  async (
+    usuario: Pick<Usuario, 'id' | 'nome' | 'email' | 'perfis'>,
+  ): Promise<'ativo' | 'desativado'> => {
     await repository.registrar(usuario);
     return (await repository.estaDesativado(usuario.id)) ? 'desativado' : 'ativo';
   };
