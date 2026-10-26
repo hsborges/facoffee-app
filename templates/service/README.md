@@ -38,12 +38,12 @@ pnpm --filter @facoffee/service-template db:generate        # gera migration ap�
 docker build -f templates/service/Dockerfile .              # na raiz do monorepo
 ```
 
-No compose local: `cd infra && docker compose --profile example up -d --wait --build`, depois `POST http://localhost:3000/examples` com `{"name": "Café"}`.
+O template não sobe no compose ([ADR 0026](../../docs/adr/0026-dockerfile-por-servico.md)); o `Dockerfile` é o modelo que cada serviço copia. O banco `example` do teste de integração só é criado num volume novo do PostgreSQL; num volume antigo, rode `docker compose down -v` em `infra/` antes.
 
 ## Criar um serviço
 
 1. `cp -r templates/service services/<contexto>` (sem `node_modules` e `dist`).
-2. No `package.json`, troque o nome para `@facoffee/<contexto>`; no `Dockerfile`, o `ARG PACKAGE`.
+2. No `package.json`, troque o nome para `@facoffee/<contexto>`; no `Dockerfile`, troque `@facoffee/service-template` pelo novo nome e `templates/service` por `services/<contexto>`.
 3. Troque o exemplo pelo domínio do contexto, com a linguagem ubíqua: `domain/`, `application/`, `api/`, `infra/db/schema.ts` e os `handlers` em `service.ts`. Apague `drizzle/` e gere a migration inicial.
 4. Valide os eventos publicados e consumidos contra os schemas de `contracts/events/`.
-5. Adicione o serviço, o banco e o usuário em `infra/` (compose, `postgres/init.sh`, `.env.example`).
+5. Adicione o serviço, o banco e o usuário em `infra/` (compose apontando para `services/<contexto>/Dockerfile`, `postgres/init.sh`, `.env.example`).
