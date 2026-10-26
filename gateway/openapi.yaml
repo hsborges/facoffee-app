@@ -271,6 +271,48 @@ paths:
                 error: participante-nao-encontrado
         '500':
           $ref: '#/components/responses/ErroInterno'
+  /api/participacao/tipo-de-cota:
+    get:
+      tags: [participacao]
+      operationId: listarValoresDaCota
+      summary: Valores da cota
+      description: |
+        O valor mensal de cada tipo de cota no ano atual (horário de Campo Grande). Qualquer usuário
+        logado consulta; mostra só os valores, sem a situação de ninguém. Um tipo de cota sem valor
+        definido para o ano não aparece.
+      responses:
+        '200':
+          description: Valor de cada tipo de cota no ano.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [tipoDeCota, ano, valorEmCentavos]
+                  properties:
+                    tipoDeCota:
+                      $ref: '#/components/schemas/TipoDeCota'
+                    ano:
+                      type: integer
+                      description: Ano em que o valor vale.
+                    valorEmCentavos:
+                      type: integer
+                      minimum: 1
+                      description: Valor mensal em centavos de real.
+              example:
+                - tipoDeCota: so-cafe
+                  ano: 2027
+                  valorEmCentavos: 2500
+                - tipoDeCota: completa
+                  ano: 2027
+                  valorEmCentavos: 3500
+        '401':
+          $ref: '#/components/responses/NaoAutorizado'
+        '403':
+          $ref: '#/components/responses/AcessoDesativado'
+        '500':
+          $ref: '#/components/responses/ErroInterno'
   /api/participacao/definir-valor-da-cota:
     post:
       tags: [participacao]
@@ -702,7 +744,8 @@ paths:
       operationId: consultarCaixinha
       summary: Caixinha
       description: |
-        Saldo da caixinha e gastos do ano anterior. Qualquer participante consulta a caixinha.
+        Saldo da caixinha e gastos do ano anterior, no total e por tipo de gasto. Qualquer
+        participante consulta; mostra só os totais, sem a situação de ninguém.
       responses:
         '200':
           description: Saldo e gastos do ano anterior.
@@ -710,7 +753,12 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [saldoEmCentavos, gastosDoAnoAnteriorEmCentavos]
+                required:
+                  [
+                    saldoEmCentavos,
+                    gastosDoAnoAnteriorEmCentavos,
+                    gastosDoAnoAnteriorPorTipoEmCentavos,
+                  ]
                 properties:
                   saldoEmCentavos:
                     type: integer
@@ -725,9 +773,32 @@ paths:
                       Soma dos gastos feitos no ano anterior, pagos pela caixinha ou do próprio
                       bolso, em centavos de real; o ano vira à meia-noite de Campo Grande (MS). É
                       a base para o valor da cota.
+                  gastosDoAnoAnteriorPorTipoEmCentavos:
+                    type: object
+                    required: [cafe, outros-itens, conserto-e-manutencao, reposicao]
+                    additionalProperties: false
+                    description: Os mesmos gastos do ano anterior, por tipo de gasto, em centavos de real.
+                    properties:
+                      cafe:
+                        type: integer
+                        minimum: 0
+                      outros-itens:
+                        type: integer
+                        minimum: 0
+                      conserto-e-manutencao:
+                        type: integer
+                        minimum: 0
+                      reposicao:
+                        type: integer
+                        minimum: 0
               example:
                 saldoEmCentavos: 4500
                 gastosDoAnoAnteriorEmCentavos: 384000
+                gastosDoAnoAnteriorPorTipoEmCentavos:
+                  cafe: 240000
+                  outros-itens: 108000
+                  conserto-e-manutencao: 30000
+                  reposicao: 6000
         '401':
           $ref: '#/components/responses/NaoAutorizado'
         '403':
