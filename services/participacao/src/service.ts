@@ -10,7 +10,7 @@ import {
   pedirSaida,
   trocarTipo,
 } from './application/participantes.js';
-import { definirValor, iniciarAno } from './application/tipos-de-cota.js';
+import { consultarValoresDaCota, definirValor, iniciarAno } from './application/tipos-de-cota.js';
 import type { Config } from './infra/config.js';
 import { startConsumer } from './infra/consumer.js';
 import { cotaRepository } from './infra/db/cota-repository.js';
@@ -54,6 +54,7 @@ export const startService = async (config: Config, logger: Logger) => {
     pedirSaida: pedirSaida(repository, clock),
     definirValor: definirValor(valores, clock),
     consultarParticipante: consultarParticipante(repository, clock),
+    consultarValoresDaCota: consultarValoresDaCota(valores, clock),
     iniciarAno: iniciarAno(valores, clock),
     iniciarMes: iniciarMes(cotaRepository(database.db), valores, clock),
     health: async () => ({
