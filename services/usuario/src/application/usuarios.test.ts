@@ -31,6 +31,7 @@ const inMemory = () => {
     listar: async () =>
       [...usuarios.values()].map((u) => ({ ...u, desativado: desativados.has(u.id) })),
     buscar: async (id) => usuarios.get(id),
+    gestores: async () => [],
     reativar: async (id) => {
       desativados.delete(id);
     },
