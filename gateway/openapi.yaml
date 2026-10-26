@@ -600,7 +600,7 @@ paths:
                   value:
                     error: participante-nao-encontrado
         '409':
-          description: O arquivo já foi enviado em outro comprovante.
+          description: O arquivo já foi enviado em outro comprovante ou usado em outro pagamento.
           content:
             application/json:
               schema:
@@ -699,7 +699,7 @@ paths:
         '409':
           description: |
             O comprovante já foi confirmado ou recusado, ou o arquivo já foi enviado em outro
-            comprovante.
+            comprovante ou usado em outro pagamento.
           content:
             application/json:
               schema:
@@ -746,7 +746,8 @@ paths:
         pode corrigir o valor informado pelo participante. Vale o valor confirmado: o pagamento
         quita as cotas do participante e entra na caixinha, como o pagamento recebido em
         `receber-pagamento`. Cada comprovante é confirmado ou recusado uma vez só. Só o gestor
-        confirma.
+        confirma. O pedido informa o arquivo que o gestor conferiu; se o participante trocou o
+        arquivo depois disso, a confirmação é recusada.
       parameters:
         - $ref: '#/components/parameters/IdDoComprovanteEnviado'
       requestBody:
@@ -755,7 +756,7 @@ paths:
           application/json:
             schema:
               type: object
-              required: [valorEmCentavos]
+              required: [valorEmCentavos, comprovanteId]
               properties:
                 valorEmCentavos:
                   type: integer
@@ -763,6 +764,10 @@ paths:
                   maximum: 2147483647
                   description: Valor confirmado em centavos de real.
                   example: 3000
+                comprovanteId:
+                  type: string
+                  format: uuid
+                  description: Arquivo do comprovante que o gestor conferiu.
       responses:
         '201':
           description: Comprovante confirmado e pagamento recebido.
@@ -786,8 +791,8 @@ paths:
           $ref: '#/components/responses/ComprovanteEnviadoNaoEncontrado'
         '409':
           description: |
-            O comprovante já foi confirmado ou recusado, ou o arquivo já foi usado em outro
-            pagamento.
+            O comprovante já foi confirmado ou recusado, o participante trocou o arquivo depois
+            que o gestor o conferiu, ou o arquivo já foi usado em outro pagamento.
           content:
             application/json:
               schema:
@@ -796,6 +801,9 @@ paths:
                 comprovanteJaAnalisado:
                   value:
                     error: comprovante-ja-analisado
+                comprovanteAlterado:
+                  value:
+                    error: comprovante-alterado
                 comprovanteJaUsado:
                   value:
                     error: comprovante-ja-usado
