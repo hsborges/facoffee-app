@@ -1,6 +1,6 @@
 # 0005. Template de serviço
 
-- Status: Substituído por 0025
+- Status: Aceito; Dockerfile e ambiente local substituídos por 0026
 - Data: 2026-10-25
 
 ## Contexto

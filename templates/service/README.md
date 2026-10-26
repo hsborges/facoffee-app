@@ -38,7 +38,7 @@ pnpm --filter @facoffee/service-template db:generate        # gera migration ap�
 docker build -f templates/service/Dockerfile .              # na raiz do monorepo
 ```
 
-O template não sobe no compose ([ADR 0025](../../docs/adr/0025-dockerfile-por-servico.md)); o `Dockerfile` é o modelo que cada serviço copia. O banco `example` do teste de integração só é criado num volume novo do PostgreSQL; num volume antigo, rode `docker compose down -v` em `infra/` antes.
+O template não sobe no compose ([ADR 0026](../../docs/adr/0026-dockerfile-por-servico.md)); o `Dockerfile` é o modelo que cada serviço copia. O banco `example` do teste de integração só é criado num volume novo do PostgreSQL; num volume antigo, rode `docker compose down -v` em `infra/` antes.
 
 ## Criar um serviço
 

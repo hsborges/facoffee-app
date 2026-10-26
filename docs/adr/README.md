@@ -8,7 +8,7 @@ Registros de decisões de arquitetura. Um arquivo por decisão: `NNNN-titulo.md`
 | [0002](0002-stack.md) | Stack TypeScript/Node.js | Aceito |
 | [0003](0003-ambiente-local-docker-compose.md) | Ambiente local com docker compose | Aceito |
 | [0004](0004-contratos-dos-eventos-de-dominio.md) | Contratos dos eventos de domínio | Substituído por 0006 |
-| [0005](0005-template-de-servico.md) | Template de serviço | Aceito |
+| [0005](0005-template-de-servico.md) | Template de serviço | Aceito; Dockerfile e ambiente local substituídos por 0026 |
 | [0006](0006-contratos-dos-eventos-em-ingles.md) | Contratos dos eventos em inglês | Aceito |
 | [0007](0007-api-gateway.md) | API Gateway | Aceito |
 | [0008](0008-dados-do-usuario-logado.md) | Dados do usuário logado | Aceito |
@@ -29,3 +29,4 @@ Registros de decisões de arquitetura. Um arquivo por decisão: `NNNN-titulo.md`
 | [0023](0023-teste-ponta-a-ponta-com-playwright.md) | Teste ponta a ponta com Playwright e Testcontainers | Aceito |
 | [0024](0024-ci-no-github-actions.md) | CI no GitHub Actions | Aceito |
 | [0025](0025-pagina-inicial-antes-do-login.md) | Página inicial antes do login | Aceito |
+| [0026](0026-dockerfile-por-servico.md) | Dockerfile por serviço | Aceito |

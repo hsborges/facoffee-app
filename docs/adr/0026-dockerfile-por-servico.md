@@ -1,4 +1,4 @@
-# 0025. Dockerfile por serviço
+# 0026. Dockerfile por serviço
 
 - Status: Aceito
 - Data: 2026-10-26
@@ -11,11 +11,11 @@ Os Dockerfiles faziam `COPY . .` antes do `pnpm install`: qualquer arquivo alter
 
 ## Decisão
 
-Substitui o ADR 0005. Tudo o que ele decidiu continua valendo, exceto:
+Substitui, no ADR 0005, só o Dockerfile e o ambiente local; o resto continua valendo.
 
 - **Dockerfile por serviço**: cada serviço tem o próprio `Dockerfile` na sua pasta (`services/<contexto>/Dockerfile`, `gateway/Dockerfile`), com o nome do pacote fixo. `templates/service/Dockerfile` é só o modelo a copiar.
 - **Ambiente local**: o serviço `example` sai do compose. O banco `example` continua, usado pelo teste de integração do template.
-- **Build em camadas**: manifestos da raiz e `pnpm fetch`, depois o `package.json` do pacote e `pnpm install`, por fim o código do pacote e o build. Cada imagem copia só a própria pasta e `tsconfig.base.json` (o web também copia o logo e as fontes do tema do Keycloak). O store do pnpm fica num cache mount do BuildKit compartilhado entre as imagens. Vale também para `web/Dockerfile`.
+- **Build em camadas**: manifestos da raiz e `pnpm fetch`, depois o `package.json` do pacote e `pnpm install`, por fim o código do pacote e o build. Cada imagem copia só a própria pasta e `tsconfig.base.json` (o web também copia o logo e as fontes do tema do Keycloak). O store do pnpm fica num cache mount do BuildKit compartilhado entre as imagens; o `pnpm install` usa `--prefer-offline`, e não `--offline`, para não falhar se o BuildKit descartar o cache mount e mantiver a camada do `pnpm fetch`. Vale também para `web/Dockerfile`.
 
 ## Consequências
 
