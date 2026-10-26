@@ -11,7 +11,7 @@ O template de serviço é escrito em inglês, e os contratos são a API pública
 
 Forças em jogo:
 
-- A linguagem ubíqua é em português ([glossário](../GLOSSARIO.md)); nomes em inglês exigem uma tradução única e registrada para cada termo.
+- A linguagem ubíqua é em português ([glossário](../dominio/GLOSSARIO.md)); nomes em inglês exigem uma tradução única e registrada para cada termo.
 - O ADR 0004 exige versão major nova para mudança incompatível, o que faria sentido só se a v1 já tivesse sido publicada.
 
 ## Decisão
@@ -24,7 +24,7 @@ Substitui o ADR 0004. Tudo o que ele decidiu continua valendo, com os nomes em i
 
 **Traduções**:
 
-- A seção [Nomes nos contratos de eventos](../GLOSSARIO.md#nomes-nos-contratos-de-eventos) do glossário é a única fonte: uma tabela de termos e uma de eventos, um só nome em inglês por termo.
+- A seção [Nomes nos contratos de eventos](../dominio/GLOSSARIO.md#nomes-nos-contratos-de-eventos) do glossário é a única fonte: uma tabela de termos e uma de eventos, um só nome em inglês por termo.
 - A tradução segue a definição do glossário, não a semelhança da palavra. Falsos cognatos e termos a evitar ficam registrados na coluna de observação (ex.: *Cota* é `contribution`, não `quota`; *Complemento* é `top-up`, não `complement`; *Reembolso* é `reimbursement`, não `refund`).
 - Testes em `contracts/` garantem que o tipo de cada evento é `<contexto>.<evento>` com os nomes do glossário e recusam campo ou valor de enum do payload com palavra que não esteja na tabela de termos. Termo novo num contrato entra antes no glossário.
 

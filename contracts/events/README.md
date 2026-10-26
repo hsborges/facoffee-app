@@ -1,8 +1,8 @@
 # Contratos de eventos
 
-Contratos dos eventos de domínio trocados entre os contextos pelo RabbitMQ. Fonte: [Modelos de domínio §3](../../docs/MODELOS_DOMINIO.md#eventos-entre-contextos). Decisão: [ADR 0006](../../docs/adr/0006-contratos-dos-eventos-em-ingles.md).
+Contratos dos eventos de domínio trocados entre os contextos pelo RabbitMQ. Fonte: [Modelos de domínio §3](../../docs/dominio/MODELOS.md#eventos-entre-contextos). Decisão: [ADR 0006](../../docs/adr/0006-contratos-dos-eventos-em-ingles.md).
 
-Os nomes nos contratos (campos, tipos, routing keys, filas) são em inglês; títulos e descrições ficam em português, na linguagem ubíqua. A tradução de cada termo está em [Nomes nos contratos de eventos](../../docs/GLOSSARIO.md#nomes-nos-contratos-de-eventos), no glossário.
+Os nomes nos contratos (campos, tipos, routing keys, filas) são em inglês; títulos e descrições ficam em português, na linguagem ubíqua. A tradução de cada termo está em [Nomes nos contratos de eventos](../../docs/dominio/GLOSSARIO.md#nomes-nos-contratos-de-eventos), no glossário.
 
 - `envelope.v1.json`: campos comuns a todo evento.
 - `<type>.v<version>.json`: um JSON Schema (draft-07) por evento e versão major, com um exemplo.

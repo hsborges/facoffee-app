@@ -37,7 +37,7 @@ const linhasDaTabela = (texto: string, inicio: string): string[][] =>
     );
 const lista = (celula: string): string[] => (celula === '—' ? [] : celula.split(', ').sort());
 
-const modeloDeDominio = ler('../../docs/MODELOS_DOMINIO.md')
+const modeloDeDominio = ler('../../docs/dominio/MODELOS.md')
   .split('### Eventos entre contextos')[1]
   ?.split('\n### ')[0];
 if (!modeloDeDominio) throw new Error('seção "Eventos entre contextos" não encontrada');
@@ -50,7 +50,7 @@ const tabelaDoModelo = Object.fromEntries(
 const eventosPublicados = Object.values(tabelaDoModelo).flatMap((c) => c.publica);
 
 // Nomes em inglês usados nos contratos, da seção "Nomes nos contratos de eventos" do glossário.
-const glossario = ler('../../docs/GLOSSARIO.md');
+const glossario = ler('../../docs/dominio/GLOSSARIO.md');
 const nomeNosContratos = (termo: string): string => {
   const nome = linhasDaTabela(glossario, `| ${termo} |`)[0]?.[1];
   if (!nome) throw new Error(`termo sem nome nos contratos no glossário: ${termo}`);

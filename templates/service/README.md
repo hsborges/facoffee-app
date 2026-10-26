@@ -1,6 +1,6 @@
 # Template de serviço
 
-Esqueleto copiável dos serviços do FACOFFEE. Decisão em [ADR 0005](../../docs/adr/0005-template-de-servico.md); stack no [ADR 0002](../../docs/adr/0002-stack.md); eventos no [ADR 0006](../../docs/adr/0006-contratos-dos-eventos-em-ingles.md). O código do template é em inglês; o código de cada serviço usa a linguagem ubíqua do [glossário](../../docs/GLOSSARIO.md).
+Esqueleto copiável dos serviços do FACOFFEE. Decisão em [ADR 0005](../../docs/adr/0005-template-de-servico.md); stack no [ADR 0002](../../docs/adr/0002-stack.md); eventos no [ADR 0006](../../docs/adr/0006-contratos-dos-eventos-em-ingles.md). O código do template é em inglês; o código de cada serviço usa a linguagem ubíqua do [glossário](../../docs/dominio/GLOSSARIO.md).
 
 O exemplo registra um *Example* (`POST /examples`), publica `example.example-registered.v1` pelo outbox e consome o próprio evento para confirmar o *Example*.
 

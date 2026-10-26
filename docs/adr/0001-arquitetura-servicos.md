@@ -5,7 +5,7 @@
 
 ## Contexto
 
-O FACOFFEE divide os custos da copa da FACOM. O domínio já foi separado em contextos delimitados em [MODELOS_DOMINIO.md §3](../MODELOS_DOMINIO.md#3-contextos-delimitados), e a arquitetura foi desenhada em [arquitetura.png](../arquitetura.png). Falta registrar as decisões que esses documentos assumem.
+O FACOFFEE divide os custos da copa da FACOM. O domínio já foi separado em contextos delimitados em [MODELOS.md §3](../dominio/MODELOS.md#3-contextos-delimitados), e a arquitetura foi desenhada em [arquitetura/visao-geral.png](../arquitetura/visao-geral.png). Falta registrar as decisões que esses documentos assumem.
 
 Forças em jogo:
 

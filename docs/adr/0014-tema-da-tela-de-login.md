@@ -5,7 +5,7 @@
 
 ## Contexto
 
-A tela de login é a do Keycloak, com a identidade visual dele, não a do [Design System](../SYSTEM_DESIGN.md). Quem entra no FACOFFEE vê primeiro uma tela que não parece do FACOFFEE.
+A tela de login é a do Keycloak, com a identidade visual dele, não a do [Design System](../design/DESIGN_SYSTEM.md). Quem entra no FACOFFEE vê primeiro uma tela que não parece do FACOFFEE.
 
 Forças em jogo:
 
@@ -31,7 +31,7 @@ Ganhos:
 Custos:
 
 - Em produção, a tela continua a do Passaporte UFMS, a menos que a universidade instale o tema.
-- Cerca de 90 KB de fontes versionados; o logo do tema é uma cópia de `docs/facoffee-logo.svg` e precisa acompanhar mudanças nele.
+- Cerca de 90 KB de fontes versionados; o logo do tema é uma cópia de `docs/design/facoffee-logo.svg` e precisa acompanhar mudanças nele.
 
 Riscos:
 
