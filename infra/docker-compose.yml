@@ -108,9 +108,7 @@ services:
   gateway-auth:
     build:
       context: ..
-      dockerfile: templates/service/Dockerfile
-      args:
-        PACKAGE: "@facoffee/gateway"
+      dockerfile: gateway/Dockerfile
     environment:
       # iss dos tokens emitidos ao navegador; o JWKS é buscado pela rede interna
       OIDC_ISSUER: http://localhost:8080/realms/facoffee
@@ -139,9 +137,7 @@ services:
   usuario:
     build:
       context: ..
-      dockerfile: templates/service/Dockerfile
-      args:
-        PACKAGE: "@facoffee/usuario"
+      dockerfile: services/usuario/Dockerfile
     environment:
       SERVICE: user
       DATABASE_URL: postgres://usuario:${USUARIO_DB_PASSWORD}@postgres:5432/usuario
@@ -155,9 +151,7 @@ services:
   participacao:
     build:
       context: ..
-      dockerfile: templates/service/Dockerfile
-      args:
-        PACKAGE: "@facoffee/participacao"
+      dockerfile: services/participacao/Dockerfile
     environment:
       SERVICE: participation
       DATABASE_URL: postgres://participacao:${PARTICIPACAO_DB_PASSWORD}@postgres:5432/participacao
@@ -171,9 +165,7 @@ services:
   financeiro:
     build:
       context: ..
-      dockerfile: templates/service/Dockerfile
-      args:
-        PACKAGE: "@facoffee/financeiro"
+      dockerfile: services/financeiro/Dockerfile
     environment:
       SERVICE: finance
       DATABASE_URL: postgres://financeiro:${FINANCEIRO_DB_PASSWORD}@postgres:5432/financeiro
@@ -194,9 +186,7 @@ services:
   notificacao:
     build:
       context: ..
-      dockerfile: templates/service/Dockerfile
-      args:
-        PACKAGE: "@facoffee/notificacao"
+      dockerfile: services/notificacao/Dockerfile
     environment:
       SERVICE: notification
       DATABASE_URL: postgres://notificacao:${NOTIFICACAO_DB_PASSWORD}@postgres:5432/notificacao
@@ -216,33 +206,11 @@ services:
   agendador:
     build:
       context: ..
-      dockerfile: templates/service/Dockerfile
-      args:
-        PACKAGE: "@facoffee/agendador"
+      dockerfile: services/agendador/Dockerfile
     environment:
       PARTICIPACAO_URL: http://participacao:3000
-    healthcheck:
-      disable: true
     depends_on:
       participacao:
-        condition: service_healthy
-
-  # Template de serviço (templates/service); sobe só com --profile example.
-  example:
-    profiles: [example]
-    build:
-      context: ..
-      dockerfile: templates/service/Dockerfile
-    environment:
-      SERVICE: example
-      DATABASE_URL: postgres://example:${EXAMPLE_DB_PASSWORD}@postgres:5432/example
-      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
-    ports:
-      - "127.0.0.1:3000:3000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
         condition: service_healthy
 
 volumes:

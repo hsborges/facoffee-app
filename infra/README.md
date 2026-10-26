@@ -15,7 +15,6 @@ docker compose up -d --wait
 | Documentação da API (Swagger UI, pelo gateway) | https://localhost/docs ou http://localhost/docs |
 | RabbitMQ (AMQP / painel) | `localhost:5672` / http://localhost:15672 |
 | PostgreSQL (bancos `usuario`, `participacao`, `financeiro`, `notificacao`, `example`) | `localhost:5432` |
-| Serviço de exemplo (perfil `example`) | http://localhost:3000 |
 | Keycloak | http://localhost:8080 |
 | SeaweedFS (S3) | http://localhost:8333 |
 | Mailpit (SMTP / caixa de entrada) | `localhost:1025` / http://localhost:8025 |
@@ -41,15 +40,3 @@ O realm `facoffee` é importado de [`keycloak/facoffee-realm.json`](keycloak/fac
 ## Stack do teste ponta a ponta
 
 [`docker-compose.test.yml`](docker-compose.test.yml) vai por cima do `docker-compose.yml` e só muda as portas: o gateway, o Keycloak e o Mailpit em portas aleatórias de `127.0.0.1`, sem publicar o restante, para rodar ao lado desta stack. O `pnpm test:e2e` a sobe e remove sozinho, com Testcontainers ([ADR 0023](../docs/adr/0023-teste-ponta-a-ponta-com-playwright.md)).
-
-## Serviço de exemplo
-
-O [template de serviço](../templates/service/) sobe no perfil `example` e publica e consome um evento pelo RabbitMQ:
-
-```sh
-docker compose --profile example up -d --wait --build
-curl -X POST localhost:3000/examples -H 'content-type: application/json' -d '{"name":"Café"}'
-curl localhost:3000/examples/<id>   # confirmedAt preenchido após consumir o evento
-```
-
-O banco `example` só é criado num volume novo do PostgreSQL; num volume antigo, rode `docker compose down -v` antes.

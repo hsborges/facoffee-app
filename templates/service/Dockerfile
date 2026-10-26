@@ -1,14 +1,18 @@
 # Build from the monorepo root: docker build -f templates/service/Dockerfile .
-ARG PACKAGE=@facoffee/service-template
-
 FROM node:24-alpine AS build
-ARG PACKAGE
 RUN corepack enable
 WORKDIR /repo
-COPY . .
-RUN pnpm install --frozen-lockfile --filter "${PACKAGE}..." \
- && pnpm --filter "${PACKAGE}" build \
- && pnpm --filter "${PACKAGE}" deploy --prod /app
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm fetch --store-dir /pnpm/store
+COPY tsconfig.base.json ./
+COPY templates/service/package.json templates/service/
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm install --prefer-offline --frozen-lockfile --store-dir /pnpm/store --filter "@facoffee/service-template..."
+COPY templates/service templates/service
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm --filter @facoffee/service-template build \
+ && pnpm --filter @facoffee/service-template deploy --prod --store-dir /pnpm/store /app
 
 FROM node:24-alpine
 ENV NODE_ENV=production PORT=3000

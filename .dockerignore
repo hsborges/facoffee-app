@@ -2,4 +2,12 @@
 **/dist
 **/coverage
 **/.env
+**/*.test.ts
 .git
+.github
+contracts
+docs
+e2e
+infra
+!infra/keycloak/themes/facoffee/login/resources
+scripts
