@@ -43,7 +43,7 @@ const doEvento = (event: Event): readonly Aviso[] | undefined => {
         {
           participanteId: p.participantId,
           assunto: 'Pagamento recebido',
-          texto: `O gestor recebeu o seu pagamento de ${emReais(p.amountInCents)} ${forma}.`,
+          texto: `O gestor recebeu um pagamento de ${emReais(p.amountInCents)} ${forma} em seu nome.`,
         },
       ];
     }
