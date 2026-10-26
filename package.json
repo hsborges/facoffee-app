@@ -6,7 +6,7 @@
     "node": ">=24"
   },
   "scripts": {
-    "lint": "biome check . && node scripts/check-tsdoc.ts",
+    "lint": "biome check . && node scripts/check-tsdoc.ts && node scripts/check-requisitos.ts",
     "format": "biome check --write .",
     "test": "vitest run scripts && pnpm -r test",
     "test:e2e": "playwright test -c e2e",
