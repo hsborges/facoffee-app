@@ -1,6 +1,6 @@
 # 0018. Armazenamento de comprovantes e notas
 
-- Status: Aceito
+- Status: Aceito; quem guarda o comprovante substituído por 0030
 - Data: 2026-10-25
 
 ## Contexto
