@@ -8,7 +8,7 @@
 | **Versão** | 2.10 |
 | **Data** | 2026-10-26 |
 | **Status** | Aprovado |
-| **Base** | [Glossário da Linguagem Ubíqua](GLOSSARIO.md) (versão 2.6) e arquitetura do FACOFFEE ([arquitetura/visao-geral.png](../arquitetura/visao-geral.png)) |
+| **Base** | [Glossário da Linguagem Ubíqua](GLOSSARIO.md) (versão 2.7) e arquitetura do FACOFFEE ([arquitetura/visao-geral.png](../arquitetura/visao-geral.png)) |
 
 ## Propósito
 
@@ -299,4 +299,4 @@ Nenhum no momento.
 | 2.7 | 2026-10-26 | Todo gasto tem um tipo de gasto (#73). Nova leitura *Caixinha do mês*, com o que entrou, o que saiu por tipo de gasto e o saldo no início e no fim do mês. Base atualizada para o glossário 2.5. |
 | 2.8 | 2026-10-26 | Decisão: o pagamento pertence ao participante cujas cotas ele quita, mesmo quando outra pessoa paga; um pagamento por participante (ponto crítico 2 fechado, #74). Base atualizada para o glossário 2.6. |
 | 2.9 | 2026-10-26 | A leitura *Gastos do ano anterior* passa a ser por tipo de gasto e serve também aos participantes. Nova leitura *Valores da cota* (Participação), com o valor de cada tipo de cota no ano (#77). |
-| 2.10 | 2026-10-26 | Nova política de Notificação: avisar a cota devida e lembrar os pendentes, a partir da leitura *Crédito e pendentes*, que Notificação consulta em Financeiro ([ADR 0027](../adr/0027-lembrete-aos-pendentes.md)). Ponto crítico 1 fechado (#72). |
+| 2.10 | 2026-10-26 | Nova política de Notificação: avisar a cota devida e lembrar os pendentes, a partir da leitura *Crédito e pendentes*, que Notificação consulta em Financeiro ([ADR 0027](../adr/0027-lembrete-aos-pendentes.md)). Ponto crítico 1 fechado (#72). Base atualizada para o glossário 2.7. |

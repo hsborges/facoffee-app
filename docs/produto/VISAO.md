@@ -8,7 +8,7 @@
 | **Versão** | 1.4 |
 | **Data** | 2026-10-26 |
 | **Status** | Proposto |
-| **Base** | [Glossário](../dominio/GLOSSARIO.md) (versão 2.6) e [Modelos de Domínio](../dominio/MODELOS.md) (versão 2.10) |
+| **Base** | [Glossário](../dominio/GLOSSARIO.md) (versão 2.7) e [Modelos de Domínio](../dominio/MODELOS.md) (versão 2.10) |
 
 ## Propósito
 
