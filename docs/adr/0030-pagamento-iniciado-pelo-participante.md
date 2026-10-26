@@ -1,6 +1,6 @@
 # 0030. Pagamento iniciado pelo participante
 
-- Status: Aceito
+- Status: Aceito; envio e recusa sem evento substituídos por 0031
 - Data: 2026-10-26
 
 ## Contexto
