@@ -20,7 +20,7 @@ Forças em jogo:
 
 **Confirmação**: *Confirmar comprovante* recebe o pagamento por PIX com o comprovante e o valor confirmado, na mesma transação que marca o comprovante como confirmado, e publica *Pagamento recebido* pela outbox, sem mudar o contrato. Para o resto do FACOFFEE, é um pagamento como o recebido diretamente: entra em *Crédito e pendentes* e no *Saldo da caixinha*. Antes disso, o comprovante enviado não aparece em nenhuma das duas leituras.
 
-**Análise uma vez só**: toda mudança só acontece se o comprovante ainda está a confirmar (`where situacao = 'a-confirmar'`); a confirmação trava a linha até salvar o pagamento. Dois pedidos ao mesmo tempo: um vale, o outro recebe 409.
+**Análise uma vez só**: toda mudança só acontece se o comprovante ainda está a confirmar (`where situacao = 'a-confirmar'`); a confirmação trava a linha até salvar o pagamento. Dois pedidos ao mesmo tempo: um vale, o outro recebe 409. A confirmação informa o arquivo que o gestor conferiu: se o participante o trocou depois, ela é recusada (`comprovante-alterado`, 409), e o gestor nunca confirma um arquivo que não viu. Um arquivo já usado em pagamento não é enviado nem trocado na edição, já que nunca poderia ser confirmado. Uma restrição `check` no banco garante o valor confirmado no confirmado e o motivo no recusado.
 
 **Arquivo**: o participante passa a guardar comprovante em `POST /api/financeiro/guardar-comprovante`, só para si mesmo; o gestor continua guardando para qualquer participante. Substitui, no ADR 0018, só *quem guarda o comprovante*; o resto continua valendo.
 
