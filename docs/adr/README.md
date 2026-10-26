@@ -35,3 +35,4 @@ Registros de decisões de arquitetura. Um arquivo por decisão: `NNNN-titulo.md`
 | [0029](0029-visoes-do-gestor-e-do-participante.md) | Visões do gestor e do participante | Aceito |
 | [0030](0030-pagamento-iniciado-pelo-participante.md) | Pagamento iniciado pelo participante | Aceito; envio e recusa sem evento substituídos por 0031 |
 | [0031](0031-avisos-do-comprovante-enviado.md) | Avisos do comprovante enviado | Aceito |
+| [0032](0032-requisitos-rastreaveis-em-bdd.md) | Requisitos rastreáveis em BDD | Aceito |
