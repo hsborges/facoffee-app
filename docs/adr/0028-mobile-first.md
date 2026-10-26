@@ -17,12 +17,12 @@ Forças em jogo:
 
 **Mobile first** é o princípio do front-end: cada tela é projetada primeiro para o celular e depois adaptada a telas maiores.
 
-- **CSS**: o estilo base é o do celular; telas a partir de `48rem` (768 px) ganham ajustes com `@media (min-width: 48rem)`. Um só ponto de quebra enquanto as telas não pedirem outro.
+- **CSS**: o estilo base é o do celular; telas a partir de `48rem` (768 px) ganham ajustes com `@media (min-width: 48rem)`. Um só ponto de quebra enquanto as telas não pedirem outro. A exceção é o que desfaz o estilo do próprio navegador, como a tabela empilhada: fica em `@media (width < 48rem)`, em vez de ser desfeito de novo no computador.
 - **Largura mínima**: 320 px, sem rolagem horizontal da página.
 - **Alvos de toque**: pelo menos 24 × 24 px.
 - **Tabelas**: com até três colunas, continuam tabela em qualquer largura; com mais, no celular cada linha vira um bloco e cada célula mostra o rótulo da coluna. A marcação continua `<table>`: só o CSS muda.
 - **Login**: o tema `facoffee` segue as mesmas regras.
-- **Teste**: o teste ponta a ponta ([ADR 0023](0023-teste-ponta-a-ponta-com-playwright.md)) roda no computador e num celular de 320 px, e confere que nenhuma tela rola na horizontal.
+- **Teste**: o teste ponta a ponta ([ADR 0023](0023-teste-ponta-a-ponta-com-playwright.md)) roda no computador; os testes das telas, marcados com `@celular`, rodam também num celular de 320 px e conferem que nenhuma tela rola na horizontal.
 
 As regras de cada componente ficam no [Design System](../design/DESIGN_SYSTEM.md#5-mobile-first).
 
@@ -35,7 +35,8 @@ Ganhos:
 
 Custos:
 
-- O teste ponta a ponta roda duas vezes, uma por largura: cerca do dobro do tempo dos testes, fora o build.
+- Os testes das telas rodam duas vezes, uma por largura, na mesma stack: cada um tem de aceitar que a outra execução já passou por ali.
+- Teste de tela novo precisa da marca `@celular`, ou não roda no celular.
 - Cada célula de tabela larga repete o rótulo da coluna em `data-rotulo`.
 
 Riscos:
