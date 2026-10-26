@@ -70,9 +70,9 @@ Professor ou técnico administrativo da FACOM que participa por vontade própria
 | Momento | O que acontece | Por que pesa |
 |---|---|---|
 | **Início do mês** | O gestor avisa no grupo que a cobrança começou e depois cobra individualmente quem não pagou. | É a pior época: correr atrás de pagamento e de comprovante. |
-| **Início do ano** | O gestor olha os gastos do ano anterior, define o valor de cada tipo de cota, avisa no grupo e explica de novo a quem pergunta. | Precisa justificar as duas cotas e a parte da caixinha, uma pessoa por vez. |
+| **Início do ano** | O gestor olha os gastos do ano anterior, define o valor de cada tipo de cota, avisa no grupo e explica de novo a quem pergunta. | Precisa justificar os dois tipos de cota e a parte da caixinha, uma pessoa por vez. |
 | **Fim do mês** | O gestor gostaria de mostrar quanto entrou, quanto saiu e quanto sobrou. | Hoje não consegue montar isso com facilidade. |
-| **Entrada de alguém** | A pessoa procura o gestor, ouve a explicação das cotas, escolhe uma, paga o mês cheio, entra no grupo e o gestor anota nome e tipo de cota. | Mais uma anotação solta e mais uma explicação repetida. |
+| **Entrada de alguém** | A pessoa procura o gestor, ouve a explicação dos tipos de cota, escolhe um, paga a cota do mês cheia, entra no grupo e o gestor anota nome e tipo de cota. | Mais uma anotação solta e mais uma explicação repetida. |
 
 ### Como o gestor confere um pagamento por PIX
 
@@ -127,13 +127,13 @@ Cada necessidade aponta para onde o domínio já a trata.
 | Registrar pagamento por PIX (com comprovante) ou em dinheiro | Gestor | Comando *Receber pagamento*; [Comprovante](../dominio/GLOSSARIO.md#comprovante) |
 | Aceitar pagamento adiantado de semestre ou ano | Gestor | [Crédito](../dominio/GLOSSARIO.md#crédito) abatido automaticamente |
 | Ver a própria situação (em dia, pendente, crédito) | Participante | Leitura *Crédito e pendentes*, só a do próprio participante |
-| Lembrar quem está pendente sem o gestor cobrar | Participante | **Lacuna:** Notificação não recebe nenhum evento de pendência ([#72](../../../../issues/72)) |
+| Lembrar quem está pendente sem o gestor cobrar | Participante | **Lacuna:** Notificação não recebe nenhum evento que indique cota pendente ([#72](../../../../issues/72)) |
 | Avisar o valor da cota do ano | Todos | Evento *Valor da cota definido* → Notificação |
 | Avisar o início da cobrança do mês | Todos | **Lacuna:** *Cota devida* vai só para Financeiro, não para Notificação ([#72](../../../../issues/72)) |
 | Registrar gastos com nota e reembolsar quem pagou | Gestor | [Gasto](../dominio/GLOSSARIO.md#gasto), [Nota](../dominio/GLOSSARIO.md#nota), [Reembolso](../dominio/GLOSSARIO.md#reembolso) |
-| Resumo do mês: entrou, saiu e sobrou | Todos | Leitura *Saldo da caixinha* |
+| Resumo do mês: entrou, saiu e sobrou | Todos | Leitura *Saldo da caixinha*. **Lacuna:** ela dá só o saldo; o total que entrou no mês e o gasto por tipo não existem ([#73](../../../../issues/73)) |
 | Pedir complemento quando a caixinha não dá conta | Gestor | [Complemento](../dominio/GLOSSARIO.md#complemento) |
-| Embasar o valor da cota do ano | Gestor e participantes | Leitura *Gastos do ano anterior* |
+| Embasar o valor da cota do ano | Gestor e participantes | Leitura *Gastos do ano anterior*, hoje só para o gestor |
 
 ## Fora do escopo
 
@@ -148,10 +148,10 @@ Cada necessidade aponta para onde o domínio já a trata.
 
 ## Questões em aberto
 
-1. **Lembretes** ([#72](../../../../issues/72)). É a prioridade 1, mas o modelo atual não tem como disparar: Notificação não recebe *Cota devida* nem nada sobre pendência. O gestor também nunca pensou em lembretes vindos de outro lugar; só não quer que o pessoal se sinta pressionado. Gatilho, frequência e canal (e-mail, WhatsApp) precisam ser decididos e validados com ele.
+1. **Lembretes** ([#72](../../../../issues/72)). É a prioridade 1, mas o modelo atual não tem como disparar: Notificação não recebe *Cota devida* nem nada sobre cota pendente. O gestor também nunca pensou em lembretes vindos de outro lugar; só não quer que o pessoal se sinta pressionado. Gatilho, frequência e canal (e-mail, WhatsApp) precisam ser decididos e validados com ele.
 2. **Gasto por tipo** ([#73](../../../../issues/73)). O gestor quer mostrar o total gasto por tipo de coisa (café, bolacha, conserto), mas o [Gasto](../dominio/GLOSSARIO.md#gasto) hoje não tem tipo. Exige um termo novo no glossário e mudança no Financeiro.
 3. **Pagamento feito por outra pessoa** ([#74](../../../../issues/74)). Às vezes alguém paga pelo outro. Falta definir no domínio a quem o pagamento é atribuído.
-4. **Desequilíbrio entre os tipos de cota.** Alguns da cota só café consomem bolacha e chá. O gestor quer mais equilíbrio, mas não quer controlar consumo. O produto pode, no máximo, deixar claro o que cada tipo de cota inclui.
+4. **Desequilíbrio entre os tipos de cota.** Alguns participantes do tipo de cota só café consomem bolacha e chá. O gestor quer mais equilíbrio, mas não quer controlar consumo. O produto pode, no máximo, deixar claro o que cada tipo de cota inclui.
 
 ### Decididas
 
