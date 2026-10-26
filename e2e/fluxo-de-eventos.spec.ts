@@ -176,7 +176,7 @@ const assuntosDosEmails = async (email: string, texto?: string): Promise<readonl
   return (await r.json()).messages.map((m: { Subject: string }) => m.Subject);
 };
 
-test('entrar, cota devida e pagamento recebido: crédito correto e e-mail enviado', {
+test('RN-FIN-15, RN-FIN-16, RN-NOT-02: entrar, cota devida e pagamento recebido: crédito correto e e-mail enviado', {
   tag: '@celular',
 }, async ({ browser }) => {
   const pessoa = await novoUsuario();
@@ -264,7 +264,7 @@ test('entrar, cota devida e pagamento recebido: crédito correto e e-mail enviad
   });
 });
 
-test('telas do gestor: gasto do próprio bolso e nenhuma tela rola na horizontal', {
+test('RN-FIN-24, RNF-01: telas do gestor: gasto do próprio bolso e nenhuma tela rola na horizontal', {
   tag: '@celular',
 }, async ({ browser }) => {
   // A new gestor per run, whose name has a word wider than 320 px: in the topo and the tables.
@@ -320,7 +320,7 @@ test('telas do gestor: gasto do próprio bolso e nenhuma tela rola na horizontal
     });
 });
 
-test('desativar acesso: participante saiu e fica fora dos participantes ativos', async ({
+test('RN-PAR-08, RN-USU-01: desativar acesso: participante saiu e fica fora dos participantes ativos', async ({
   browser,
 }) => {
   const pessoa = await novoUsuario();
@@ -337,7 +337,7 @@ test('desativar acesso: participante saiu e fica fora dos participantes ativos',
     recarregarAte(gestor, linhaDe(gestor, pessoa.nome).getByText('Saiu', { exact: true })));
 });
 
-test('complemento: parte igual para cada participante ativo', async ({ browser }) => {
+test('RN-FIN-28: complemento: parte igual para cada participante ativo', async ({ browser }) => {
   const gestor = await entrarNoFacoffee(browser, 'gestor', 'gestor');
   const participantes: Page[] = [];
   for (const pessoa of [await novoUsuario(), await novoUsuario()]) {
@@ -376,7 +376,7 @@ test('complemento: parte igual para cada participante ativo', async ({ browser }
   });
 });
 
-test('comprovante enviado: o gestor confirma com outro valor ou recusa com o motivo', {
+test('RN-FIN-09, RN-FIN-10: comprovante enviado: o gestor confirma com outro valor ou recusa com o motivo', {
   tag: '@celular',
 }, async ({ browser }) => {
   const pessoa = await novoUsuario();

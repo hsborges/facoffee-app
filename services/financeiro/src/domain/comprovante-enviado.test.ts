@@ -38,7 +38,7 @@ const confirmado: ComprovanteEnviado = {
 };
 
 describe('enviar', () => {
-  it('leaves the comprovante of the participante a confirmar, producing Comprovante enviado as in the contract', () => {
+  it('RN-FIN-07: leaves the comprovante of the participante a confirmar, producing Comprovante enviado as in the contract', () => {
     expect(envio).toEqual({
       comprovante: {
         id: enviado.payload.receiptId,
@@ -54,7 +54,7 @@ describe('enviar', () => {
 });
 
 describe('editar', () => {
-  it('changes valor and arquivo while a confirmar', () => {
+  it('RN-FIN-11: changes valor and arquivo while a confirmar', () => {
     const pedido = { comprovanteId: 'arquivo-2', valorEmCentavos: 2500 };
     expect(editar(participante, aConfirmar, pedido)).toEqual({
       ok: true,
@@ -62,7 +62,7 @@ describe('editar', () => {
     });
   });
 
-  it('refuses a comprovante already confirmado or recusado', () => {
+  it('RN-FIN-11: refuses a comprovante already confirmado or recusado', () => {
     for (const analisado of [confirmado, recusado]) {
       expect(editar(participante, analisado, aConfirmar)).toEqual({
         ok: false,
@@ -71,7 +71,7 @@ describe('editar', () => {
     }
   });
 
-  it('hides the comprovante of someone else, even from the gestor', () => {
+  it('RN-FIN-11: hides the comprovante of someone else, even from the gestor', () => {
     expect(editar(gestor, aConfirmar, aConfirmar)).toEqual({
       ok: false,
       error: 'comprovante-enviado-nao-encontrado',
@@ -80,7 +80,7 @@ describe('editar', () => {
 });
 
 describe('cancelar', () => {
-  it('is only for the participante, while a confirmar', () => {
+  it('RN-FIN-11: is only for the participante, while a confirmar', () => {
     expect(cancelar(participante, aConfirmar)).toEqual({ ok: true, value: undefined });
     expect(cancelar(participante, recusado)).toEqual({
       ok: false,
@@ -94,7 +94,7 @@ describe('cancelar', () => {
 });
 
 describe('confirmar', () => {
-  it('receives the pagamento por PIX with the comprovante, producing Pagamento recebido', () => {
+  it('RN-FIN-09: receives the pagamento por PIX with the comprovante, producing Pagamento recebido', () => {
     expect(confirmar(gestor, aConfirmar, pedido(3000), contexto)).toEqual({
       ok: true,
       value: {
@@ -123,7 +123,7 @@ describe('confirmar', () => {
     });
   });
 
-  it('with the valor corrected by the gestor, the valor confirmado is what counts', () => {
+  it('RN-FIN-09: with the valor corrected by the gestor, the valor confirmado is what counts', () => {
     expect(confirmar(gestor, aConfirmar, pedido(2000), contexto)).toMatchObject({
       ok: true,
       value: {
@@ -134,7 +134,7 @@ describe('confirmar', () => {
     });
   });
 
-  it('only the gestor confirms, and only once', () => {
+  it('RN-FIN-08: only the gestor confirms, and only once', () => {
     expect(confirmar(participante, aConfirmar, pedido(3000), contexto)).toEqual({
       ok: false,
       error: 'sem-permissao',
@@ -147,7 +147,7 @@ describe('confirmar', () => {
     }
   });
 
-  it('refuses when the arquivo the gestor saw is no longer the one sent', () => {
+  it('RN-FIN-12: refuses when the arquivo the gestor saw is no longer the one sent', () => {
     expect(confirmar(gestor, aConfirmar, pedido(3000, 'arquivo-2'), contexto)).toEqual({
       ok: false,
       error: 'comprovante-alterado',
@@ -159,7 +159,7 @@ describe('recusar', () => {
   const recusadoNoContrato = contrato('finance.receipt-rejected');
   const contexto = { eventId: recusadoNoContrato.id, agora };
 
-  it('keeps the motivo for the participante to see, producing Comprovante recusado as in the contract', () => {
+  it('RN-FIN-10: keeps the motivo for the participante to see, producing Comprovante recusado as in the contract', () => {
     const { reason } = recusadoNoContrato.payload;
     expect(recusar(gestor, aConfirmar, `  ${reason} `, contexto)).toEqual({
       ok: true,
@@ -170,7 +170,7 @@ describe('recusar', () => {
     });
   });
 
-  it('refuses a recusa without motivo', () => {
+  it('RN-FIN-10: refuses a recusa without motivo', () => {
     for (const motivo of ['', '   ']) {
       expect(recusar(gestor, aConfirmar, motivo, contexto)).toEqual({
         ok: false,
@@ -179,7 +179,7 @@ describe('recusar', () => {
     }
   });
 
-  it('only the gestor recusa, and only once', () => {
+  it('RN-FIN-08: only the gestor recusa, and only once', () => {
     expect(recusar(participante, aConfirmar, 'Ilegível', contexto)).toEqual({
       ok: false,
       error: 'sem-permissao',

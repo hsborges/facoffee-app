@@ -94,7 +94,7 @@ const confirmacao = (valorConfirmadoEmCentavos: number) => ({
 });
 
 describe('enviarComprovante', () => {
-  it('saves the comprovante a confirmar and stores Comprovante enviado, without any pagamento', async () => {
+  it('RN-FIN-07: saves the comprovante a confirmar and stores Comprovante enviado, without any pagamento', async () => {
     const { salvos, pagamentos, events, enviar } = inMemory();
     expect(await enviar(participante, pedido)).toEqual({ ok: true, value: 'id-1' });
     expect(salvos.get('id-1')).toEqual({
@@ -110,7 +110,7 @@ describe('enviarComprovante', () => {
     ]);
   });
 
-  it('refuses an arquivo not guardado for the participante', async () => {
+  it('RN-FIN-13: refuses an arquivo not guardado for the participante', async () => {
     const { salvos, enviar } = inMemory();
     for (const comprovanteId of ['arquivo-do-outro', 'nao-existe']) {
       expect(await enviar(participante, { ...pedido, comprovanteId })).toEqual({
@@ -121,7 +121,7 @@ describe('enviarComprovante', () => {
     expect(salvos.size).toBe(0);
   });
 
-  it('refuses an arquivo already sent, without a second Comprovante enviado', async () => {
+  it('RN-FIN-05: refuses an arquivo already sent, without a second Comprovante enviado', async () => {
     const { events, enviar } = inMemory();
     await enviar(participante, pedido);
     expect(await enviar(participante, pedido)).toEqual({
@@ -133,7 +133,7 @@ describe('enviarComprovante', () => {
 });
 
 describe('editarComprovante and cancelarComprovante', () => {
-  it('edit valor and arquivo while a confirmar', async () => {
+  it('RN-FIN-11: edit valor and arquivo while a confirmar', async () => {
     const { salvos, enviar, editar } = inMemory();
     await enviar(participante, pedido);
     const editado = { comprovanteId: 'arquivo-2', valorEmCentavos: 2500 };
@@ -157,14 +157,14 @@ describe('editarComprovante and cancelarComprovante', () => {
     });
   });
 
-  it('cancel removes the comprovante a confirmar', async () => {
+  it('RN-FIN-11: cancel removes the comprovante a confirmar', async () => {
     const { salvos, enviar, cancelar } = inMemory();
     await enviar(participante, pedido);
     expect(await cancelar(participante, 'id-1')).toEqual({ ok: true, value: undefined });
     expect(salvos.size).toBe(0);
   });
 
-  it('refuses both once the comprovante is confirmado or recusado', async () => {
+  it('RN-FIN-11: refuses both once the comprovante is confirmado or recusado', async () => {
     const { enviar, editar, cancelar, confirmar, recusar } = inMemory();
     await enviar(participante, pedido);
     await enviar(participante, { ...pedido, comprovanteId: 'arquivo-2' });
@@ -184,7 +184,7 @@ describe('editarComprovante and cancelarComprovante', () => {
 });
 
 describe('confirmarComprovante', () => {
-  it('receives the pagamento with the valor confirmado and stores Pagamento recebido', async () => {
+  it('RN-FIN-09: receives the pagamento with the valor confirmado and stores Pagamento recebido', async () => {
     const { salvos, pagamentos, events, enviar, confirmar } = inMemory();
     await enviar(participante, pedido);
     expect(await confirmar(gestor, 'id-1', confirmacao(2000))).toEqual({ ok: true, value: 'id-3' });
@@ -207,7 +207,7 @@ describe('confirmarComprovante', () => {
     ]);
   });
 
-  it('confirms once only', async () => {
+  it('RN-FIN-08: confirms once only', async () => {
     const { pagamentos, enviar, confirmar, recusar } = inMemory();
     await enviar(participante, pedido);
     await confirmar(gestor, 'id-1', confirmacao(3000));
@@ -222,7 +222,7 @@ describe('confirmarComprovante', () => {
     expect(pagamentos).toHaveLength(1);
   });
 
-  it('refuses an arquivo the participante changed after the gestor saw it', async () => {
+  it('RN-FIN-12: refuses an arquivo the participante changed after the gestor saw it', async () => {
     const { pagamentos, enviar, editar, confirmar } = inMemory();
     await enviar(participante, pedido);
     await editar(participante, 'id-1', { ...pedido, comprovanteId: 'arquivo-2' });
@@ -254,7 +254,7 @@ describe('confirmarComprovante', () => {
 });
 
 describe('recusarComprovante', () => {
-  it('keeps the motivo, stores Comprovante recusado and receives no pagamento', async () => {
+  it('RN-FIN-10: keeps the motivo, stores Comprovante recusado and receives no pagamento', async () => {
     const { salvos, pagamentos, events, enviar, recusar } = inMemory();
     await enviar(participante, pedido);
     expect(await recusar(gestor, 'id-1', '')).toEqual({ ok: false, error: 'recusa-sem-motivo' });
@@ -279,7 +279,7 @@ describe('recusarComprovante', () => {
 });
 
 describe('leituras', () => {
-  it('gives the gestor only the comprovantes a confirmar, and each participante their own', async () => {
+  it('RN-FIN-14: gives the gestor only the comprovantes a confirmar, and each participante their own', async () => {
     const { repositorio, enviar, confirmar } = inMemory();
     await enviar(participante, pedido);
     await enviar(participante, { ...pedido, comprovanteId: 'arquivo-2' });

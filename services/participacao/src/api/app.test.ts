@@ -135,7 +135,7 @@ describe('GET /participante/eu', () => {
 });
 
 describe('GET /tipo-de-cota', () => {
-  it('200 with the valor of each tipo de cota in the year, for anyone logged in', async () => {
+  it('RN-PAR-16: 200 with the valor of each tipo de cota in the year, for anyone logged in', async () => {
     const response = await app().request('/tipo-de-cota', { headers: { 'x-user-id': novo } });
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual([

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { anoAnterior, caixinha, caixinhaDoMes, saldoDaCaixinha } from './caixinha.js';
 
 describe('saldoDaCaixinha', () => {
-  it('takes out gastos pagos pela caixinha and reembolsos, but not gastos do próprio bolso', () => {
+  it('RN-FIN-30: takes out gastos pagos pela caixinha and reembolsos, but not gastos do próprio bolso', () => {
     expect(
       saldoDaCaixinha({
         recebidoEmCentavos: 10000,
@@ -15,7 +15,7 @@ describe('saldoDaCaixinha', () => {
     ).toBe(5500);
   });
 
-  it('goes negative when the gastos pela caixinha pass what was received', () => {
+  it('RN-FIN-30: goes negative when the gastos pela caixinha pass what was received', () => {
     expect(
       saldoDaCaixinha({
         recebidoEmCentavos: 1000,
@@ -27,7 +27,7 @@ describe('saldoDaCaixinha', () => {
 });
 
 describe('caixinha', () => {
-  it('sums the gastos do ano anterior in total and per tipo de gasto, besides the saldo', () => {
+  it('RN-FIN-33: sums the gastos do ano anterior in total and per tipo de gasto, besides the saldo', () => {
     expect(
       caixinha({ recebidoEmCentavos: 5000, gastos: [], reembolsadoEmCentavos: 0 }, [
         { tipo: 'cafe', valorEmCentavos: 60000 },
@@ -48,7 +48,7 @@ describe('caixinha', () => {
 });
 
 describe('caixinhaDoMes', () => {
-  it('sums what left the caixinha per tipo de gasto, and the saldo no fim matches it', () => {
+  it('RN-FIN-31, RN-FIN-32: sums what left the caixinha per tipo de gasto, and the saldo no fim matches it', () => {
     expect(
       caixinhaDoMes(
         '2026-10',
@@ -78,7 +78,7 @@ describe('caixinhaDoMes', () => {
 });
 
 describe('anoAnterior', () => {
-  it('turns the year at midnight in Campo Grande, not in UTC', () => {
+  it('RNF-03: turns the year at midnight in Campo Grande, not in UTC', () => {
     expect(anoAnterior(new Date('2027-01-01T03:59:59Z'))).toBe(2025);
     expect(anoAnterior(new Date('2027-01-01T04:00:00Z'))).toBe(2026);
   });

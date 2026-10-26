@@ -25,7 +25,7 @@ const inMemory = (ativos: readonly string[]) => {
 };
 
 describe('solicitarComplemento', () => {
-  it('saves the complemento divided among the ativos together with Complemento solicitado', async () => {
+  it('RN-FIN-28: saves the complemento divided among the ativos together with Complemento solicitado', async () => {
     const { salvos, events, solicitar } = inMemory(['p-1', 'p-2', 'p-3']);
     expect(await solicitar(gestor, 1000)).toEqual({ ok: true, value: 'id-1' });
     expect(salvos).toEqual([

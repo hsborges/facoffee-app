@@ -41,7 +41,7 @@ const inMemory = (conhecidos = [p1]) => {
 };
 
 describe('receberPagamento', () => {
-  it('saves the pagamento together with Pagamento recebido', async () => {
+  it('RN-FIN-03: saves the pagamento together with Pagamento recebido', async () => {
     const { salvos, events, receber } = inMemory();
     expect(await receber(gestor, porPix)).toEqual({ ok: true, value: 'id-1' });
     expect(salvos).toEqual([{ ...porPix, id: 'id-1', recebidoEm: now }]);
@@ -50,7 +50,7 @@ describe('receberPagamento', () => {
     ]);
   });
 
-  it('refuses a comprovante not guardado for the participante', async () => {
+  it('RN-FIN-03: refuses a comprovante not guardado for the participante', async () => {
     const { salvos, receber } = inMemory();
     for (const pedido of [
       { ...porPix, comprovanteId: 'nao-existe' },
@@ -64,7 +64,7 @@ describe('receberPagamento', () => {
     expect(salvos).toEqual([]);
   });
 
-  it('refuses a pagamento por PIX without comprovante, saving nothing', async () => {
+  it('RN-FIN-02: refuses a pagamento por PIX without comprovante, saving nothing', async () => {
     const { salvos, receber } = inMemory();
     expect(await receber(gestor, { ...porPix, comprovanteId: null })).toEqual({
       ok: false,

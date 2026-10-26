@@ -12,11 +12,11 @@ const gasto: Gasto = {
 };
 
 describe('saidaDaCaixinha', () => {
-  it('takes the valor of a gasto pago pela caixinha out of the caixinha', () => {
+  it('RN-FIN-24: takes the valor of a gasto pago pela caixinha out of the caixinha', () => {
     expect(saidaDaCaixinha(gasto)).toBe(4590);
   });
 
-  it('takes nothing out for a gasto pago do próprio bolso; only the reembolso does', () => {
+  it('RN-FIN-24: takes nothing out for a gasto pago do próprio bolso; only the reembolso does', () => {
     expect(saidaDaCaixinha({ ...gasto, origem: 'proprio-bolso' })).toBe(0);
   });
 });

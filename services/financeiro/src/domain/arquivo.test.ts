@@ -42,7 +42,7 @@ describe('validar', () => {
 describe('comprovante', () => {
   const participanteId = 'participante-1';
 
-  it('is guardado by the gestor for anyone, and by the participante only for themself', () => {
+  it('RN-FIN-13: is guardado by the gestor for anyone, and by the participante only for themself', () => {
     const gestor = { id: 'gestor-1', perfis: ['participante', 'gestor'] };
     expect(podeGuardarComprovante(gestor, participanteId)).toBe(true);
     expect(podeGuardarComprovante({ id: participanteId, perfis: [] }, participanteId)).toBe(true);
@@ -51,7 +51,7 @@ describe('comprovante', () => {
     );
   });
 
-  it('is seen by its participante and by the gestor only', () => {
+  it('RN-FIN-04: is seen by its participante and by the gestor only', () => {
     expect(podeVerComprovante({ id: participanteId, perfis: [] }, participanteId)).toBe(true);
     expect(podeVerComprovante({ id: 'gestor-1', perfis: ['gestor'] }, participanteId)).toBe(true);
     expect(podeVerComprovante({ id: 'outro', perfis: ['participante'] }, participanteId)).toBe(

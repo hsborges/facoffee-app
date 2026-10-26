@@ -60,7 +60,7 @@ const usuarioDesativado = (userId: unknown): Event => ({
 });
 
 describe('pedirEntrada', () => {
-  it('saves the participante together with Participante entrou', async () => {
+  it('RN-PAR-01: saves the participante together with Participante entrou', async () => {
     const { participantes, events, pedirEntrada } = inMemory();
 
     expect(await pedirEntrada('p-1', 'completa')).toEqual({ ok: true, value: undefined });
@@ -75,7 +75,7 @@ describe('pedirEntrada', () => {
     ]);
   });
 
-  it('publishes again when the participante returns', async () => {
+  it('RN-PAR-03: publishes again when the participante returns', async () => {
     const { participantes, events, pedirEntrada } = inMemory();
     participantes.set('p-1', {
       id: 'p-1',
@@ -89,7 +89,7 @@ describe('pedirEntrada', () => {
     expect(events).toHaveLength(1);
   });
 
-  it('refuses and publishes nothing when already participando', async () => {
+  it('RN-PAR-02: refuses and publishes nothing when already participando', async () => {
     const { participantes, events, pedirEntrada } = inMemory();
 
     await pedirEntrada('p-1', 'completa');
@@ -111,7 +111,7 @@ describe('pedirEntrada', () => {
 });
 
 describe('trocarTipo', () => {
-  it('saves the troca for the next month and publishes nothing', async () => {
+  it('RN-PAR-05: saves the troca for the next month and publishes nothing', async () => {
     const { participantes, events, pedirEntrada, trocarTipo } = inMemory();
     await pedirEntrada('p-1', 'so-cafe');
 
@@ -123,14 +123,14 @@ describe('trocarTipo', () => {
     expect(events).toHaveLength(1);
   });
 
-  it('refuses whoever is not participando', async () => {
+  it('RN-PAR-06: refuses whoever is not participando', async () => {
     const { trocarTipo } = inMemory();
     expect(await trocarTipo('p-1', 'completa')).toEqual({ ok: false, error: 'nao-participando' });
   });
 });
 
 describe('pedirSaida', () => {
-  it('saves the saída together with Participante saiu', async () => {
+  it('RN-PAR-07: saves the saída together with Participante saiu', async () => {
     const { participantes, events, pedirEntrada, pedirSaida } = inMemory();
     await pedirEntrada('p-1', 'so-cafe');
 
@@ -182,7 +182,7 @@ describe('consultarParticipante', () => {
 });
 
 describe('encerrarAoDesativarAcesso', () => {
-  it('turns Usuário desativado into Participante saiu', async () => {
+  it('RN-PAR-08: turns Usuário desativado into Participante saiu', async () => {
     const { participantes, events, pedirEntrada, encerrar } = inMemory();
     await pedirEntrada(p1, 'completa');
 
@@ -194,7 +194,7 @@ describe('encerrarAoDesativarAcesso', () => {
     });
   });
 
-  it('publishes Participante saiu only once after a saída already asked for', async () => {
+  it('RN-PAR-08: publishes Participante saiu only once after a saída already asked for', async () => {
     const { events, pedirEntrada, pedirSaida, encerrar } = inMemory();
     await pedirEntrada(p1, 'completa');
     await pedirSaida(p1);

@@ -14,7 +14,7 @@ const id = '7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d';
 const participando: Participante = { id, tipoDeCota: 'so-cafe', participando: true, troca: null };
 
 describe('entrar', () => {
-  it('the person enters for the first time with the chosen tipo de cota and Participante entrou is published', () => {
+  it('RN-PAR-01: the person enters for the first time with the chosen tipo de cota and Participante entrou is published', () => {
     expect(entrar(undefined, { id, tipoDeCota: 'so-cafe' }, contexto)).toEqual({
       ok: true,
       value: {
@@ -30,7 +30,7 @@ describe('entrar', () => {
     });
   });
 
-  it('returning is entering again, even with another tipo de cota, dropping an old troca', () => {
+  it('RN-PAR-03: returning is entering again, even with another tipo de cota, dropping an old troca', () => {
     const saiu: Participante = {
       ...participando,
       participando: false,
@@ -46,7 +46,7 @@ describe('entrar', () => {
     });
   });
 
-  it('cannot enter while already participando', () => {
+  it('RN-PAR-02: cannot enter while already participando', () => {
     expect(entrar(participando, { id, tipoDeCota: 'completa' }, contexto)).toEqual({
       ok: false,
       error: 'ja-participando',
@@ -64,7 +64,7 @@ describe('trocarTipoDeCota', () => {
     return resultado.value;
   };
 
-  it('the cota of the current month keeps the tipo; the next month uses the new one', () => {
+  it('RN-PAR-05: the cota of the current month keeps the tipo; the next month uses the new one', () => {
     const trocado = trocar(participando);
 
     expect(trocado.troca).toEqual({ tipoDeCota: 'completa', aPartirDe: '2026-11' });
@@ -73,14 +73,14 @@ describe('trocarTipoDeCota', () => {
     expect(tipoDeCotaNoMes(trocado, '2027-01')).toBe('completa');
   });
 
-  it('turns months in Campo Grande time and from December to January', () => {
+  it('RNF-03: turns months in Campo Grande time and from December to January', () => {
     // Still October 31 in Campo Grande (UTC-4).
     expect(trocar(participando, new Date('2026-11-01T03:59:59Z')).troca?.aPartirDe).toBe('2026-11');
     expect(trocar(participando, new Date('2026-11-01T04:00:00Z')).troca?.aPartirDe).toBe('2026-12');
     expect(trocar(participando, new Date('2026-12-20T12:00:00Z')).troca?.aPartirDe).toBe('2027-01');
   });
 
-  it('asking for the current tipo cancels a pending troca', () => {
+  it('RN-PAR-05: asking for the current tipo cancels a pending troca', () => {
     const cancelado = trocarTipoDeCota(trocar(participando), 'so-cafe', emOutubro);
     expect(cancelado).toEqual({ ok: true, value: participando });
   });
@@ -99,7 +99,7 @@ describe('trocarTipoDeCota', () => {
     });
   });
 
-  it('only who is participando can trocar', () => {
+  it('RN-PAR-06: only who is participando can trocar', () => {
     for (const atual of [undefined, { ...participando, participando: false }]) {
       expect(trocarTipoDeCota(atual, 'completa', emOutubro)).toEqual({
         ok: false,
@@ -110,7 +110,7 @@ describe('trocarTipoDeCota', () => {
 });
 
 describe('sair', () => {
-  it('ends the participação and produces Participante saiu', () => {
+  it('RN-PAR-07: ends the participação and produces Participante saiu', () => {
     expect(sair(participando, contexto)).toEqual({
       ok: true,
       value: {
@@ -126,7 +126,7 @@ describe('sair', () => {
     });
   });
 
-  it('who is not participando cannot leave', () => {
+  it('RN-PAR-07: who is not participando cannot leave', () => {
     for (const atual of [undefined, { ...participando, participando: false }]) {
       expect(sair(atual, contexto)).toEqual({ ok: false, error: 'nao-participando' });
     }

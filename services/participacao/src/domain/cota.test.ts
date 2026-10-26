@@ -14,7 +14,7 @@ const valores: readonly ValorDaCota[] = [
 ];
 
 describe('deverCota', () => {
-  it('the participante owes the cota of the month with the valor of their tipo and Cota devida is published', () => {
+  it('RN-PAR-09: the participante owes the cota of the month with the valor of their tipo and Cota devida is published', () => {
     expect(deverCota(participando, '2026-11', valores, contexto)).toEqual({
       ok: true,
       value: {
@@ -35,7 +35,7 @@ describe('deverCota', () => {
     });
   });
 
-  it('uses the tipo de cota in that month, counting a troca, and the valor of that year', () => {
+  it('RN-PAR-11: uses the tipo de cota in that month, counting a troca, and the valor of that year', () => {
     const trocou: Participante = {
       ...participando,
       troca: { tipoDeCota: 'completa', aPartirDe: '2026-12' },
@@ -54,14 +54,14 @@ describe('deverCota', () => {
     });
   });
 
-  it('is not devida without a valor for the tipo de cota in that year', () => {
+  it('RN-PAR-11: is not devida without a valor for the tipo de cota in that year', () => {
     expect(deverCota(participando, '2027-01', valores, contexto)).toEqual({
       ok: false,
       error: 'valor-nao-definido',
     });
   });
 
-  it('whoever is not participando owes no cota', () => {
+  it('RN-PAR-09: whoever is not participando owes no cota', () => {
     expect(
       deverCota({ ...participando, participando: false }, '2026-11', valores, contexto),
     ).toEqual({ ok: false, error: 'nao-participando' });

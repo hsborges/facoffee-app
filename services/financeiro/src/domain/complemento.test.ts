@@ -20,7 +20,7 @@ const ativos: string[] = contrato.payload.shares.map(
 );
 
 describe('dividir', () => {
-  it('splits in partes iguais and the centavos left over go one each, so none is lost', () => {
+  it('RN-FIN-28: splits in partes iguais and the centavos left over go one each, so none is lost', () => {
     const partes = dividir(1000, ['a', 'b', 'c']);
     expect(partes.map((p) => p.valorEmCentavos)).toEqual([334, 333, 333]);
     expect(partes.reduce((total, p) => total + p.valorEmCentavos, 0)).toBe(1000);
@@ -42,7 +42,7 @@ describe('dividir', () => {
 });
 
 describe('solicitar', () => {
-  it('divides among the participantes ativos and produces Complemento solicitado as in the contract', () => {
+  it('RN-FIN-28, RN-FIN-29: divides among the participantes ativos and produces Complemento solicitado as in the contract', () => {
     expect(solicitar(gestor, contrato.payload.totalAmountInCents, ativos, contexto)).toEqual({
       ok: true,
       value: {
@@ -60,14 +60,14 @@ describe('solicitar', () => {
     });
   });
 
-  it('only the gestor solicita', () => {
+  it('RN-FIN-27: only the gestor solicita', () => {
     expect(solicitar({ perfis: ['participante'] }, 1001, ativos, contexto)).toEqual({
       ok: false,
       error: 'sem-permissao',
     });
   });
 
-  it('needs someone ativo and at least one centavo per parte', () => {
+  it('RN-FIN-28: needs someone ativo and at least one centavo per parte', () => {
     expect(solicitar(gestor, 1001, [], contexto)).toEqual({
       ok: false,
       error: 'sem-participantes-ativos',

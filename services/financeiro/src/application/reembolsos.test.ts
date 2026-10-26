@@ -49,7 +49,7 @@ describe('reembolsarGasto', () => {
     ]);
   });
 
-  it('does not reembolsar the same gasto twice', async () => {
+  it('RN-FIN-25: does not reembolsar the same gasto twice', async () => {
     const { salvos, events, reembolsar } = inMemory();
     await reembolsar(gestor, 'do-bolso');
     expect(await reembolsar(gestor, 'do-bolso')).toEqual({

@@ -28,7 +28,7 @@ describe('obterUsuarioLogado', () => {
     expect(new Headers(init.headers).get('authorization')).toBe('Bearer token');
   });
 
-  it('a deactivated access gets 403 from the gateway', async () => {
+  it('RN-USU-02: a deactivated access gets 403 from the gateway', async () => {
     responde(async () => Response.json({ error: 'acesso-desativado' }, { status: 403 }));
     expect(await obterUsuarioLogado('token')).toEqual({ situacao: 'desativado' });
   });

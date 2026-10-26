@@ -61,7 +61,7 @@ describe('avisos', () => {
     expect(result.ok && result.value.emails[0]?.texto).toMatch(/^Olá, Ana\./);
   });
 
-  it('Pagamento recebido avisa o participante, com a forma do pagamento', () => {
+  it('RN-NOT-02: Pagamento recebido avisa o participante, com a forma do pagamento', () => {
     const payload = { paymentId: bia.id, participantId: ana.id, amountInCents: 18000 };
     const pix = avisos(evento('finance.payment-received', { ...payload, method: 'pix' }), contatos);
     const cash = avisos(
@@ -79,7 +79,7 @@ describe('avisos', () => {
     );
   });
 
-  it('Complemento solicitado avisa cada participante da sua parte', () => {
+  it('RN-NOT-03: Complemento solicitado avisa cada participante da sua parte', () => {
     const result = avisos(
       evento('finance.top-up-requested', {
         topUpId: ana.id,
@@ -102,7 +102,7 @@ describe('avisos', () => {
     );
   });
 
-  it('Reembolso feito avisa quem pagou o gasto do próprio bolso', () => {
+  it('RN-NOT-04: Reembolso feito avisa quem pagou o gasto do próprio bolso', () => {
     const result = avisos(
       evento('finance.reimbursement-made', {
         reimbursementId: ana.id,
@@ -120,7 +120,7 @@ describe('avisos', () => {
     );
   });
 
-  it('Comprovante enviado avisa cada gestor, com o nome de quem enviou e o valor', () => {
+  it('RN-NOT-05: Comprovante enviado avisa cada gestor, com o nome de quem enviou e o valor', () => {
     const outro = { ...bia, id: gestor.id.replace('9e', '8e'), email: 'outro@ufms.br' };
     const enviado = evento('finance.receipt-sent', {
       receiptId: bia.id,
@@ -139,7 +139,7 @@ describe('avisos', () => {
     expect(semNome.ok && semNome.value.emails[0]?.texto).toContain('Um participante enviou');
   });
 
-  it('Comprovante enviado sem gestor conhecido não envia e-mail e avisa a falta', () => {
+  it('RN-NOT-05: Comprovante enviado sem gestor conhecido não envia e-mail e avisa a falta', () => {
     const enviado = evento('finance.receipt-sent', {
       receiptId: bia.id,
       participantId: ana.id,
@@ -151,7 +151,7 @@ describe('avisos', () => {
     });
   });
 
-  it('Comprovante recusado avisa o participante do valor e do motivo', () => {
+  it('RN-NOT-06: Comprovante recusado avisa o participante do valor e do motivo', () => {
     const result = avisos(
       evento('finance.receipt-rejected', {
         receiptId: bia.id,

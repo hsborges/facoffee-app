@@ -57,7 +57,7 @@ describe('receberPagamento', () => {
     expect(chamadas()).toHaveLength(1);
   });
 
-  it('refuses a PIX without comprovante before calling the API', async () => {
+  it('RN-FIN-02: refuses a PIX without comprovante before calling the API', async () => {
     const chamadas = responde();
     for (const comprovante of [null, new File([], '')]) {
       expect(await receberPagamento('token', { ...pagamento, forma: 'pix', comprovante })).toEqual({
@@ -114,7 +114,7 @@ describe('registrarGasto', () => {
 });
 
 describe('confirmarComprovante', () => {
-  it('confirms the valor for the arquivo the gestor saw', async () => {
+  it('RN-FIN-12: confirms the valor for the arquivo the gestor saw', async () => {
     const chamadas = responde(Response.json({ id: 'pagamento' }, { status: 201 }));
     expect(
       await confirmarComprovante('token', { id: 'enviado', comprovanteId: 'arquivo' }, 2500),
@@ -131,7 +131,7 @@ describe('confirmarComprovante', () => {
 describe('creditoOuPendencia', () => {
   const situacao = { id: participanteId, ativo: true, creditoEmCentavos: 0, pendenteEmCentavos: 0 };
 
-  it('shows the pendência, the crédito or that the participante is em dia', () => {
+  it('RN-FIN-20: shows the pendência, the crédito or that the participante is em dia', () => {
     expect(creditoOuPendencia({ ...situacao, pendenteEmCentavos: 3250 })).toBe(
       'Pendente: R$\u00a032,50',
     );

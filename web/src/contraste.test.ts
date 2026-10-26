@@ -36,7 +36,7 @@ const pares = [
 ] as const;
 
 describe('design tokens', () => {
-  it.each(pares)('%s on %s reaches %s:1', (frente, fundo, minimo) => {
+  it.each(pares)('RNF-02: %s on %s reaches %s:1', (frente, fundo, minimo) => {
     const [a, b] = [cores[frente], cores[fundo]];
     if (!a || !b) throw new Error(`token not found: ${a ? fundo : frente}`);
     expect(contraste(a, b)).toBeGreaterThanOrEqual(minimo);

@@ -24,7 +24,7 @@ const porPix: PedidoDePagamento = {
 const emDinheiro: PedidoDePagamento = { ...porPix, forma: 'dinheiro', comprovanteId: null };
 
 describe('receber', () => {
-  it('records the pagamento por PIX and produces Pagamento recebido as in the contract', () => {
+  it('RN-FIN-02: records the pagamento por PIX and produces Pagamento recebido as in the contract', () => {
     const result = receber(gestor, porPix, contexto);
     expect(result).toEqual({
       ok: true,
@@ -35,25 +35,25 @@ describe('receber', () => {
     });
   });
 
-  it('records the pagamento em dinheiro as cash', () => {
+  it('RN-FIN-02: records the pagamento em dinheiro as cash', () => {
     const result = receber(gestor, emDinheiro, contexto);
     expect(result).toMatchObject({ ok: true, value: { evento: { payload: { method: 'cash' } } } });
   });
 
-  it('refuses a pagamento por PIX without comprovante', () => {
+  it('RN-FIN-02: refuses a pagamento por PIX without comprovante', () => {
     expect(receber(gestor, { ...porPix, comprovanteId: null }, contexto)).toEqual({
       ok: false,
       error: 'pix-sem-comprovante',
     });
   });
 
-  it('refuses a comprovante on a pagamento em dinheiro', () => {
+  it('RN-FIN-02: refuses a comprovante on a pagamento em dinheiro', () => {
     expect(
       receber(gestor, { ...emDinheiro, comprovanteId: porPix.comprovanteId }, contexto),
     ).toEqual({ ok: false, error: 'comprovante-so-no-pix' });
   });
 
-  it('only the gestor receives pagamentos', () => {
+  it('RN-FIN-01: only the gestor receives pagamentos', () => {
     expect(receber({ perfis: ['participante'] }, porPix, contexto)).toEqual({
       ok: false,
       error: 'sem-permissao',

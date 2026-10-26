@@ -27,7 +27,7 @@ const gestor = { id: 'gestor-1', perfis: ['participante', 'gestor'] };
 const participante = { id: 'participante-1', perfis: ['participante'] };
 
 describe('guardarComprovante', () => {
-  it('guarda the comprovante of the participante, sent by the gestor', async () => {
+  it('RN-FIN-13: guarda the comprovante of the participante, sent by the gestor', async () => {
     const { armazem, arquivos } = emMemoria();
     expect(await guardarComprovante(armazem, newId)(gestor, participante.id, PDF)).toEqual({
       ok: true,
@@ -40,7 +40,7 @@ describe('guardarComprovante', () => {
     });
   });
 
-  it('guarda the comprovante the participante sends for themself', async () => {
+  it('RN-FIN-13: guarda the comprovante the participante sends for themself', async () => {
     const { armazem, arquivos } = emMemoria();
     expect(await guardarComprovante(armazem, newId)(participante, participante.id, PDF)).toEqual({
       ok: true,
@@ -49,7 +49,7 @@ describe('guardarComprovante', () => {
     expect(arquivos.get('comprovante/arquivo-1')?.participanteId).toBe(participante.id);
   });
 
-  it('refuses a participante guardando for someone else', async () => {
+  it('RN-FIN-13: refuses a participante guardando for someone else', async () => {
     const { armazem, arquivos } = emMemoria();
     expect(await guardarComprovante(armazem, newId)(participante, gestor.id, PDF)).toEqual({
       ok: false,
@@ -75,13 +75,13 @@ describe('baixarComprovante', () => {
     return baixarComprovante(armazem);
   };
 
-  it('gives the comprovante to its participante and to the gestor', async () => {
+  it('RN-FIN-04: gives the comprovante to its participante and to the gestor', async () => {
     const baixar = await guardado();
     expect(await baixar(participante, 'arquivo-1')).toMatchObject({ ok: true });
     expect(await baixar(gestor, 'arquivo-1')).toMatchObject({ ok: true });
   });
 
-  it('hides it from other participantes as if it did not exist', async () => {
+  it('RN-FIN-04: hides it from other participantes as if it did not exist', async () => {
     const baixar = await guardado();
     const outro = { id: 'outro', perfis: ['participante'] };
     expect(await baixar(outro, 'arquivo-1')).toEqual({ ok: false, error: 'nao-encontrado' });
@@ -90,7 +90,7 @@ describe('baixarComprovante', () => {
 });
 
 describe('nota', () => {
-  it('is guardada by any participante and seen by all', async () => {
+  it('RN-FIN-23: is guardada by any participante and seen by all', async () => {
     const { armazem } = emMemoria();
     expect(await guardarNota(armazem, newId)(participante, PDF)).toEqual({
       ok: true,
@@ -102,7 +102,7 @@ describe('nota', () => {
     });
   });
 
-  it('is not found under the comprovantes, nor the other way round', async () => {
+  it('RN-FIN-06: is not found under the comprovantes, nor the other way round', async () => {
     const { armazem } = emMemoria();
     await guardarNota(armazem, newId)(participante, PDF);
     expect(await baixarComprovante(armazem)(gestor, 'arquivo-1')).toEqual({
