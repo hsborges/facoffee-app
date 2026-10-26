@@ -32,6 +32,10 @@ const app = (deps: Partial<ApiDependencies> = {}) =>
       id === participando
         ? ok({ id, tipoDeCota: 'so-cafe', participando: true, troca: null })
         : fail('participante-nao-encontrado'),
+    consultarValoresDaCota: async () => [
+      { tipoDeCota: 'so-cafe', ano: 2026, valorEmCentavos: 2500 },
+      { tipoDeCota: 'completa', ano: 2026, valorEmCentavos: 3000 },
+    ],
     iniciarAno: async () => ({ valoresRepetidos: 1 }),
     iniciarMes: async () => ({ cotasDevidas: 2, semValorDaCota: 0 }),
     health: async () => ({ database: true, rabbitmq: true }),
@@ -127,6 +131,18 @@ describe('GET /participante/eu', () => {
     expect(response.status).toBe(404);
     expect(await response.json()).toEqual({ error: 'participante-nao-encontrado' });
     expect((await app().request('/participante/eu')).status).toBe(401);
+  });
+});
+
+describe('GET /tipo-de-cota', () => {
+  it('200 with the valor of each tipo de cota in the year, for anyone logged in', async () => {
+    const response = await app().request('/tipo-de-cota', { headers: { 'x-user-id': novo } });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual([
+      { tipoDeCota: 'so-cafe', ano: 2026, valorEmCentavos: 2500 },
+      { tipoDeCota: 'completa', ano: 2026, valorEmCentavos: 3000 },
+    ]);
+    expect((await app().request('/tipo-de-cota')).status).toBe(401);
   });
 });
 

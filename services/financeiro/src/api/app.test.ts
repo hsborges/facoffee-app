@@ -99,6 +99,12 @@ const app = (deps: Partial<ApiDependencies> = {}) => {
     consultarCaixinha: async () => ({
       saldoEmCentavos: -1500,
       gastosDoAnoAnteriorEmCentavos: 90000,
+      gastosDoAnoAnteriorPorTipoEmCentavos: {
+        cafe: 60000,
+        'outros-itens': 20000,
+        'conserto-e-manutencao': 10000,
+        reposicao: 0,
+      },
     }),
     consultarCaixinhaDoMes: async (mes) => ({
       mes,
@@ -490,9 +496,10 @@ describe('GET /caixinha', () => {
   it('gives any participante the saldo and the gastos do ano anterior', async () => {
     const response = await app().request('/caixinha', { headers: doParticipante });
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({
+    expect(await response.json()).toMatchObject({
       saldoEmCentavos: -1500,
       gastosDoAnoAnteriorEmCentavos: 90000,
+      gastosDoAnoAnteriorPorTipoEmCentavos: { cafe: 60000 },
     });
     expect((await app().request('/caixinha')).status).toBe(401);
   });

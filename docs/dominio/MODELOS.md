@@ -5,7 +5,7 @@
 | **Escopo** | Divisão de custos da copa da FACOM |
 | **Sistema** | FACOFFEE |
 | **Disciplina** | Técnicas Avançadas de Desenvolvimento de Software (2026/2) |
-| **Versão** | 2.8 |
+| **Versão** | 2.9 |
 | **Data** | 2026-10-26 |
 | **Status** | Aprovado |
 | **Base** | [Glossário da Linguagem Ubíqua](GLOSSARIO.md) (versão 2.6) e arquitetura do FACOFFEE ([arquitetura/visao-geral.png](../arquitetura/visao-geral.png)) |
@@ -179,7 +179,7 @@ flowchart LR
     C1 --> G1["▣ Tipo de cota (Participação)"] --> E1["⚡ Valor da cota definido"]
 ```
 
-O gestor consulta os gastos do ano anterior em Financeiro e define o valor em Participação. Nenhum contexto consulta o outro diretamente. Se o gestor não define o valor de um tipo de cota até o início do ano, a política repete o valor do ano anterior e publica *Valor da cota definido*.
+O gestor consulta os gastos do ano anterior em Financeiro e define o valor em Participação. Os participantes veem as mesmas leituras, *Gastos do ano anterior* e *Valores da cota*, para entender de onde vem o valor. Nenhum contexto consulta o outro diretamente. Se o gestor não define o valor de um tipo de cota até o início do ano, a política repete o valor do ano anterior e publica *Valor da cota definido*.
 
 ### Eventos
 
@@ -210,7 +210,8 @@ O contexto Participação também recebe um evento do contexto Usuário:
 | **Crédito e pendentes** | Financeiro | Para cada participante: pagamentos recebidos menos cotas devidas e partes de complementos. Se o resultado é positivo, é crédito; se é negativo, o participante está pendente. | O gestor, para lembrar quem deve; o participante, para saber a própria situação. |
 | **Saldo da caixinha** | Financeiro | Pagamentos recebidos menos gastos pagos pela caixinha e reembolsos feitos. | O gestor, para decidir se precisa pedir complemento; os participantes, para acompanhar. |
 | **Caixinha do mês** | Financeiro | Saldo da caixinha no início do mês, pagamentos recebidos no mês, o que saiu no mês por tipo de gasto (gastos pagos pela caixinha e reembolsos feitos) e o saldo no fim do mês, que é o do início mais o que entrou menos o que saiu. | Todos os participantes, para acompanhar quanto entrou, quanto saiu com cada coisa e quanto sobrou. Mostra só totais, sem a situação de ninguém. |
-| **Gastos do ano anterior** | Financeiro | Soma dos gastos feitos no ano anterior. | O gestor, para definir o valor da cota. |
+| **Gastos do ano anterior** | Financeiro | Soma dos gastos feitos no ano anterior, no total e por tipo de gasto. | O gestor, para definir o valor da cota; todos os participantes, para entender de onde vem o valor de cada tipo de cota. Mostra só totais, sem a situação de ninguém. |
+| **Valores da cota** | Participação | O valor de cada tipo de cota no ano atual. | Todos os participantes, para saber quanto custa cada tipo de cota e compará-lo com os gastos do ano anterior. |
 | **Participantes ativos** | Financeiro | Quem entrou e ainda não saiu, segundo os eventos de Participação. | O complemento, para ser dividido em partes iguais. |
 
 ### Agregados
@@ -293,3 +294,4 @@ As setas vão de quem publica para quem consome. A seta tracejada é uma consult
 | 2.6 | 2026-10-25 | Abertos os pontos críticos 1 (avisar o início da cobrança e lembrar os pendentes, #72) e 2 (pagamento feito por outra pessoa, #74), levantados na [Visão de produto](../produto/VISAO.md). Base atualizada para o glossário 2.4. |
 | 2.7 | 2026-10-26 | Todo gasto tem um tipo de gasto (#73). Nova leitura *Caixinha do mês*, com o que entrou, o que saiu por tipo de gasto e o saldo no início e no fim do mês. Base atualizada para o glossário 2.5. |
 | 2.8 | 2026-10-26 | Decisão: o pagamento pertence ao participante cujas cotas ele quita, mesmo quando outra pessoa paga; um pagamento por participante (ponto crítico 2 fechado, #74). Base atualizada para o glossário 2.6. |
+| 2.9 | 2026-10-26 | A leitura *Gastos do ano anterior* passa a ser por tipo de gasto e serve também aos participantes. Nova leitura *Valores da cota* (Participação), com o valor de cada tipo de cota no ano (#77). |

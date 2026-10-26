@@ -199,6 +199,24 @@ it('the agendador triggers make the cota of the month devida once for each parti
   ]);
 });
 
+it('gives anyone logged in the valor of each tipo de cota in the current year', async () => {
+  const ano = anoDe(new Date());
+  await db.query(
+    `insert into valores_da_cota values ('so-cafe', $1, 2500), ('completa', $1, 3000)
+     on conflict do nothing`,
+    [ano],
+  );
+  const { rows } = await db.query(
+    `select tipo_de_cota as "tipoDeCota", ano, valor_em_centavos as "valorEmCentavos"
+     from valores_da_cota where ano = $1`,
+    [ano],
+  );
+
+  const response = await fetch(`${url}/tipo-de-cota`, { headers: { 'x-user-id': randomUUID() } });
+  expect(response.status).toBe(200);
+  expect(new Set(await response.json())).toEqual(new Set(rows));
+});
+
 it('concurrent requests publish Participante saiu and Valor da cota definido once', async () => {
   const id = randomUUID();
   await entrar(id, 'completa');

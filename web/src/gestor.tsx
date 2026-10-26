@@ -15,7 +15,7 @@ import {
   NOME_DO_TIPO_DE_COTA,
   NOME_DO_TIPO_DE_GASTO,
 } from './formato';
-import { Carregando, FalhaAoCarregar, useLeitura } from './participante';
+import { Carregando, FalhaAoCarregar, GastosDoAnoAnterior, useLeitura } from './participante';
 
 const ERROS: ReadonlyMap<string, string> = new Map([
   ['arquivo-vazio', 'O arquivo está vazio.'],
@@ -544,10 +544,7 @@ export const ValorDaCota = ({ token }: { token: string }) => {
 
   return (
     <>
-      <dl>
-        <dt>Gastos do ano anterior</dt>
-        <dd>{emReais(caixinha.valor.gastosDoAnoAnteriorEmCentavos)}</dd>
-      </dl>
+      <GastosDoAnoAnterior caixinha={caixinha.valor} />
       <section aria-labelledby="definir-valor-da-cota">
         <h2 id="definir-valor-da-cota">Definir valor da cota</h2>
         <p>

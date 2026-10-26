@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { Event } from '../domain/event.js';
 import type { ValorDaCota } from '../domain/tipo-de-cota.js';
-import { definirValor, iniciarAno, type ValoresDaCota } from './tipos-de-cota.js';
+import {
+  consultarValoresDaCota,
+  definirValor,
+  iniciarAno,
+  type ValoresDaCota,
+} from './tipos-de-cota.js';
 
 const clock = { now: () => new Date('2027-01-02T12:00:00Z'), newId: () => 'id-1' };
 const gestor = { perfis: ['gestor'] };
@@ -26,6 +31,7 @@ const inMemory = () => {
     events,
     definir: definirValor(valores, clock),
     iniciar: iniciarAno(valores, clock),
+    consultar: consultarValoresDaCota(valores, clock),
   };
 };
 
@@ -88,5 +94,18 @@ describe('iniciarAno', () => {
       { payload: { contributionType: 'full', year: 2027, amountInCents: 3000 } },
       { payload: { contributionType: 'coffee-only', year: 2027, amountInCents: 2500 } },
     ]);
+  });
+});
+
+describe('consultarValoresDaCota', () => {
+  it('gives the valor of each tipo de cota defined for the current year, in Campo Grande', async () => {
+    const { salvos, consultar } = inMemory();
+    expect(await consultar()).toEqual([]);
+    salvos.push(
+      { tipoDeCota: 'so-cafe', ano: 2026, valorEmCentavos: 2500 },
+      { tipoDeCota: 'completa', ano: 2026, valorEmCentavos: 3000 },
+      valor,
+    );
+    expect(await consultar()).toEqual([valor]);
   });
 });
