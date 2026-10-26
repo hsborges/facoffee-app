@@ -229,7 +229,7 @@ export const Participantes = ({ token, usuarioId }: { token: string; usuarioId: 
       {avisos}
       <section aria-labelledby="credito-e-pendentes">
         <h2 id="credito-e-pendentes">Crédito e pendentes</h2>
-        <table>
+        <table className="empilhada">
           <thead>
             <tr>
               <th scope="col">Nome</th>
@@ -245,9 +245,13 @@ export const Participantes = ({ token, usuarioId }: { token: string; usuarioId: 
               return (
                 <tr key={usuario.id}>
                   <th scope="row">{nomeDe(usuario)}</th>
-                  <td>{!situacao ? 'Nunca participou' : situacao.ativo ? 'Participa' : 'Saiu'}</td>
-                  <td>{situacao ? creditoOuPendencia(situacao) : '—'}</td>
-                  <td>
+                  <td data-rotulo="Participação">
+                    {!situacao ? 'Nunca participou' : situacao.ativo ? 'Participa' : 'Saiu'}
+                  </td>
+                  <td data-rotulo="Crédito ou pendência">
+                    {situacao ? creditoOuPendencia(situacao) : '—'}
+                  </td>
+                  <td data-rotulo="Acesso">
                     {usuario.desativado ? 'Desativado ' : 'Ativo '}
                     {usuario.id !== usuarioId && (
                       <button
@@ -422,7 +426,7 @@ export const Gastos = ({ token }: { token: string }) => {
         {gastos.valor.length === 0 ? (
           <p>Nenhum gasto registrado.</p>
         ) : (
-          <table>
+          <table className="empilhada">
             <thead>
               <tr>
                 <th scope="col">Data</th>
@@ -438,12 +442,12 @@ export const Gastos = ({ token }: { token: string }) => {
                 const quem = nomes.get(gasto.participanteId) ?? 'Desconhecido';
                 return (
                   <tr key={gasto.id}>
-                    <td>{dataEmCampoGrande(gasto.feitoEm)}</td>
-                    <td>{quem}</td>
-                    <td>{NOME_DO_TIPO_DE_GASTO[gasto.tipo]}</td>
-                    <td>{emReais(gasto.valorEmCentavos)}</td>
-                    <td>{NOME_DA_ORIGEM[gasto.origem]}</td>
-                    <td>
+                    <td data-rotulo="Data">{dataEmCampoGrande(gasto.feitoEm)}</td>
+                    <td data-rotulo="Quem pagou">{quem}</td>
+                    <td data-rotulo="Tipo">{NOME_DO_TIPO_DE_GASTO[gasto.tipo]}</td>
+                    <td data-rotulo="Valor">{emReais(gasto.valorEmCentavos)}</td>
+                    <td data-rotulo="Pago com">{NOME_DA_ORIGEM[gasto.origem]}</td>
+                    <td data-rotulo="Reembolso">
                       {gasto.origem === 'caixinha' ? (
                         '—'
                       ) : gasto.reembolsado ? (

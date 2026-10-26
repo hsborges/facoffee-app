@@ -63,3 +63,31 @@ A estética da **FACOFFEE** transmite **modernidade, acolhimento, sobriedade e e
 
 ### Iconografia
 * Ícones com traços arredondados (`stroke-linecap: round`) e espessura média (`2px`).
+
+---
+
+## 5. Mobile First
+
+Cada tela é projetada primeiro para o celular e depois adaptada a telas maiores ([ADR 0028](../adr/0028-mobile-first.md)).
+
+### Larguras de Referência
+| Largura | Uso |
+| :--- | :--- |
+| **320 px** | Mínima: tudo funciona sem rolagem horizontal da página (WCAG 1.4.10). |
+| **360 a 414 px** | Celulares mais comuns: o desenho de partida de cada tela. |
+| **768 px (`48rem`)** | Ponto de quebra: a partir dele, `@media (min-width: 48rem)` aplica o layout do computador. |
+
+* No celular, margens de `1rem`; a partir de `48rem`, `2rem`.
+* Texto de corpo a partir de `16px` (`1rem`), sem nada abaixo de `14px`; campos com `16px` também evitam o zoom automático do iOS ao focar.
+* Sem bloquear o zoom (`maximum-scale`, `user-scalable=no`): a página continua usável com zoom de 200%.
+
+### Área Mínima de Toque
+* Todo alvo de toque tem pelo menos **24 × 24 px** (WCAG 2.5.8): botões e campos já passam disso; links soltos, como os do menu, ganham `padding` vertical; *radios* têm `1.5rem`, e o rótulo inteiro também é clicável.
+
+### Tabelas em Telas Estreitas
+* **Até três colunas:** continuam tabela; o texto quebra dentro da célula.
+* **Mais de três colunas:** recebem a classe `empilhada`. No celular, cada linha vira um bloco, separado por Light Sand, e cada célula mostra o rótulo da coluna em Muted Mocha, vindo de `data-rotulo` (ex.: *Valor: R$ 20,00*). O cabeçalho fica só para leitores de tela, e o rótulo visível fica escondido deles. A partir de `48rem`, volta a ser tabela.
+* A marcação é sempre `<table>`, com `<caption>` ou título e `scope` nos cabeçalhos: só o CSS muda.
+
+### Cards
+* Card que encosta nas bordas da tela fica sem cantos arredondados, como o da tela de login abaixo de 500 px.

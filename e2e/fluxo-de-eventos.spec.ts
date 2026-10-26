@@ -21,7 +21,13 @@ test.use({
 type Usuario = { readonly usuario: string; readonly nome: string; readonly email: string };
 
 // A new usuário per test, so the tests do not depend on each other.
-const novoUsuario = async (): Promise<Usuario> => {
+const novoUsuario = async ({
+  sobrenome,
+  gestor = false,
+}: {
+  readonly sobrenome?: string;
+  readonly gestor?: boolean;
+} = {}): Promise<Usuario> => {
   const usuario = `e2e-${randomUUID().slice(0, 8)}`;
   const email = `${usuario}@facoffee.local`;
   return test.step(`Criar o usuário ${usuario} no Keycloak`, async () => {
@@ -34,26 +40,50 @@ const novoUsuario = async (): Promise<Usuario> => {
         password: process.env.KEYCLOAK_ADMIN_PASSWORD ?? 'admin',
       }),
     });
+    const headers = {
+      authorization: `Bearer ${(await admin.json()).access_token}`,
+      'content-type': 'application/json',
+    };
     const criado = await fetch(`${KEYCLOAK}/admin/realms/facoffee/users`, {
       method: 'POST',
-      headers: {
-        authorization: `Bearer ${(await admin.json()).access_token}`,
-        'content-type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({
         username: usuario,
         email,
         firstName: 'E2E',
-        lastName: usuario,
+        lastName: sobrenome ?? usuario,
         enabled: true,
         emailVerified: true,
         credentials: [{ type: 'password', value: usuario, temporary: false }],
       }),
     });
     expect(criado.status).toBe(201);
-    return { usuario, nome: `E2E ${usuario}`, email };
+    if (gestor) {
+      const papel = await fetch(`${KEYCLOAK}/admin/realms/facoffee/roles/gestor`, { headers });
+      const id = criado.headers.get('location')?.split('/').pop();
+      const mapeado = await fetch(
+        `${KEYCLOAK}/admin/realms/facoffee/users/${id}/role-mappings/realm`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify([await papel.json()]),
+        },
+      );
+      expect(mapeado.status).toBe(204);
+    }
+    return { usuario, nome: `E2E ${sobrenome ?? usuario}`, email };
   });
 };
+
+// WCAG 1.4.10 (ADR 0028): the page never scrolls sideways, not even at 320 px.
+const semRolagemHorizontal = (page: Page) =>
+  expect
+    .poll(() =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      ),
+    )
+    .toBe(0);
 
 // Each person in their own browser context, logged in through the Keycloak like anyone else.
 const entrarNoFacoffee = (browser: Browser, usuario: string, senha = usuario) =>
@@ -61,7 +91,10 @@ const entrarNoFacoffee = (browser: Browser, usuario: string, senha = usuario) =>
     const page = await (await browser.newContext()).newPage();
     page.on('dialog', (dialogo) => dialogo.accept());
     await page.goto('/');
+    await semRolagemHorizontal(page);
     await page.getByRole('button', { name: 'Entrar' }).click();
+    await expect(page.locator('#username')).toBeVisible();
+    await semRolagemHorizontal(page);
     await page.locator('#username').fill(usuario);
     await page.locator('#password').fill(senha);
     await page.locator('#kc-login').click();
@@ -124,15 +157,24 @@ const assuntosDosEmails = async (email: string): Promise<readonly string[]> => {
   return (await r.json()).messages.map((m: { Subject: string }) => m.Subject);
 };
 
-test('entrar, cota devida e pagamento recebido: crédito correto e e-mail enviado', async ({
-  browser,
-}) => {
+test('entrar, cota devida e pagamento recebido: crédito correto e e-mail enviado', {
+  tag: '@celular',
+}, async ({ browser }) => {
   const pessoa = await novoUsuario();
   const participante = await entrarNoFacoffee(browser, pessoa.usuario);
   const gestor = await entrarNoFacoffee(browser, 'gestor');
   await pedirEntrada(participante, pessoa.usuario);
 
   await test.step('Gestor define o valor da cota Só café: R$ 20,00', async () => {
+    // Once per ano: the other project's run of this test, on the same stack, may have defined it.
+    await gestor.goto('/caixinha');
+    const soCafe = gestor
+      .getByRole('table', { name: /^Valor da cota em \d+$/ })
+      .getByRole('row')
+      .filter({ hasText: 'Só café' });
+    const indefinido = gestor.getByText('O valor da cota deste ano ainda não foi definido.');
+    await expect(soCafe.or(indefinido)).toBeVisible();
+    if (await soCafe.isVisible()) return expect(soCafe).toContainText(/R\$\s20,00/);
     await gestor.goto('/valor-da-cota');
     await gestor.getByLabel('Valor mensal (R$)').fill('20');
     await gestor.getByRole('button', { name: 'Definir valor da cota' }).click();
@@ -171,6 +213,7 @@ test('entrar, cota devida e pagamento recebido: crédito correto e e-mail enviad
   await test.step(`${pessoa.usuario} vê o crédito: R$ 5,00`, async () => {
     await participante.reload();
     await expect(participante.getByText(/Crédito: R\$\s5,00/)).toBeVisible();
+    await semRolagemHorizontal(participante);
   });
   await test.step(`E-mail "Pagamento recebido" chega a ${pessoa.email}`, () =>
     expect.poll(() => assuntosDosEmails(pessoa.email), ESPERA).toContain('Pagamento recebido'));
@@ -184,7 +227,47 @@ test('entrar, cota devida e pagamento recebido: crédito correto e e-mail enviad
     // A new stack has no gasto in the year before.
     const gastos = participante.getByRole('table', { name: 'Gastos do ano anterior' });
     await expect(gastos.getByRole('row').filter({ hasText: 'Total' })).toContainText(/R\$\s0,00/);
+    await semRolagemHorizontal(participante);
   });
+});
+
+test('telas do gestor: gasto do próprio bolso e nenhuma tela rola na horizontal', {
+  tag: '@celular',
+}, async ({ browser }) => {
+  // A new gestor per run, whose name has a word wider than 320 px: in the topo and the tables.
+  const pessoa = await novoUsuario({
+    sobrenome: `Wolfeschlegelsteinhausenbergerdorff${randomUUID().slice(0, 4)}`,
+    gestor: true,
+  });
+  const gestor = await entrarNoFacoffee(browser, pessoa.usuario);
+  // Only who has pedido entrada has gastos.
+  await pedirEntrada(gestor, pessoa.usuario);
+  await participarNaTelaDoGestor(gestor, pessoa.nome);
+
+  await test.step('Gestor registra um gasto de R$ 12,34 pago do próprio bolso', async () => {
+    await gestor.goto('/gastos');
+    await gestor.getByLabel('Tipo').selectOption({ label: 'Café' });
+    await gestor.getByLabel('Valor total (R$)').fill('12.34');
+    await gestor.getByLabel('Próprio bolso').check();
+    await gestor.getByLabel(/^Nota/).setInputFiles({
+      name: 'nota.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]),
+    });
+    await gestor.getByRole('button', { name: 'Registrar gasto' }).click();
+    await expect(gestor.getByText('Gasto registrado.', { exact: true })).toBeVisible();
+    await expect(
+      linhaDe(gestor, pessoa.nome).getByRole('button', { name: /^Reembolsar R\$\s12,34 a / }),
+    ).toBeVisible();
+  });
+
+  for (const caminho of ['/', '/caixinha', '/participantes', '/gastos', '/valor-da-cota'])
+    await test.step(`${caminho} não rola na horizontal`, async () => {
+      await gestor.goto(caminho);
+      await expect(gestor.getByRole('heading', { level: 1 })).toBeVisible();
+      await expect(gestor.getByText('Carregando…')).toHaveCount(0);
+      await semRolagemHorizontal(gestor);
+    });
 });
 
 test('desativar acesso: participante saiu e fica fora dos participantes ativos', async ({

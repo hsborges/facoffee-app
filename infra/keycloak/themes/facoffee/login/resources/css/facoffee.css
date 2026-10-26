@@ -47,17 +47,30 @@
     background: #F9F6F2;
 }
 
+/* Mobile first (ADR 0028): o estilo base é o do celular. */
 .pf-v5-c-login {
-    --pf-v5-c-login--PaddingTop: var(--pf-v5-global--spacer--3xl);
+    --pf-v5-c-login--PaddingTop: var(--pf-v5-global--spacer--lg);
     align-items: flex-start;
 }
 
 .pf-v5-c-login__main {
     color: #413C31;
     background: #FFFFFF;
-    border-radius: 16px;
     box-shadow: 0 8px 24px -4px rgba(65, 60, 49, 0.08);
     overflow: hidden;
+}
+
+/* Abaixo de 500 px, a largura máxima do cartão no PatternFly, ele encosta nas bordas: sem cantos. */
+@media (min-width: 31.25rem) {
+    .pf-v5-c-login__main {
+        border-radius: 16px;
+    }
+}
+
+@media (min-width: 48rem) {
+    .pf-v5-c-login {
+        --pf-v5-c-login--PaddingTop: var(--pf-v5-global--spacer--3xl);
+    }
 }
 
 .pf-v5-c-login__main-header .pf-v5-c-title {
