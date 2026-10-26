@@ -5,10 +5,10 @@
 | **Escopo** | Divisão de custos da copa da FACOM |
 | **Sistema** | FACOFFEE |
 | **Disciplina** | Técnicas Avançadas de Desenvolvimento de Software (2026/2) |
-| **Versão** | 2.8 |
+| **Versão** | 2.9 |
 | **Data** | 2026-10-26 |
 | **Status** | Aprovado |
-| **Base** | [Glossário da Linguagem Ubíqua](GLOSSARIO.md) (versão 2.5) e arquitetura do FACOFFEE ([arquitetura/visao-geral.png](../arquitetura/visao-geral.png)) |
+| **Base** | [Glossário da Linguagem Ubíqua](GLOSSARIO.md) (versão 2.6) e arquitetura do FACOFFEE ([arquitetura/visao-geral.png](../arquitetura/visao-geral.png)) |
 
 ## Propósito
 
@@ -40,7 +40,7 @@ flowchart TB
     TipoDeCota -- "define o que entra no" --> Consumo
     Consumo -- "acontece na" --> Copa(["Copa"])
 
-    Participante -- "faz" --> Pagamento(["Pagamento"])
+    Participante -- "tem as cotas quitadas por" --> Pagamento(["Pagamento"])
     Pagamento -- "por PIX tem" --> Comprovante(["Comprovante"])
     Pagamento -- "quita" --> Cota
     Pagamento -- "quita" --> Complemento(["Complemento"])
@@ -68,7 +68,7 @@ flowchart TB
 | Contexto | Conceitos |
 |---|---|
 | **Participação** | Participante (situação e tipo de cota), Gestor, Tipo de cota, Valor da cota, Cota (quando passa a ser devida) |
-| **Financeiro** | Participante (o que deve, pagou e tem de crédito), Cota (quando é quitada), Pagamento, Comprovante, Crédito, Pendente, Complemento, Caixinha, Saldo da caixinha, Gasto, Tipo de gasto, Compra, Nota, Reembolso |
+| **Financeiro** | Participante (o que deve, o que foi quitado e o que tem de crédito), Cota (quando é quitada), Pagamento, Comprovante, Crédito, Pendente, Complemento, Caixinha, Saldo da caixinha, Gasto, Tipo de gasto, Compra, Nota, Reembolso |
 | **Fora do sistema** | Consumo e Copa, que não são registrados |
 
 ### Decisões de modelagem
@@ -82,7 +82,8 @@ flowchart TB
 | **Gasto** tem um **Tipo de gasto**, não uma lista de itens. | Basta o valor total da nota; o tipo permite mostrar quanto saiu com cada coisa. |
 | Um gasto pago do próprio bolso só sai da caixinha no **Reembolso**. | Assim o mesmo dinheiro não sai da caixinha duas vezes: uma no gasto e outra no reembolso. |
 | **Cota** e **Complemento** são quitados por pagamento ou abatidos do **Crédito**. | O crédito é abatido automaticamente; para o participante deixar de estar pendente, basta a cota ou o complemento ser pago ou abatido. |
-| **Participante** e **Cota** são tratados em dois contextos. | Em Participação importa se a pessoa participa e com qual tipo de cota; em Financeiro importa o que ela deve, pagou e tem de crédito. |
+| O **Pagamento** pertence ao participante cujas cotas ele quita, não a quem entregou o dinheiro. | Às vezes alguém paga pelo outro; quem entregou não é guardado, e o nome no comprovante basta para o gestor conferir. Se alguém paga por mais de uma pessoa, o gestor registra um pagamento para cada uma. |
+| **Participante** e **Cota** são tratados em dois contextos. | Em Participação importa se a pessoa participa e com qual tipo de cota; em Financeiro importa o que ela deve, o que foi quitado e o que tem de crédito. |
 | O mapa mostra só as relações essenciais. | Ações do gestor, como receber pagamentos, solicitar complementos e fazer reembolsos, estão no glossário e no [Event Storming](#2-event-storming). |
 
 ## 2. Event Storming
@@ -133,7 +134,7 @@ flowchart LR
 
 A cota passa a ser devida em Participação, que sabe o tipo de cota do participante naquele mês. Quem entra durante o mês também deve a cota daquele mês. Financeiro recebe o evento *Cota devida* com o valor e passa a cobrá-la.
 
-O comando de pagamento é do gestor: o participante entrega o dinheiro, e é o gestor quem o recebe.
+O comando de pagamento é do gestor: é ele quem recebe o dinheiro, entregue pelo participante ou por outra pessoa em nome dele, no agregado Participante (Financeiro) de quem tem as cotas quitadas.
 
 O crédito é abatido automaticamente: cada nova cota ou parte de complemento consome primeiro o crédito do participante, sem comando de ninguém.
 
@@ -191,7 +192,7 @@ A coluna **Publicado para** indica quais contextos recebem o evento. Os eventos 
 | 3 | **Tipo de cota trocado** | O participante mudou de só café para completa, ou o contrário. | Participação: Participante | *Trocar tipo de cota* | *interno* |
 | 4 | **Participante saiu** | O participante pediu a saída ou teve o acesso desativado. | Participação: Participante | *Pedir saída* ou *Usuário desativado* | Financeiro |
 | 5 | **Cota devida** | O participante passou a dever a cota do mês, com o valor do seu tipo de cota. | Participação: Participante | Início do mês | Financeiro |
-| 6 | **Pagamento recebido** | O gestor recebeu dinheiro de um participante, por PIX com comprovante ou em mãos. | Financeiro: Participante | *Receber pagamento por PIX ou em dinheiro* | Notificação |
+| 6 | **Pagamento recebido** | O gestor recebeu dinheiro para as cotas de um participante, por PIX com comprovante ou em mãos. | Financeiro: Participante | *Receber pagamento por PIX ou em dinheiro* | Notificação |
 | 7 | **Complemento solicitado** | O gestor pediu um complemento; cada participante ativo passou a dever uma parte igual. | Financeiro: Complemento | Saldo da caixinha insuficiente | Notificação |
 | 8 | **Gasto feito** | Alguém pagou uma compra, um conserto, uma manutenção ou uma reposição, com dinheiro da caixinha ou do próprio bolso, e guardou a nota, com o tipo de gasto. | Financeiro: Caixinha | *Pagar compra, conserto, manutenção ou reposição* | *interno* |
 | 9 | **Reembolso feito** | O gestor devolveu o valor a quem pagou um gasto do próprio bolso. | Financeiro: Caixinha | Gasto pago do próprio bolso | Notificação |
@@ -277,7 +278,6 @@ As setas vão de quem publica para quem consome. A seta tracejada é uma consult
 ### Pontos críticos para validar
 
 1. **Avisar o início da cobrança e lembrar os pendentes** ([#72](../../../../issues/72)). Notificação não consome *Cota devida* nem recebe nada sobre quem está pendente. Falta decidir o gatilho (consumir *Cota devida* e/ou uma política do agendador sobre a leitura *Crédito e pendentes*) e validar frequência e canal com o gestor.
-2. **Pagamento feito por outra pessoa** ([#74](../../../../issues/74)). *Receber pagamento por PIX ou em dinheiro* chega ao agregado Participante (Financeiro) de quem paga. Falta definir o que acontece quando quem entrega o dinheiro não é o participante cujas cotas são quitadas.
 
 ## Histórico de revisões
 
@@ -293,4 +293,5 @@ As setas vão de quem publica para quem consome. A seta tracejada é uma consult
 | 2.5 | 2026-10-25 | Notificação consulta os contatos em Usuário para enviar os avisos por e-mail ([ADR 0020](../adr/0020-envio-de-e-mails-da-notificacao.md)). |
 | 2.6 | 2026-10-25 | Abertos os pontos críticos 1 (avisar o início da cobrança e lembrar os pendentes, #72) e 2 (pagamento feito por outra pessoa, #74), levantados na [Visão de produto](../produto/VISAO.md). Base atualizada para o glossário 2.4. |
 | 2.7 | 2026-10-26 | Todo gasto tem um tipo de gasto (#73). Nova leitura *Caixinha do mês*, com o que entrou, o que saiu por tipo de gasto e o saldo no início e no fim do mês. Base atualizada para o glossário 2.5. |
-| 2.8 | 2026-10-26 | A leitura *Gastos do ano anterior* passa a ser por tipo de gasto e serve também aos participantes. Nova leitura *Valores da cota* (Participação), com o valor de cada tipo de cota no ano (#77). |
+| 2.8 | 2026-10-26 | Decisão: o pagamento pertence ao participante cujas cotas ele quita, mesmo quando outra pessoa paga; um pagamento por participante (ponto crítico 2 fechado, #74). Base atualizada para o glossário 2.6. |
+| 2.9 | 2026-10-26 | A leitura *Gastos do ano anterior* passa a ser por tipo de gasto e serve também aos participantes. Nova leitura *Valores da cota* (Participação), com o valor de cada tipo de cota no ano (#77). |

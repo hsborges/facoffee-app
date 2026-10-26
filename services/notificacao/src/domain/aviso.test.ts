@@ -64,10 +64,10 @@ describe('avisos', () => {
       expect.objectContaining({ para: 'ana@ufms.br', assunto: 'Pagamento recebido' }),
     ]);
     expect(reais(pix.ok ? (pix.value.emails[0]?.texto ?? '') : '')).toContain(
-      'O gestor recebeu o seu pagamento de R$ 180,00 por PIX.',
+      'O gestor recebeu um pagamento de R$ 180,00 por PIX em seu nome.',
     );
     expect(reais(cash.ok ? (cash.value.emails[0]?.texto ?? '') : '')).toContain(
-      'O gestor recebeu o seu pagamento de R$ 180,00 em dinheiro.',
+      'O gestor recebeu um pagamento de R$ 180,00 em dinheiro em seu nome.',
     );
   });
 

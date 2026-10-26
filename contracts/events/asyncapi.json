@@ -434,7 +434,7 @@
       "finance.payment-received.v1": {
         "name": "finance.payment-received",
         "title": "Pagamento recebido",
-        "summary": "O gestor recebeu dinheiro de um participante, por PIX com comprovante ou em mãos.",
+        "summary": "O gestor recebeu dinheiro para as cotas de um participante, por PIX com comprovante ou em mãos.",
         "contentType": "application/json",
         "payload": { "$ref": "./finance.payment-received.v1.json" }
       },

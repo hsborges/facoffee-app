@@ -63,7 +63,7 @@ Em desenvolvimento ao longo da disciplina. O backlog está nas [issues](../../is
 | M2 Financeiro | Pagamentos, crédito e pendentes, gastos, reembolsos, caixinha, complemento |
 | M3 Notificação + Web | Avisos, telas do participante e do gestor, teste ponta a ponta |
 
-Próximos passos do produto: lembrar os pendentes sem o gestor cobrar ([#72](../../issues/72)) e pagamento feito por outra pessoa ([#74](../../issues/74)).
+Próximo passo do produto: lembrar os pendentes sem o gestor cobrar ([#72](../../issues/72)).
 
 ## Documentação
 

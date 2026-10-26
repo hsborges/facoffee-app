@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/hsborges/facoffee-app/blob/main/contracts/events/finance.payment-received.v1.json",
   "title": "Pagamento recebido",
-  "description": "O gestor recebeu dinheiro de um participante, por PIX com comprovante ou em mãos.",
+  "description": "O gestor recebeu dinheiro para as cotas de um participante, por PIX com comprovante ou em mãos.",
   "type": "object",
   "allOf": [{ "$ref": "envelope.v1.json" }],
   "properties": {
@@ -20,7 +20,7 @@
         "participantId": {
           "type": "string",
           "format": "uuid",
-          "description": "Identificador da pessoa, o mesmo do contexto Usuário (sub do Passaporte UFMS)."
+          "description": "Participante cujas cotas o pagamento quita, mesmo que outra pessoa tenha pago; o mesmo identificador do contexto Usuário (sub do Passaporte UFMS)."
         },
         "amountInCents": {
           "type": "integer",

@@ -393,7 +393,9 @@ paths:
                 participanteId:
                   type: string
                   format: uuid
-                  description: Participante que fez o pagamento; só ele e o gestor veem o comprovante.
+                  description: |
+                    Participante cujas cotas o pagamento quita, mesmo que outra pessoa tenha feito o
+                    PIX; só ele e o gestor veem o comprovante.
       responses:
         '201':
           $ref: '#/components/responses/ArquivoGuardado'
@@ -445,7 +447,9 @@ paths:
       summary: Receber pagamento
       description: |
         Registra o dinheiro que o gestor recebeu de um participante, por PIX ou em mãos. Só o
-        gestor recebe pagamentos. O pagamento por PIX exige o comprovante, guardado antes em
+        gestor recebe pagamentos. Quando alguém paga por outro, o pagamento é registrado para o
+        participante cujas cotas ele quita; para várias pessoas, registra-se um pagamento para cada
+        uma. O pagamento por PIX exige o comprovante, guardado antes em
         `guardar-comprovante` para o mesmo participante; cada comprovante vale para um pagamento
         só. Todo pagamento entra na caixinha.
       requestBody:
@@ -459,7 +463,9 @@ paths:
                 participanteId:
                   type: string
                   format: uuid
-                  description: Participante que pagou.
+                  description: |
+                    Participante cujas cotas o pagamento quita, mesmo que outra pessoa tenha
+                    entregado o dinheiro.
                 valorEmCentavos:
                   type: integer
                   minimum: 1
@@ -979,7 +985,7 @@ paths:
       operationId: baixarComprovante
       summary: Baixar comprovante
       description: |
-        O arquivo do comprovante. Só o participante que fez o pagamento e o gestor veem o
+        O arquivo do comprovante. Só o participante cujas cotas o pagamento quita e o gestor veem o
         comprovante; para os demais, ele não existe (404).
       parameters:
         - $ref: '#/components/parameters/IdDoArquivo'
