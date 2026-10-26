@@ -31,3 +31,4 @@ Registros de decisões de arquitetura. Um arquivo por decisão: `NNNN-titulo.md`
 | [0025](0025-pagina-inicial-antes-do-login.md) | Página inicial antes do login | Aceito |
 | [0026](0026-dockerfile-por-servico.md) | Dockerfile por serviço | Aceito |
 | [0027](0027-lembrete-aos-pendentes.md) | Lembrete aos pendentes | Aceito |
+| [0028](0028-mobile-first.md) | Mobile first | Aceito |
