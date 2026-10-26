@@ -18,7 +18,7 @@ Os termos do domínio seguem o [Glossário](../dominio/GLOSSARIO.md). Termos da 
 
 ## Fontes e método
 
-- Entrevista com o gestor da copa (proto-persona *Andrew*), em 2026-10-25, focada em rotina, dores, prioridades e limites.
+- Entrevista com o gestor da copa (proto-persona *Andrew*), focada em rotina, dores, prioridades e limites.
 - Fatos já registrados no glossário e nos modelos de domínio.
 - Os números da seção [Situação atual](#situação-atual) são estimativas do gestor, não medições.
 
