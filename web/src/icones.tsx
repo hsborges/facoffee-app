@@ -66,6 +66,12 @@ const TRACOS = {
     <path d="M4 9h13v5a6 6 0 0 1-6 6h-1a6 6 0 0 1-6-6zM17 11h1a3 3 0 0 1 0 6h-1M8 3v3M12 3v3" />
   ),
   reembolso: <path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5" />,
+  desativar: (
+    <>
+      <circle cx="9" cy="8" r="4" />
+      <path d="M2 21a7 7 0 0 1 14 0M17 9l4 4M21 9l-4 4" />
+    </>
+  ),
 } as const satisfies Record<string, ReactNode>;
 
 /** Name of an icon. */

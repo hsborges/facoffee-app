@@ -13,7 +13,11 @@ const DO_PARTICIPANTE: readonly Item[] = [
     caminho: '/',
     titulo: 'Minha situação',
     icone: 'usuario',
-    subpaginas: [{ caminho: '/enviar-comprovante', titulo: 'Enviar comprovante' }],
+    // Desativar meu acesso opens from the menu da conta, and goes back to Minha situação.
+    subpaginas: [
+      { caminho: '/enviar-comprovante', titulo: 'Enviar comprovante' },
+      { caminho: '/desativar-meu-acesso', titulo: 'Desativar meu acesso' },
+    ],
   },
   {
     caminho: '/caixinha',

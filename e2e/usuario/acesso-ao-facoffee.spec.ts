@@ -41,8 +41,13 @@ test.describe('RF-USU-01 Acesso ao FACOFFEE', () => {
     const bia = await novoUsuario();
     const propria = await entrarNoFacoffee(browser, bia.usuario);
     await test.step(`${bia.usuario} desativa o próprio acesso`, async () => {
+      await (await abrirConta(propria)).getByTestId('ir-desativar-meu-acesso').click();
+      await expect(pagina(propria, 'desativar-meu-acesso')).toBeVisible();
+      await semRolagemHorizontal(propria);
       await propria.getByTestId('desativar-meu-acesso').click();
       await confirmarAcao(propria);
+      await expect(propria.getByTestId('acesso-desativado')).toBeVisible();
+      await propria.getByTestId('sair').click();
       await expect(propria.getByTestId('entrar')).toBeVisible();
       await gestor.reload();
       await expect(linhaDe(gestor, bia.nome)).toHaveAttribute('data-acesso', 'desativado');
@@ -124,6 +129,7 @@ test.describe('RF-USU-01 Acesso ao FACOFFEE', () => {
       await expect(conta).toContainText(pessoa.nome);
       await expect(conta.getByTestId('trocar-visao')).toHaveCount(0);
       await expect(conta.getByTestId('sair')).toBeVisible();
+      await expect(conta.getByTestId('ir-desativar-meu-acesso')).toBeVisible();
       await participante.keyboard.press('Escape');
       await expect(conta).toBeHidden();
       await participante.goto('/gastos');
@@ -139,11 +145,15 @@ test.describe('RF-USU-01 Acesso ao FACOFFEE', () => {
       expect(await paginasDoMenu(gestor)).toEqual(['minha-situacao', 'caixinha']);
       const conta = await abrirConta(gestor);
       await semRolagemHorizontal(gestor);
+      // The gestor desativa the own access only in the visão do participante.
+      await expect(conta.getByTestId('ir-desativar-meu-acesso')).toBeVisible();
       await conta.getByTestId('trocar-visao').click();
       await expect(conta).toBeHidden();
       await expect(pagina(gestor, 'participantes')).toBeVisible();
       expect(await paginasDoMenu(gestor)).toEqual(['participantes', 'gastos', 'valor-da-cota']);
-      await expect((await abrirConta(gestor)).getByTestId('trocar-visao')).toBeVisible();
+      const doGestor = await abrirConta(gestor);
+      await expect(doGestor.getByTestId('trocar-visao')).toBeVisible();
+      await expect(doGestor.getByTestId('ir-desativar-meu-acesso')).toHaveCount(0);
       await gestor.keyboard.press('Escape');
       await gestor.getByTestId('menu-gastos').click();
       await expect(pagina(gestor, 'gastos')).toBeVisible();

@@ -31,6 +31,7 @@ test.describe('Não funcionais', () => {
     for (const [caminho, id] of [
       ['/', 'minha-situacao'],
       ['/enviar-comprovante', 'enviar-comprovante'],
+      ['/desativar-meu-acesso', 'desativar-meu-acesso'],
       ['/caixinha', 'caixinha'],
       ['/caixinha/registrar-gasto', 'registrar-gasto'],
       ['/participantes', 'participantes'],

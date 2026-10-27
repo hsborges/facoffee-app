@@ -46,6 +46,7 @@ describe('paginas', () => {
     expect(paginas('participante').map(({ caminho, menu }) => [caminho, menu])).toEqual([
       ['/', '/'],
       ['/enviar-comprovante', '/'],
+      ['/desativar-meu-acesso', '/'],
       ['/caixinha', '/caixinha'],
       ['/caixinha/registrar-gasto', '/caixinha'],
     ]);

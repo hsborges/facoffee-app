@@ -1131,6 +1131,20 @@ main [role="alert"] {
   background: var(--warm-latte-hover);
 }
 
+/* A alternativa mais leve, em Espuma: sair da copa, em Desativar meu acesso. */
+.chamada.espuma,
+.chamada.espuma:hover {
+  background: var(--espuma);
+}
+
+.chamada.espuma > span {
+  flex: 1 1 auto;
+}
+
+.chamada.espuma:hover strong {
+  text-decoration: underline;
+}
+
 .chamada small {
   display: block;
 }
@@ -1526,6 +1540,22 @@ button.abrir-conta:hover {
 .conta a {
   align-items: center;
   background: var(--espuma);
+}
+
+/* Desativar meu acesso: por último, discreto, depois de um separador. */
+.conta a.discreto {
+  margin-top: 0.25rem;
+  border-top: 1px solid var(--light-sand);
+  border-radius: 0;
+  color: var(--mocha-texto);
+  background: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.conta a.discreto:hover {
+  color: var(--espresso-dark);
+  text-decoration: underline;
 }
 
 main {
@@ -1982,6 +2012,20 @@ button.visao.escura:hover {
 .com-check {
   display: grid;
   gap: 0.625rem;
+}
+
+/* Lista em que cada item começa por um ícone. */
+.com-icone {
+  display: grid;
+  gap: 0.875rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.com-icone li {
+  display: flex;
+  gap: 0.75rem;
 }
 
 .com-check li {

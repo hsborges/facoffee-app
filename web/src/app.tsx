@@ -22,7 +22,7 @@ import {
   visaoAtual,
   visaoGuardada,
 } from './navegacao';
-import { Caixinha, EnviarComprovante, MinhaSituacao } from './participante';
+import { Caixinha, DesativarMeuAcesso, EnviarComprovante, MinhaSituacao } from './participante';
 
 // Names the page in its data-testid by the last part of its path: `/` is Minha situação.
 const idDaPagina = (caminho: string) =>
@@ -192,7 +192,11 @@ export const App = () => {
         <p role="alert" data-testid="acesso-desativado">
           Seu acesso ao FACOFFEE foi desativado.
         </p>
-        <button type="button" onClick={sair}>
+        <p className="apoio">
+          Para voltar, fale com o gestor: ele reativa o acesso, e você pede a entrada na copa de
+          novo.
+        </p>
+        <button type="button" data-testid="sair" onClick={sair}>
           Sair
         </button>
       </Aviso>
@@ -232,8 +236,15 @@ export const App = () => {
   const atual = daVisao.find((pagina) => matchPath(pagina.caminho, pathname));
   const outra = visao === 'gestor' ? 'participante' : 'gestor';
   const conteudo: Readonly<Record<string, ReactNode>> = {
-    '/': <MinhaSituacao token={token} usuarioId={usuario.id} sair={sair} />,
+    '/': <MinhaSituacao token={token} />,
     '/enviar-comprovante': <EnviarComprovante token={token} participanteId={usuario.id} />,
+    '/desativar-meu-acesso': (
+      <DesativarMeuAcesso
+        token={token}
+        usuarioId={usuario.id}
+        desativado={() => setEu({ situacao: 'desativado' })}
+      />
+    ),
     '/caixinha': <Caixinha token={token} />,
     '/caixinha/registrar-gasto': (
       <RegistrarGasto token={token} voltar="/caixinha" origem="proprio-bolso" />
@@ -314,6 +325,18 @@ export const App = () => {
             <Icone nome="sair" />
             Sair
           </button>
+          {/* Only in the visão do participante: a gestor desativa the own access there, on purpose. */}
+          {visao === 'participante' && (
+            <Link
+              to="/desativar-meu-acesso"
+              className="discreto"
+              data-testid="ir-desativar-meu-acesso"
+              onClick={() => document.getElementById('conta')?.hidePopover()}
+            >
+              <Icone nome="desativar" />
+              Desativar meu acesso
+            </Link>
+          )}
         </div>
       </header>
       <main id="conteudo" tabIndex={-1} data-testid="conteudo">

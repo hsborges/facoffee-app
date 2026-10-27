@@ -24,6 +24,6 @@ Entre com um usuário de teste do [realm local](../infra/README.md#keycloak) (`g
 | `src/api.ts` | Chamadas à API pelo gateway |
 | `src/formato.ts` | Valores, meses e datas em português |
 | `src/inicial.tsx` | Página inicial de quem não está logado |
-| `src/participante.tsx` | Páginas do participante: Minha situação, Enviar comprovante e Caixinha; e os componentes que o gestor também usa |
+| `src/participante.tsx` | Páginas do participante: Minha situação, Enviar comprovante, Desativar meu acesso e Caixinha; e os componentes que o gestor também usa |
 | `src/gestor.tsx` | Páginas do gestor: Participantes, Conferir comprovante, Receber pagamento, Gastos, Solicitar complemento e Valor da cota; e Registrar gasto, das duas visões |
 | `src/app.tsx` | Login, layout e rotas |

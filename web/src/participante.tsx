@@ -750,18 +750,9 @@ const CotasEComplementos = ({ situacao }: { situacao: Situacao }) =>
 
 /**
  * *Minha situação*: the crédito or pendência in evidence, the comprovantes enviados, the cotas and
- * complementos, and the participação (pedir entrada, trocar tipo de cota, sair da copa); and
- * desativar the person's own access.
+ * complementos, and the participação (pedir entrada, trocar tipo de cota, sair da copa).
  */
-export const MinhaSituacao = ({
-  token,
-  usuarioId,
-  sair,
-}: {
-  token: string;
-  usuarioId: string;
-  sair: () => void;
-}) => {
+export const MinhaSituacao = ({ token }: { token: string }) => {
   const [participacao, recarregarParticipacao] = useLeitura<Participacao>(
     token,
     '/api/participacao/participante/eu',
@@ -805,22 +796,6 @@ export const MinhaSituacao = ({
       acao: 'Sair da copa',
       destrutiva: true,
     })) && fazer('/api/participacao/sair', ['Saída pedida.', 'Não foi possível pedir a saída.']);
-  // Once desativado, every leitura answers 403: the person leaves instead of reloading.
-  const desativarAcesso = async () => {
-    const sim = await confirmar({
-      titulo: 'Desativar seu acesso ao FACOFFEE?',
-      texto: 'Sua participação termina, e só o gestor pode reativar o acesso.',
-      acao: 'Desativar meu acesso',
-      destrutiva: true,
-    });
-    if (!sim) return;
-    setEnviando(true);
-    setFalha(undefined);
-    if ((await comandar(token, `/api/usuario/${usuarioId}/desativar`)).feito) return sair();
-    setEnviando(false);
-    setFalha('Não foi possível desativar seu acesso.');
-  };
-
   const tipoDaCota = atual?.troca?.tipoDeCota ?? atual?.tipoDeCota ?? 'completa';
   const valorDaMinha = atual && valorDe(doAno, atual.tipoDeCota);
 
@@ -913,37 +888,137 @@ export const MinhaSituacao = ({
               <p className="nota">A troca vale a partir do mês seguinte.</p>
             </section>
           )}
-          <section aria-labelledby="acesso" className="discreta">
-            <h2 id="acesso" className="visualmente-oculto">
-              Participação e acesso
-            </h2>
-            {atual?.participando && (
-              <>
-                <button
-                  type="button"
-                  className="destrutivo"
-                  data-testid="pedir-saida"
-                  disabled={enviando}
-                  onClick={pedirSaida}
-                >
-                  Sair da copa
-                </button>
-                <p className="nota">
-                  O crédito e o que estiver devido ficam guardados para quando voltar.
-                </p>
-              </>
-            )}
+          {atual?.participando && (
+            <section aria-labelledby="participacao" className="discreta">
+              <h2 id="participacao" className="visualmente-oculto">
+                Participação
+              </h2>
+              <button
+                type="button"
+                className="destrutivo"
+                data-testid="pedir-saida"
+                disabled={enviando}
+                onClick={pedirSaida}
+              >
+                Sair da copa
+              </button>
+              <p className="nota">
+                O crédito e o que estiver devido ficam guardados para quando voltar.
+              </p>
+            </section>
+          )}
+        </div>
+      </div>
+    </>
+  );
+};
+
+/**
+ * *Desativar meu acesso*, opened from the menu da conta of the visão do participante: what follows
+ * (RN-PAR-08, RN-USU-02, RN-USU-04), sair da copa for who only wants to stop paying, and the crédito
+ * or pendência, which stays. Desativar asks for confirmação (RNF-12); once done, `desativado` shows
+ * the acesso desativado.
+ */
+export const DesativarMeuAcesso = ({
+  token,
+  usuarioId,
+  desativado,
+}: {
+  token: string;
+  usuarioId: string;
+  desativado: () => void;
+}) => {
+  const [situacao] = useLeitura<Situacao>(token, '/api/financeiro/participante/eu');
+  const { confirmar, confirmacao } = useConfirmacao();
+  const [enviando, setEnviando] = useState(false);
+  const [falha, setFalha] = useState(false);
+  if (!situacao) return <Carregando />;
+
+  // Whoever never asked for entrada has no situação: nothing to keep, nor a copa to leave.
+  const saldo = situacao.situacao === 'ok' ? situacao.valor : undefined;
+  const qual = saldo && situacaoDe(saldo);
+  // Once desativado, every leitura answers 403: the page leaves for the acesso desativado.
+  const desativar = async () => {
+    const sim = await confirmar({
+      titulo: 'Desativar seu acesso ao FACOFFEE?',
+      texto: 'Sua participação termina, e só o gestor pode reativar o acesso.',
+      acao: 'Desativar meu acesso',
+      destrutiva: true,
+    });
+    if (!sim) return;
+    setEnviando(true);
+    setFalha(false);
+    if ((await comandar(token, `/api/usuario/${usuarioId}/desativar`)).feito) return desativado();
+    setEnviando(false);
+    setFalha(true);
+  };
+
+  return (
+    <>
+      <p className="apoio">Para quem não vai mais usar o FACOFFEE.</p>
+      {confirmacao}
+      {falha && (
+        <p role="alert" className="aviso-falha" data-testid="aviso-falha">
+          Não foi possível desativar seu acesso.
+        </p>
+      )}
+      <div className="colunas">
+        <div className="pilha">
+          <section className="cartao" aria-labelledby="o-que-acontece">
+            <h2 id="o-que-acontece">O que acontece</h2>
+            <ul className="com-icone">
+              <li>
+                <Icone nome="cafe" />
+                Sua participação na copa termina.
+              </li>
+              <li>
+                <Icone nome="cadeado" />
+                Você não acessa mais o FACOFFEE.
+              </li>
+              <li>
+                <Icone nome="reembolso" />
+                Só o gestor reativa o acesso. Reativado, você pede a entrada na copa de novo.
+              </li>
+            </ul>
+          </section>
+          <div className="acoes">
             <button
               type="button"
-              className="destrutivo"
+              className="perigo"
               data-testid="desativar-meu-acesso"
               disabled={enviando}
-              onClick={desativarAcesso}
+              onClick={desativar}
             >
               Desativar meu acesso
             </button>
-            <p className="nota">Sua participação termina, e só o gestor pode reativá-lo.</p>
-          </section>
+            <Link className="botao contorno" to="/">
+              Continuar com o acesso
+            </Link>
+          </div>
+        </div>
+        <div className="pilha">
+          {saldo?.ativo && (
+            <Link className="chamada espuma" to="/" data-testid="ir-sair-da-copa">
+              <Icone nome="info" />
+              <span>
+                <strong>Só quer parar de pagar a cota?</strong>
+                <small>Saia da copa em Minha situação: o acesso continua.</small>
+              </span>
+              <Icone nome="direita" />
+            </Link>
+          )}
+          {saldo && qual === 'pendente' && (
+            <p className="previa-da-situacao" data-situacao="pendente">
+              Você deve {emReais(saldo.pendenteEmCentavos)}. O que está devido fica guardado; se
+              puder, acerte com o gestor antes.
+            </p>
+          )}
+          {saldo && qual === 'credito' && (
+            <p className="previa-da-situacao" data-situacao="credito">
+              Você tem {emReais(saldo.creditoEmCentavos)} de crédito. Ele fica guardado para quando
+              voltar.
+            </p>
+          )}
         </div>
       </div>
     </>
