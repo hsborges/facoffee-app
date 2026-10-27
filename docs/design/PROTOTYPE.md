@@ -4,7 +4,7 @@ Protótipo navegável das telas do FACOFFEE, feito no Claude Design a partir da 
 
 - **Protótipo:** [FACOFFEE Prototype](https://claude.ai/artifact/7ypfHujXYVCwRNjhknVJXb). Abre só para quem recebeu acesso pelo menu de compartilhar do artefato.
 - **Exportação em PDF:** em cinco partes, uma por fileira, na tabela abaixo.
-- **Status:** proposta, ainda não implementada no `web/`.
+- **Status:** implementado no `web/`, menos o que pede dado que a API ainda não tem (abaixo).
 
 ## O que tem
 
