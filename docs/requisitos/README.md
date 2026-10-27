@@ -27,4 +27,4 @@ Fonte única dos requisitos e das regras de negócio do FACOFFEE, especificados 
 | [RF-NOT-01](notificacao/avisar-os-participantes.md) | Avisar os participantes | Notificação | RN-NOT-01, RN-NOT-02, RN-NOT-03, RN-NOT-04, RN-NOT-05, RN-NOT-06 |
 | [RF-NOT-02](notificacao/lembrar-os-pendentes.md) | Lembrar os pendentes | Notificação | RN-NOT-07, RN-NOT-08, RN-NOT-09, RN-NOT-10 |
 
-Não funcionais: [RNF-01 a RNF-11](nao-funcionais.md).
+Não funcionais: [RNF-01 a RNF-12](nao-funcionais.md).

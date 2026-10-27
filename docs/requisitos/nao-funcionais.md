@@ -89,3 +89,22 @@ Cenário: RNF-05 disparo repetido
 
 - Origem: [Visão, princípio 7](../produto/VISAO.md#princípios-de-produto); [Consumo](../dominio/GLOSSARIO.md#consumo) e [Copa](../dominio/GLOSSARIO.md#copa) no glossário
 - Verificação: revisão. Ninguém mede nem anota o consumo, e o acesso à copa não é controlado: só quem participa usa a copa, na confiança.
+
+### RNF-12 Ação crítica pede confirmação
+
+- Origem: [Design System, Confirmação](../design/DESIGN_SYSTEM.md#confirmação)
+
+São críticas: entrar na copa (RN-PAR-01), sair da copa (RN-PAR-07), desativar o acesso, o próprio ou o de outra pessoa (RN-USU-01), cancelar o envio de um comprovante (RN-FIN-11), reembolsar (RN-FIN-24), solicitar complemento (RN-FIN-27) e definir o valor da cota (RN-PAR-13). A confirmação diz quem e o quê e o que acontece depois; o foco começa em *Voltar*, para Enter não confirmar por acidente.
+
+```gherkin
+# language: pt
+Cenário: RNF-12 confirmar a ação crítica
+  Dado que Ana participa da copa
+  Quando Ana pede a saída e confirma
+  Então Ana deixa de participar
+
+Cenário: RNF-12 voltar da confirmação
+  Dado que Ana participa da copa
+  Quando Ana pede a saída e volta, por Voltar ou por Esc
+  Então Ana continua participando
+```
