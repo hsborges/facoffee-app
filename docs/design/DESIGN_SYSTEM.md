@@ -86,6 +86,9 @@ A hierarquia põe a situação de cada um primeiro, em número grande.
 
 Uma ação primária por tela.
 
+### Campo de valor
+Valor em reais tem máscara: o campo mostra `R$ 30,00`, abre o teclado numérico e os dígitos preenchem a partir dos centavos, como nos apps de banco (`3`, `30`, `300`, `3000` mostram `R$ 30,00`); apagar volta dígito a dígito. O rótulo não repete "(R$)".
+
 ### Confirmação
 Ação crítica pede confirmação ([RNF-12](../requisitos/nao-funcionais.md#rnf-12-ação-crítica-pede-confirmação)) num diálogo modal, no centro da tela, sobre um véu Espresso a 50%:
 
