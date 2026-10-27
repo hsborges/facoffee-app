@@ -105,6 +105,7 @@ Ação crítica pede confirmação ([RNF-12](../requisitos/nao-funcionais.md#rnf
 * **Celular:** menu fixo no pé da tela, com ícone e nome; topo com a logo, o selo *Gestor* e o avatar ([ADR 0034](../adr/0034-menu-inferior-no-celular-e-lateral-no-computador.md)).
 * **A partir de `48rem`:** menu lateral, com a logo e o selo no alto e o avatar, o nome e o perfil no pé.
 * Página atual com fundo Espuma e sublinhado, não só cor.
+* **Menu da conta**, no avatar: o nome e o perfil, *Ir para a visão do…* (só o gestor), *Sair* e, por último, depois de um separador e em Mocha texto, *Desativar meu acesso*, que abre uma página própria e só aparece na visão do participante.
 
 ### Elevação e Sombras
 * **Sombra Suave (Quente):** `0 8px 24px -4px rgba(65, 60, 49, 0.08)`
