@@ -38,10 +38,10 @@ test.describe('RF-FIN-05 Solicitar complemento', () => {
     const total = ((parte * ativos) / 100).toFixed(2);
     await test.step(`Gestor solicita complemento de R$ ${total} para ${ativos} ativos`, async () => {
       await gestor.goto('/gastos');
-      const complemento = gestor.getByTestId('complemento');
-      await complemento.getByTestId('valor').fill(total);
-      await complemento.getByTestId('solicitar-complemento').click();
-      await feito(complemento);
+      const solicitacao = gestor.getByTestId('solicitacao-de-complemento');
+      await solicitacao.getByTestId('valor').fill(total);
+      await solicitacao.getByTestId('solicitar-complemento').click();
+      await feito(solicitacao);
     });
 
     await test.step(`Cada um dos ${ativos} ativos deve R$ 1,50 a mais, e os inativos nada`, async () => {

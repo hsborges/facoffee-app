@@ -1,3 +1,4 @@
+import type { Page } from '@playwright/test';
 import {
   assuntosDosEmails,
   cotas,
@@ -23,7 +24,7 @@ test.describe('RF-NOT-02 Lembrar os pendentes', () => {
     const gestor = await entrarNoFacoffee(browser, 'gestor', 'gestor');
     await garantirValorDaCota(gestor);
     const [pendente, comCredito] = [await novoUsuario(), await novoUsuario()];
-    const paginas = [];
+    const paginas: Page[] = [];
     for (const pessoa of [pendente, comCredito]) {
       const page = await entrarNoFacoffee(browser, pessoa.usuario);
       await pedirEntrada(page, pessoa.usuario);

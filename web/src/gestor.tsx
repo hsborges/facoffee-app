@@ -582,7 +582,7 @@ export const SolicitarComplemento = ({ token }: { token: string }) => {
     if (feito) form.reset();
   });
   return (
-    <section aria-labelledby="solicitar-complemento" data-testid="complemento">
+    <section aria-labelledby="solicitar-complemento" data-testid="solicitacao-de-complemento">
       <h2 id="solicitar-complemento">Solicitar complemento</h2>
       <p>
         Quando o saldo não cobre os gastos. O valor é dividido em partes iguais entre todos os
