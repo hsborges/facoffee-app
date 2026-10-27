@@ -82,8 +82,16 @@ A hierarquia põe a situação de cada um primeiro, em número grande.
 2. **Secundário:** Fundo `#D5B290`, texto `#413C31`, *hover* `#C8A079`.
 3. **Outline / Fantasma:** Borda `1.5px solid #413C31`, fundo transparente, texto `#413C31`.
 4. **Destrutivo discreto:** link sublinhado em `#A12F22`, sem fundo, para *Sair da copa* e *Desativar meu acesso*.
+5. **Destrutivo forte:** fundo `#A12F22`, texto `#FFFFFF`, *hover* `#82251B`; só para confirmar uma ação destrutiva, na Confirmação.
 
 Uma ação primária por tela.
+
+### Confirmação
+Ação crítica pede confirmação ([RNF-12](../requisitos/nao-funcionais.md#rnf-12-ação-crítica-pede-confirmação)) num diálogo modal, no centro da tela, sobre um véu Espresso a 50%:
+
+* **Título:** a pergunta, com quem e o quê (*Desativar o acesso de Bia?*); **texto:** o que acontece depois.
+* **Botões:** *Voltar*, em Outline, e a ação com o mesmo nome do botão que abriu o diálogo, nunca "OK". Destrutivo forte para o que encerra algo (*Sair da copa*, *Desativar meu acesso*, *Cancelar envio*, *Desativar acesso*); Primário para o resto (*Entrar na copa*, *Reembolsar*, *Solicitar complemento*, *Definir valores*).
+* O foco começa em *Voltar*: Enter não confirma por acidente. *Voltar* e Esc fecham sem fazer nada.
 
 ### Fundos e Cards
 * A página tem fundo Cream Off-White; o conteúdo fica em cards brancos, com a Sombra Suave.
