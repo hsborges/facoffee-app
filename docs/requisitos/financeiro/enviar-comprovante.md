@@ -198,15 +198,25 @@ Regra: RN-FIN-34 No envio, o valor pago começa no pendente, com atalhos de um m
     Então o valor pago começa em R$ 50,00
 ```
 
-### RN-FIN-36 O gestor confere o comprovante com uma lista e recusa com um motivo comum ou o seu
+### RN-FIN-36 O gestor só confirma o comprovante depois de conferir a lista, e recusa com um motivo comum ou o seu
 
 - Termo: [Comprovante](../../dominio/GLOSSARIO.md#comprovante), [Gestor](../../dominio/GLOSSARIO.md#gestor) · Origem: [protótipo do redesign](../../design/PROTOTYPE.md)
 
-A lista *Confira no comprovante* (o valor informado e o pendente, a data e o valor no arquivo) só ajuda a conferir: não impede confirmar. Os motivos comuns preenchem o motivo da recusa (RN-FIN-10), que o gestor ainda pode mudar.
+A lista *Confira no comprovante* tem passos curtos, cada um o contrário de um motivo comum: é um comprovante de PIX legível, o valor é o que o gestor vai confirmar e a data é deste mês. *Confirmar* só fica disponível com todos marcados; corrigir o valor desmarca o passo do valor, que passa a dizer o novo. *Recusar* não depende da lista. Os motivos comuns preenchem o motivo da recusa (RN-FIN-10), que o gestor ainda pode mudar.
 
 ```gherkin
 # language: pt
-Regra: RN-FIN-36 O gestor confere o comprovante com uma lista e recusa com um motivo comum ou o seu
+Regra: RN-FIN-36 O gestor só confirma o comprovante depois de conferir a lista, e recusa com um motivo comum ou o seu
+
+  Cenário: confirmar depois de conferir a lista
+    Dado que Ana enviou um comprovante de R$ 30,00
+    Quando o gestor confere o comprovante de Ana
+    Então o gestor só confirma depois de marcar que é um comprovante de PIX legível, de R$ 30,00 e deste mês
+
+  Cenário: valor corrigido
+    Dado que o gestor marcou todos os passos do comprovante de R$ 30,00 de Ana
+    Quando o gestor corrige o valor a confirmar para R$ 25,00
+    Então o gestor marca de novo o passo do valor, agora de R$ 25,00, para confirmar
 
   Cenário: recusa com motivo comum
     Dado que Ana enviou um comprovante de R$ 30,00
