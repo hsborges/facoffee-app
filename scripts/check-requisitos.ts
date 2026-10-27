@@ -52,6 +52,9 @@ export const citacoesDe = (arquivo: string, texto: string): readonly Citacao[] =
     .flatMap((line, i) => (line.match(ID) ?? []).map((id) => ({ id, arquivo, linha: i + 1 })));
 
 const onde = (r: { arquivo: string; linha: number }) => `${r.arquivo}:${r.linha}`;
+// The mirrored path: docs/requisitos/x/y.md → e2e/x/y.spec.ts.
+const specDe = (r: Requisito) =>
+  r.arquivo.replace(/^docs\/requisitos\//, 'e2e/').replace(/\.md$/, '.spec.ts');
 const mesmoConjunto = (a: readonly string[], b: readonly string[]) =>
   a.length === b.length && [...a].sort().join() === [...b].sort().join();
 
@@ -109,10 +112,10 @@ export const verificar = (
     .filter((arquivo) => !listados.has(arquivo))
     .map((arquivo) => `${arquivo} fora do índice ${indice.arquivo}`);
 
-  const noE2e = new Set(citacoes.filter((c) => SPEC_E2E.test(c.arquivo)).map((c) => c.id));
+  const noE2e = new Set(citacoes.map((c) => `${c.arquivo} ${c.id}`));
   const semSpec = requisitos
-    .filter((r) => r.id.startsWith('RF-') && !noE2e.has(r.id))
-    .map((r) => `${onde(r)} ${r.id} sem spec em e2e/ que o cite`);
+    .filter((r) => r.id.startsWith('RF-') && !noE2e.has(`${specDe(r)} ${r.id}`))
+    .map((r) => `${onde(r)} ${r.id} sem o spec ${specDe(r)} que o cite`);
 
   const citados = new Set(citacoes.map((c) => c.id));
   const semTeste = requisitos

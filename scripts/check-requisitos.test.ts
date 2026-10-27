@@ -31,7 +31,7 @@ const teste = [
   ...citacoesDe('e2e/participacao/entrar-na-copa.spec.ts', "test.describe('RF-PAR-01 Entrar')"),
 ];
 const semSpec =
-  'docs/requisitos/participacao/entrar-na-copa.md:1 RF-PAR-01 sem spec em e2e/ que o cite';
+  'docs/requisitos/participacao/entrar-na-copa.md:1 RF-PAR-01 sem o spec e2e/participacao/entrar-na-copa.spec.ts que o cite';
 
 describe('requisitosDe', () => {
   it('reads the ID and title of each heading, marking review and Cenário', () => {
@@ -158,7 +158,7 @@ describe('verificar', () => {
     expect(verificar(dois, indice(linha), [])).toEqual([
       'docs/requisitos/participacao/entrar-na-copa.md define mais de uma funcionalidade',
       semSpec,
-      'docs/requisitos/participacao/entrar-na-copa.md:2 RF-PAR-02 sem spec em e2e/ que o cite',
+      'docs/requisitos/participacao/entrar-na-copa.md:2 RF-PAR-02 sem o spec e2e/participacao/entrar-na-copa.spec.ts que o cite',
     ]);
   });
 
@@ -167,6 +167,14 @@ describe('verificar', () => {
       ...citacoesDe('a.test.ts', "it('RN-PAR-01: x')"),
       ...citacoesDe('web/src/a.test.ts', "it('RF-PAR-01: x')"),
       ...citacoesDe('e2e/apoio.ts', '// RF-PAR-01'),
+    ];
+    expect(verificar(entrar, indiceCerto, citacoes)).toEqual([semSpec]);
+  });
+
+  it('reports an RF whose only e2e spec is out of the mirrored path', () => {
+    const citacoes = [
+      ...citacoesDe('a.test.ts', "it('RN-PAR-01: x')"),
+      ...citacoesDe('e2e/participacao/sair-da-copa.spec.ts', "test('RF-PAR-01: x')"),
     ];
     expect(verificar(entrar, indiceCerto, citacoes)).toEqual([semSpec]);
   });
