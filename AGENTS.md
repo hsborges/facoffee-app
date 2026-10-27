@@ -106,3 +106,15 @@ Regras de nomenclatura das rotas públicas ([ADR 0016](docs/adr/0016-nomenclatur
 
 - Todo export em `src/` tem comentário TSDoc (`/** ... */`) logo acima, verificado por `pnpm lint` ([ADR 0010](docs/adr/0010-tsdoc-obrigatorio-nos-exports.md)).
 - Rota pública nova ou alterada atualiza `gateway/openapi.yaml` no mesmo PR ([ADR 0009](docs/adr/0009-openapi-da-api-publica.md)). Esse documento é público: descreve só o contrato, sem conhecimento, detalhes ou decisões internas (ADRs, serviços, infraestrutura, claims).
+
+## Protótipo
+
+O canvas [FACOFFEE Design](https://claude.ai/artifact/7ypfHujXYVCwRNjhknVJXb) é a fonte das telas e acompanha o `web/` ([docs/design/PROTOTYPE.md](docs/design/PROTOTYPE.md)).
+
+- Mudança visível em `web/` (tela, campo, texto, fluxo, navegação) atualiza o canvas no mesmo PR: a artboard da tela no celular e a do desktop.
+- Tela nova vira artboard nova, nas duas larguras e na fileira da sua visão; tela removida sai do canvas.
+- Mudança grande de tela começa por uma proposta no canvas, antes do código.
+- Antes de publicar, leia a versão atual do canvas e edite sobre ela: alguém pode ter mudado a página.
+- O canvas não é exportado para o repositório (PDF, imagem): o link é a referência.
+- O que o canvas mostra e a API ainda não devolve fica em *O que ficou de fora* de [PROTOTYPE.md](docs/design/PROTOTYPE.md); decisão nova do protótipo entra em *O que muda*.
+- O PR que muda tela cita as artboards atualizadas; sem acesso ao canvas, diz no PR o que ficou para atualizar.
