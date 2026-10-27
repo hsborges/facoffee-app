@@ -116,3 +116,21 @@ Regra: RN-FIN-26 Qualquer participante registra um gasto
     Quando Ana registra o gasto de café pago do próprio bolso
     Então o gasto fica registrado em nome de Ana
 ```
+
+### RN-FIN-37 Em Gastos, o gestor vê o saldo da caixinha e quanto sobra depois dos reembolsos
+
+- Termo: [Caixinha](../../dominio/GLOSSARIO.md#caixinha), [Reembolso](../../dominio/GLOSSARIO.md#reembolso) · Origem: [protótipo do redesign](../../design/PROTOTYPE.md)
+
+Assim o gestor decide se precisa solicitar complemento (RF-FIN-05) sem trocar de visão. Os gastos pagos do próprio bolso ainda não reembolsados ficam à parte, em *A reembolsar*.
+
+```gherkin
+# language: pt
+Regra: RN-FIN-37 Em Gastos, o gestor vê o saldo da caixinha e quanto sobra depois dos reembolsos
+
+  Cenário: gasto a reembolsar
+    Dado que o saldo da caixinha é R$ 646,50
+    E que Ana pagou do próprio bolso um gasto de R$ 45,90, ainda não reembolsado
+    Quando o gestor abre Gastos
+    Então vê o saldo da caixinha de R$ 646,50
+    E R$ 600,60 depois dos reembolsos
+```
