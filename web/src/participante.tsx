@@ -43,7 +43,11 @@ export const useLeitura = <T,>(token: string, caminho: string) => {
 };
 
 /** Announces that the page is loading. */
-export const Carregando = () => <p role="status">Carregando…</p>;
+export const Carregando = () => (
+  <p role="status" data-testid="carregando">
+    Carregando…
+  </p>
+);
 
 /** Announces that the page could not load, with a button to try again. */
 export const FalhaAoCarregar = ({ tentarDeNovo }: { tentarDeNovo: () => void }) => (
@@ -70,8 +74,14 @@ export const useComando = (recarregar: () => void) => {
   };
   const avisos = (
     <>
-      {aviso.falha && <p role="alert">{aviso.falha}</p>}
-      <p role="status">{aviso.feito}</p>
+      {aviso.falha && (
+        <p role="alert" data-testid="aviso-falha">
+          {aviso.falha}
+        </p>
+      )}
+      <p role="status" data-testid="aviso-feito">
+        {aviso.feito}
+      </p>
     </>
   );
   return { enviando, fazer, avisos };
@@ -94,6 +104,7 @@ export const CampoValor = ({ rotulo, inicial }: { rotulo: string; inicial?: numb
     {rotulo}
     <input
       name="valor"
+      data-testid="valor"
       type="number"
       min="0.01"
       max="21474836.47"
@@ -209,25 +220,25 @@ const Comprovantes = ({ token, participanteId }: { token: string; participanteId
     );
 
   return (
-    <section aria-labelledby="comprovantes">
+    <section aria-labelledby="comprovantes" data-testid="comprovantes">
       <h2 id="comprovantes">Comprovantes</h2>
       <p>
         Pagou por PIX? Envie o comprovante ao gestor. Ele vale como pagamento quando o gestor
         confirmar.
       </p>
       {avisos}
-      <form onSubmit={enviar}>
+      <form onSubmit={enviar} data-testid="envio-de-comprovante">
         <CampoValor rotulo="Valor pago (R$)" />
         <label className="campo">
           Comprovante do PIX (PDF, JPEG ou PNG, até 5 MB)
-          <input type="file" name="comprovante" accept={ARQUIVOS} required />
+          <input type="file" name="comprovante" data-testid="arquivo" accept={ARQUIVOS} required />
         </label>
-        <button type="submit" disabled={enviando}>
+        <button type="submit" data-testid="enviar-comprovante" disabled={enviando}>
           Enviar comprovante
         </button>
       </form>
       {comprovantes.valor.length > 0 && (
-        <table className="empilhada">
+        <table className="empilhada" data-testid="comprovantes-enviados">
           <caption>Comprovantes enviados</caption>
           <thead>
             <tr>
@@ -241,27 +252,40 @@ const Comprovantes = ({ token, participanteId }: { token: string; participanteId
             {comprovantes.valor.map((comprovante) => {
               const qual = `comprovante de ${emReais(comprovante.valorEmCentavos)} enviado em ${dataEmCampoGrande(comprovante.enviadoEm)}`;
               return (
-                <tr key={comprovante.id}>
+                <tr
+                  key={comprovante.id}
+                  data-testid="comprovante-enviado"
+                  data-situacao={comprovante.situacao}
+                >
                   <td data-rotulo="Enviado em">{dataEmCampoGrande(comprovante.enviadoEm)}</td>
                   <td data-rotulo="Valor pago">{emReais(comprovante.valorEmCentavos)}</td>
-                  <td data-rotulo="Situação">{situacaoDoComprovante(comprovante)}</td>
+                  <td data-rotulo="Situação" data-testid="situacao">
+                    {situacaoDoComprovante(comprovante)}
+                  </td>
                   <td data-rotulo="Editar ou cancelar">
                     {comprovante.situacao !== 'a-confirmar' ? (
                       '—'
                     ) : (
                       <>
                         <details>
-                          <summary aria-label={`Editar ${qual}`}>Editar</summary>
-                          <form onSubmit={editar(comprovante)}>
+                          <summary aria-label={`Editar ${qual}`} data-testid="editar-comprovante">
+                            Editar
+                          </summary>
+                          <form onSubmit={editar(comprovante)} data-testid="edicao-de-comprovante">
                             <CampoValor
                               rotulo="Valor pago (R$)"
                               inicial={comprovante.valorEmCentavos}
                             />
                             <label className="campo">
                               Outro comprovante (opcional)
-                              <input type="file" name="comprovante" accept={ARQUIVOS} />
+                              <input
+                                type="file"
+                                name="comprovante"
+                                data-testid="arquivo"
+                                accept={ARQUIVOS}
+                              />
                             </label>
-                            <button type="submit" disabled={enviando}>
+                            <button type="submit" data-testid="salvar" disabled={enviando}>
                               Salvar
                             </button>
                           </form>
@@ -269,6 +293,7 @@ const Comprovantes = ({ token, participanteId }: { token: string; participanteId
                         <button
                           type="button"
                           className="fantasma"
+                          data-testid="cancelar-envio"
                           disabled={enviando}
                           aria-label={`Cancelar o envio do ${qual}`}
                           onClick={() => cancelar(comprovante)}
@@ -291,12 +316,14 @@ const Comprovantes = ({ token, participanteId }: { token: string; participanteId
 const EscolhaDoTipoDeCota = ({
   legenda,
   botao,
+  testId,
   inicial,
   desabilitado,
   escolher,
 }: {
   legenda: string;
   botao: string;
+  testId: string;
   inicial: TipoDeCota;
   desabilitado: boolean;
   escolher: (tipoDeCota: TipoDeCota) => void;
@@ -311,13 +338,19 @@ const EscolhaDoTipoDeCota = ({
         <legend>{legenda}</legend>
         {(['so-cafe', 'completa'] as const).map((tipo) => (
           <label key={tipo} className="opcao">
-            <input type="radio" name="tipoDeCota" value={tipo} defaultChecked={tipo === inicial} />
+            <input
+              type="radio"
+              name="tipoDeCota"
+              value={tipo}
+              data-testid={`tipo-de-cota-${tipo}`}
+              defaultChecked={tipo === inicial}
+            />
             <strong>{NOME_DO_TIPO_DE_COTA[tipo]}</strong>
             <span>{ITENS_DO_TIPO_DE_COTA[tipo]}</span>
           </label>
         ))}
       </fieldset>
-      <button type="submit" disabled={desabilitado}>
+      <button type="submit" data-testid={testId} disabled={desabilitado}>
         {botao}
       </button>
     </form>
@@ -325,23 +358,23 @@ const EscolhaDoTipoDeCota = ({
 };
 
 const CreditoOuPendencia = ({ situacao }: { situacao: Situacao }) => (
-  <section aria-labelledby="credito-ou-pendencia">
+  <section aria-labelledby="credito-ou-pendencia" data-testid="credito-ou-pendencia">
     <h2 id="credito-ou-pendencia">Crédito ou pendência</h2>
     {situacao.pendenteEmCentavos > 0 ? (
-      <p>
+      <p data-testid="pendente">
         Pendente: <strong>{emReais(situacao.pendenteEmCentavos)}</strong>. Acerte com o gestor ou
         envie o comprovante do PIX, sem multa nem juros.
       </p>
     ) : situacao.creditoEmCentavos > 0 ? (
-      <p>
+      <p data-testid="credito">
         Crédito: <strong>{emReais(situacao.creditoEmCentavos)}</strong>, abatido das próximas cotas
         e complementos.
       </p>
     ) : (
-      <p>Em dia: nenhum crédito nem pendência.</p>
+      <p data-testid="em-dia">Em dia: nenhum crédito nem pendência.</p>
     )}
     {situacao.cotas.length > 0 && (
-      <table>
+      <table data-testid="cotas">
         <caption>Cotas</caption>
         <thead>
           <tr>
@@ -352,7 +385,7 @@ const CreditoOuPendencia = ({ situacao }: { situacao: Situacao }) => (
         </thead>
         <tbody>
           {situacao.cotas.map((cota) => (
-            <tr key={cota.mes}>
+            <tr key={cota.mes} data-testid="cota" data-tipo-de-cota={cota.tipoDeCota}>
               <td>{mesPorExtenso(cota.mes)}</td>
               <td>{NOME_DO_TIPO_DE_COTA[cota.tipoDeCota]}</td>
               <td>{emReais(cota.valorEmCentavos)}</td>
@@ -362,7 +395,7 @@ const CreditoOuPendencia = ({ situacao }: { situacao: Situacao }) => (
       </table>
     )}
     {situacao.complementos.length > 0 && (
-      <table>
+      <table data-testid="complementos">
         <caption>Complementos</caption>
         <thead>
           <tr>
@@ -372,7 +405,7 @@ const CreditoOuPendencia = ({ situacao }: { situacao: Situacao }) => (
         </thead>
         <tbody>
           {situacao.complementos.map((complemento) => (
-            <tr key={complemento.id}>
+            <tr key={complemento.id} data-testid="complemento">
               <td>{dataEmCampoGrande(complemento.solicitadoEm)}</td>
               <td>{emReais(complemento.parteEmCentavos)}</td>
             </tr>
@@ -444,21 +477,35 @@ export const MinhaSituacao = ({
 
   return (
     <>
-      {falha && <p role="alert">{falha}</p>}
-      <p role="status">{feito}</p>
-      <section aria-labelledby="participacao">
+      {falha && (
+        <p role="alert" data-testid="aviso-falha">
+          {falha}
+        </p>
+      )}
+      <p role="status" data-testid="aviso-feito">
+        {feito}
+      </p>
+      <section aria-labelledby="participacao" data-testid="participacao">
         <h2 id="participacao">Participação</h2>
         {atual?.participando ? (
           <>
-            <p>
+            <p data-testid="participando" data-tipo-de-cota={atual.tipoDeCota}>
               Você participa com a cota <strong>{NOME_DO_TIPO_DE_COTA[atual.tipoDeCota]}</strong>.
-              {atual.troca &&
-                ` A partir de ${mesPorExtenso(atual.troca.aPartirDe)}, ela passa a ser ${NOME_DO_TIPO_DE_COTA[atual.troca.tipoDeCota]}.`}
+              {atual.troca && (
+                <span
+                  data-testid="troca-de-tipo-de-cota"
+                  data-tipo-de-cota={atual.troca.tipoDeCota}
+                  data-a-partir-de={atual.troca.aPartirDe}
+                >
+                  {` A partir de ${mesPorExtenso(atual.troca.aPartirDe)}, ela passa a ser ${NOME_DO_TIPO_DE_COTA[atual.troca.tipoDeCota]}.`}
+                </span>
+              )}
             </p>
             <EscolhaDoTipoDeCota
               key={atual.troca?.tipoDeCota ?? atual.tipoDeCota}
               legenda="Trocar tipo de cota (vale a partir do mês seguinte)"
               botao="Trocar tipo de cota"
+              testId="trocar-tipo-de-cota"
               inicial={atual.troca?.tipoDeCota ?? atual.tipoDeCota}
               desabilitado={enviando}
               escolher={(tipoDeCota) =>
@@ -469,16 +516,23 @@ export const MinhaSituacao = ({
                 )
               }
             />
-            <button type="button" className="fantasma" disabled={enviando} onClick={pedirSaida}>
+            <button
+              type="button"
+              className="fantasma"
+              data-testid="pedir-saida"
+              disabled={enviando}
+              onClick={pedirSaida}
+            >
               Pedir saída
             </button>
           </>
         ) : (
           <>
-            <p>Você não participa da divisão dos custos da copa.</p>
+            <p data-testid="nao-participa">Você não participa da divisão dos custos da copa.</p>
             <EscolhaDoTipoDeCota
               legenda="Escolha o tipo de cota"
               botao="Pedir entrada"
+              testId="pedir-entrada"
               inicial={atual?.tipoDeCota ?? 'completa'}
               desabilitado={enviando}
               escolher={(tipoDeCota) =>
@@ -501,7 +555,13 @@ export const MinhaSituacao = ({
       <section aria-labelledby="acesso">
         <h2 id="acesso">Acesso</h2>
         <p>Ao desativar seu acesso, sua participação termina. Só o gestor pode reativá-lo.</p>
-        <button type="button" className="fantasma" disabled={enviando} onClick={desativarAcesso}>
+        <button
+          type="button"
+          className="fantasma"
+          data-testid="desativar-meu-acesso"
+          disabled={enviando}
+          onClick={desativarAcesso}
+        >
           Desativar meu acesso
         </button>
       </section>
@@ -534,26 +594,28 @@ const CaixinhaDoMes = ({ token }: { token: string }) => {
       ) : lida.situacao !== 'ok' ? (
         <FalhaAoCarregar tentarDeNovo={recarregar} />
       ) : (
-        <table>
+        <table data-testid="caixinha-do-mes">
           <caption>Caixinha de {mesPorExtenso(lida.valor.mes)}</caption>
           <tbody>
             <tr>
               <th scope="row">Saldo no início do mês</th>
-              <td>{emReais(lida.valor.saldoNoInicioEmCentavos)}</td>
+              <td data-testid="saldo-no-inicio">{emReais(lida.valor.saldoNoInicioEmCentavos)}</td>
             </tr>
             <tr>
               <th scope="row">Entrou (pagamentos recebidos)</th>
-              <td>{emReais(lida.valor.recebidoEmCentavos)}</td>
+              <td data-testid="recebido">{emReais(lida.valor.recebidoEmCentavos)}</td>
             </tr>
             {Object.entries(NOME_DO_TIPO_DE_GASTO).map(([tipo, nome]) => (
               <tr key={tipo}>
                 <th scope="row">Saiu: {nome}</th>
-                <td>{emReais(lida.valor.gastosPorTipoEmCentavos[tipo as TipoDeGasto])}</td>
+                <td data-testid={`saiu-${tipo}`}>
+                  {emReais(lida.valor.gastosPorTipoEmCentavos[tipo as TipoDeGasto])}
+                </td>
               </tr>
             ))}
             <tr>
               <th scope="row">Saldo no fim do mês</th>
-              <td>{emReais(lida.valor.saldoNoFimEmCentavos)}</td>
+              <td data-testid="saldo-no-fim">{emReais(lida.valor.saldoNoFimEmCentavos)}</td>
             </tr>
           </tbody>
         </table>
@@ -565,18 +627,22 @@ const CaixinhaDoMes = ({ token }: { token: string }) => {
 
 /** The gastos do ano anterior per tipo de gasto, and their total. */
 export const GastosDoAnoAnterior = ({ caixinha }: { caixinha: CaixinhaLida }) => (
-  <table>
+  <table data-testid="gastos-do-ano-anterior">
     <caption>Gastos do ano anterior</caption>
     <tbody>
       {Object.entries(NOME_DO_TIPO_DE_GASTO).map(([tipo, nome]) => (
         <tr key={tipo}>
           <th scope="row">{nome}</th>
-          <td>{emReais(caixinha.gastosDoAnoAnteriorPorTipoEmCentavos[tipo as TipoDeGasto])}</td>
+          <td data-testid={`gasto-do-ano-anterior-${tipo}`}>
+            {emReais(caixinha.gastosDoAnoAnteriorPorTipoEmCentavos[tipo as TipoDeGasto])}
+          </td>
         </tr>
       ))}
       <tr>
         <th scope="row">Total</th>
-        <td>{emReais(caixinha.gastosDoAnoAnteriorEmCentavos)}</td>
+        <td data-testid="total-do-ano-anterior">
+          {emReais(caixinha.gastosDoAnoAnteriorEmCentavos)}
+        </td>
       </tr>
     </tbody>
   </table>
@@ -589,9 +655,14 @@ const ValoresDaCota = ({ token }: { token: string }) => {
   );
   if (!valores) return <Carregando />;
   if (valores.situacao !== 'ok') return <FalhaAoCarregar tentarDeNovo={recarregar} />;
-  if (valores.valor.length === 0) return <p>O valor da cota deste ano ainda não foi definido.</p>;
+  if (valores.valor.length === 0)
+    return (
+      <p data-testid="valor-da-cota-indefinido">
+        O valor da cota deste ano ainda não foi definido.
+      </p>
+    );
   return (
-    <table>
+    <table data-testid="valores-da-cota" data-ano={valores.valor[0]?.ano}>
       <caption>Valor da cota em {valores.valor[0]?.ano}</caption>
       <thead>
         <tr>
@@ -605,7 +676,9 @@ const ValoresDaCota = ({ token }: { token: string }) => {
           <tr key={valor.tipoDeCota}>
             <th scope="row">{NOME_DO_TIPO_DE_COTA[valor.tipoDeCota]}</th>
             <td>{ITENS_DO_TIPO_DE_COTA[valor.tipoDeCota]}</td>
-            <td>{emReais(valor.valorEmCentavos)}</td>
+            <td data-testid={`valor-da-cota-${valor.tipoDeCota}`}>
+              {emReais(valor.valorEmCentavos)}
+            </td>
           </tr>
         ))}
       </tbody>

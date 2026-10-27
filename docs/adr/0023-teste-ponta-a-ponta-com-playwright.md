@@ -1,6 +1,6 @@
 # 0023. Teste ponta a ponta com Playwright e Testcontainers
 
-- Status: Aceito
+- Status: Aceito; o que o teste faz fora do web substituído por 0033
 - Data: 2026-10-25
 
 ## Contexto

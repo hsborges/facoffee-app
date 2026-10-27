@@ -26,7 +26,7 @@ Registros de decisões de arquitetura. Um arquivo por decisão: `NNNN-titulo.md`
 | [0020](0020-envio-de-e-mails-da-notificacao.md) | Envio de e-mails da Notificação | Aceito |
 | [0021](0021-front-end-servido-pelo-gateway.md) | Front-end servido pelo gateway | Aceito |
 | [0022](0022-http-no-ambiente-local.md) | HTTP no ambiente local | Aceito |
-| [0023](0023-teste-ponta-a-ponta-com-playwright.md) | Teste ponta a ponta com Playwright e Testcontainers | Aceito |
+| [0023](0023-teste-ponta-a-ponta-com-playwright.md) | Teste ponta a ponta com Playwright e Testcontainers | Aceito; o que o teste faz fora do web substituído por 0033 |
 | [0024](0024-ci-no-github-actions.md) | CI no GitHub Actions | Aceito |
 | [0025](0025-pagina-inicial-antes-do-login.md) | Página inicial antes do login | Aceito |
 | [0026](0026-dockerfile-por-servico.md) | Dockerfile por serviço | Aceito |
@@ -36,3 +36,4 @@ Registros de decisões de arquitetura. Um arquivo por decisão: `NNNN-titulo.md`
 | [0030](0030-pagamento-iniciado-pelo-participante.md) | Pagamento iniciado pelo participante | Aceito; envio e recusa sem evento substituídos por 0031 |
 | [0031](0031-avisos-do-comprovante-enviado.md) | Avisos do comprovante enviado | Aceito |
 | [0032](0032-requisitos-rastreaveis-em-bdd.md) | Requisitos rastreáveis em BDD | Aceito |
+| [0033](0033-e2e-como-teste-de-aceitacao-da-funcionalidade.md) | E2E como teste de aceitação da funcionalidade | Aceito |

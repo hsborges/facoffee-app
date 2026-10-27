@@ -8,6 +8,8 @@ const HEADING = /^#{1,3} (R(?:F|N|NF)-(?:[A-Z]+-)?\d+) (.+)$/;
 const REVISAO = /^- Verificação: revisão\b/;
 const CENARIO = /^\s*Cenário:/;
 const LINHA_DO_INDICE = /^\| \[(RF-[A-Z]+-\d+)\]\(([^)]+)\) \|/;
+// The acceptance test of each funcionalidade (ADR 0033).
+const SPEC_E2E = /^e2e\/.+\.spec\.ts$/;
 
 /** A requisito (RF, RN or RNF) defined by a heading `# ID Título` in docs/requisitos/ (ADR 0032). */
 export type Requisito = {
@@ -50,13 +52,16 @@ export const citacoesDe = (arquivo: string, texto: string): readonly Citacao[] =
     .flatMap((line, i) => (line.match(ID) ?? []).map((id) => ({ id, arquivo, linha: i + 1 })));
 
 const onde = (r: { arquivo: string; linha: number }) => `${r.arquivo}:${r.linha}`;
+// The mirrored path: docs/requisitos/x/y.md → e2e/x/y.spec.ts.
+const specDe = (r: Requisito) =>
+  r.arquivo.replace(/^docs\/requisitos\//, 'e2e/').replace(/\.md$/, '.spec.ts');
 const mesmoConjunto = (a: readonly string[], b: readonly string[]) =>
   a.length === b.length && [...a].sort().join() === [...b].sort().join();
 
 /**
  * Problems in the requisitos: IDs out of format or duplicated, cited IDs that do not exist, files
- * with RN but not exactly one RF, an index out of sync with the files, RN/RNF without a test nor
- * `Verificação: revisão`, and RN without Cenário.
+ * with RN but not exactly one RF, an index out of sync with the files, RF without an e2e spec,
+ * RN/RNF without a test nor `Verificação: revisão`, and RN without Cenário.
  */
 export const verificar = (
   requisitos: readonly Requisito[],
@@ -107,6 +112,11 @@ export const verificar = (
     .filter((arquivo) => !listados.has(arquivo))
     .map((arquivo) => `${arquivo} fora do índice ${indice.arquivo}`);
 
+  const noE2e = new Set(citacoes.map((c) => `${c.arquivo} ${c.id}`));
+  const semSpec = requisitos
+    .filter((r) => r.id.startsWith('RF-') && !noE2e.has(`${specDe(r)} ${r.id}`))
+    .map((r) => `${onde(r)} ${r.id} sem o spec ${specDe(r)} que o cite`);
+
   const citados = new Set(citacoes.map((c) => c.id));
   const semTeste = requisitos
     .filter((r) => !r.id.startsWith('RF-') && !r.revisao && !citados.has(r.id))
@@ -123,26 +133,29 @@ export const verificar = (
     ...semUmaFuncionalidade,
     ...indiceErrado,
     ...foraDoIndice,
+    ...semSpec,
     ...semTeste,
     ...semCenario,
   ];
 };
 
-/** Traceability matrix (RF → RN → tests) in Markdown. */
+/** Traceability matrix (RF → e2e specs, RN → tests) in Markdown. */
 export const matriz = (requisitos: readonly Requisito[], citacoes: readonly Citacao[]): string => {
-  const testesDe = (id: string) =>
+  const testesDe = (id: string, so: (c: Citacao) => boolean = () => true) =>
     citacoes
-      .filter((c) => c.id === id)
+      .filter((c) => c.id === id && so(c))
       .map(onde)
       .join(', ');
-  const linhas = requisitos
-    .filter((r) => !r.id.startsWith('RF-'))
-    .map((r) => {
-      const rf = requisitos.find((f) => f.arquivo === r.arquivo && f.id.startsWith('RF-'));
-      const funcionalidade = rf ? `${rf.id} ${rf.titulo}` : '—';
-      const testes = r.revisao ? 'revisão' : testesDe(r.id) || '**nenhum**';
-      return `| ${funcionalidade} | ${r.id} ${r.titulo} | ${testes} |`;
-    });
+  const linhas = requisitos.map((r) => {
+    if (r.id.startsWith('RF-')) {
+      const specs = testesDe(r.id, (c) => SPEC_E2E.test(c.arquivo)) || '**nenhum**';
+      return `| ${r.id} ${r.titulo} | — | ${specs} |`;
+    }
+    const rf = requisitos.find((f) => f.arquivo === r.arquivo && f.id.startsWith('RF-'));
+    const funcionalidade = rf ? `${rf.id} ${rf.titulo}` : '—';
+    const testes = r.revisao ? 'revisão' : testesDe(r.id) || '**nenhum**';
+    return `| ${funcionalidade} | ${r.id} ${r.titulo} | ${testes} |`;
+  });
   return ['| Funcionalidade | Regra | Testes |', '|---|---|---|', ...linhas].join('\n');
 };
 

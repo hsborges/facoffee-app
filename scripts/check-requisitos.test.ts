@@ -26,7 +26,12 @@ const indice = (...linhas: string[]) => ({
 const indiceCerto = indice(
   '| [RF-PAR-01](participacao/entrar-na-copa.md) | Entrar | RN-PAR-01, RN-PAR-02 |',
 );
-const teste = citacoesDe('a.test.ts', lines('describe(...)', "it('RN-PAR-01: enters', ...)"));
+const teste = [
+  ...citacoesDe('a.test.ts', lines('describe(...)', "it('RN-PAR-01: enters', ...)")),
+  ...citacoesDe('e2e/participacao/entrar-na-copa.spec.ts', "test.describe('RF-PAR-01 Entrar')"),
+];
+const semSpec =
+  'docs/requisitos/participacao/entrar-na-copa.md:1 RF-PAR-01 sem o spec e2e/participacao/entrar-na-copa.spec.ts que o cite';
 
 describe('requisitosDe', () => {
   it('reads the ID and title of each heading, marking review and Cenário', () => {
@@ -126,6 +131,7 @@ describe('verificar', () => {
 
   it('reports an RN without a test, unless marked for review', () => {
     expect(verificar([...entrar, ...rnf], indiceCerto, [])).toEqual([
+      semSpec,
       'docs/requisitos/participacao/entrar-na-copa.md:3 RN-PAR-01 sem teste que o cite (ou marque "- Verificação: revisão")',
       'docs/requisitos/nao-funcionais.md:1 RNF-01 sem teste que o cite (ou marque "- Verificação: revisão")',
     ]);
@@ -137,7 +143,8 @@ describe('verificar', () => {
       lines('# RF-PAR-01 Entrar', '### RN-PAR-01 Sem cenário', '- Verificação: revisão. x'),
     );
     const linha = '| [RF-PAR-01](participacao/entrar-na-copa.md) | Entrar | RN-PAR-01 |';
-    expect(verificar([...semCenario, ...rnf], indice(linha), citacoesDe('b', 'RNF-01'))).toEqual([
+    const citacoes = [...teste, ...citacoesDe('b', 'RNF-01')];
+    expect(verificar([...semCenario, ...rnf], indice(linha), citacoes)).toEqual([
       'docs/requisitos/participacao/entrar-na-copa.md:2 RN-PAR-01 sem Cenário',
     ]);
   });
@@ -150,7 +157,26 @@ describe('verificar', () => {
     const linha = '| [RF-PAR-01](participacao/entrar-na-copa.md) | Entrar | RF-PAR-02 |';
     expect(verificar(dois, indice(linha), [])).toEqual([
       'docs/requisitos/participacao/entrar-na-copa.md define mais de uma funcionalidade',
+      semSpec,
+      'docs/requisitos/participacao/entrar-na-copa.md:2 RF-PAR-02 sem o spec e2e/participacao/entrar-na-copa.spec.ts que o cite',
     ]);
+  });
+
+  it('reports an RF without an e2e spec, even when another test cites it', () => {
+    const citacoes = [
+      ...citacoesDe('a.test.ts', "it('RN-PAR-01: x')"),
+      ...citacoesDe('web/src/a.test.ts', "it('RF-PAR-01: x')"),
+      ...citacoesDe('e2e/apoio.ts', '// RF-PAR-01'),
+    ];
+    expect(verificar(entrar, indiceCerto, citacoes)).toEqual([semSpec]);
+  });
+
+  it('reports an RF whose only e2e spec is out of the mirrored path', () => {
+    const citacoes = [
+      ...citacoesDe('a.test.ts', "it('RN-PAR-01: x')"),
+      ...citacoesDe('e2e/participacao/sair-da-copa.spec.ts', "test('RF-PAR-01: x')"),
+    ];
+    expect(verificar(entrar, indiceCerto, citacoes)).toEqual([semSpec]);
   });
 
   it('reports an index row with the wrong rules, a row to no funcionalidade and a file out of the index', () => {
@@ -169,11 +195,12 @@ describe('verificar', () => {
 });
 
 describe('matriz', () => {
-  it('lists each rule under its funcionalidade with the tests that cite it', () => {
+  it('lists each funcionalidade with its e2e specs, and each rule with the tests that cite it', () => {
     expect(matriz([...entrar, ...rnf], teste)).toBe(
       lines(
         '| Funcionalidade | Regra | Testes |',
         '|---|---|---|',
+        '| RF-PAR-01 Entrar na copa | — | e2e/participacao/entrar-na-copa.spec.ts:1 |',
         '| RF-PAR-01 Entrar na copa | RN-PAR-01 Quem entra escolhe um tipo de cota | a.test.ts:2 |',
         '| RF-PAR-01 Entrar na copa | RN-PAR-02 O gestor é um papel | revisão |',
         '| — | RNF-01 Mobile first | **nenhum** |',

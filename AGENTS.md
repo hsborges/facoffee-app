@@ -50,10 +50,11 @@ Contratos de eventos em `contracts/events/` também seguem SemVer: mudança inco
 - Um arquivo por funcionalidade, na subpasta do contexto, com as suas regras dentro; regra usada por mais de uma funcionalidade fica na principal, e as demais apontam para ela.
 - Cada regra tem um ou mais `Cenário` em Gherkin em português, só com termos do glossário.
 - **Regra nova ou alterada atualiza `docs/requisitos/` e o índice no mesmo PR**, e tem ao menos um teste que cita o ID no nome (`it('RN-FIN-07: ...')`). Regra fora do sistema, ou ainda não implementada, leva `- Verificação: revisão` com o motivo.
+- **Funcionalidade nova vem com o seu spec em `e2e/`**, o teste de aceitação dela ([ADR 0033](docs/adr/0033-e2e-como-teste-de-aceitacao-da-funcionalidade.md)): mesmo caminho do arquivo em `docs/requisitos/`, trocando `.md` por `.spec.ts`, com o ID no `test.describe('RF-PAR-01 Entrar na copa', ...)` e um teste por regra observável de ponta a ponta, começando pelo ID. Os elementos são achados pelo `data-testid` (português, kebab-case, termos do glossário), e o estado pelos atributos `data-*`, nunca pelo texto, rótulo ou papel; o que se repete, como as linhas de uma tabela, é filtrado pelos dados do próprio teste (o nome, o valor).
 - Antes de implementar, leia as regras da funcionalidade; mudança de comportamento que contraria um cenário é mudança de regra, e o cenário muda junto.
 - Regra que deixa de valer é removida do arquivo e do índice; o ID não volta a ser usado.
 - O glossário e MODELOS.md apontam para as regras por ID, sem repetir o texto: termo novo entra no glossário, regra nova entra em `docs/requisitos/`.
-- `pnpm lint` falha com ID fora do formato ou duplicado, ID citado em teste que não existe, arquivo com regras sem exatamente uma funcionalidade, índice desatualizado, regra sem teste ou regra sem `Cenário`; `node scripts/check-requisitos.ts --matriz` gera a matriz de rastreabilidade.
+- `pnpm lint` falha com ID fora do formato ou duplicado, ID citado em teste que não existe, arquivo com regras sem exatamente uma funcionalidade, índice desatualizado, funcionalidade sem spec em `e2e/`, regra sem teste ou regra sem `Cenário`; `node scripts/check-requisitos.ts --matriz` gera a matriz de rastreabilidade.
 - Issue e PR citam os IDs afetados nos campos **Requisitos** e **Requisitos afetados**.
 
 ## Decisões — ADRs

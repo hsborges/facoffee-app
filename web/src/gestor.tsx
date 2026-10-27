@@ -201,7 +201,7 @@ export const Participantes = ({ token, usuarioId }: { token: string; usuarioId: 
   return (
     <>
       {avisos}
-      <section aria-labelledby="comprovantes-a-confirmar">
+      <section aria-labelledby="comprovantes-a-confirmar" data-testid="comprovantes-a-confirmar">
         <h2 id="comprovantes-a-confirmar">Comprovantes a confirmar</h2>
         {falhaAoAbrir && <p role="alert">Não foi possível abrir o comprovante.</p>}
         {comprovantes.valor.length === 0 ? (
@@ -222,7 +222,7 @@ export const Participantes = ({ token, usuarioId }: { token: string; usuarioId: 
                 const quem = nomes.get(comprovante.participanteId) ?? 'Desconhecido';
                 const qual = `comprovante de ${quem}, ${emReais(comprovante.valorEmCentavos)}`;
                 return (
-                  <tr key={comprovante.id}>
+                  <tr key={comprovante.id} data-testid="comprovante-a-confirmar">
                     <th scope="row">{quem}</th>
                     <td data-rotulo="Enviado em">{dataEmCampoGrande(comprovante.enviadoEm)}</td>
                     <td data-rotulo="Valor informado">{emReais(comprovante.valorEmCentavos)}</td>
@@ -230,6 +230,7 @@ export const Participantes = ({ token, usuarioId }: { token: string; usuarioId: 
                       <button
                         type="button"
                         className="fantasma"
+                        data-testid="ver-comprovante"
                         aria-label={`Ver o ${qual}`}
                         onClick={() => abrir(comprovante)}
                       >
@@ -238,7 +239,10 @@ export const Participantes = ({ token, usuarioId }: { token: string; usuarioId: 
                     </td>
                     <td data-rotulo="Análise">
                       <details>
-                        <summary aria-label={`Confirmar ou recusar o ${qual}`}>
+                        <summary
+                          aria-label={`Confirmar ou recusar o ${qual}`}
+                          data-testid="analisar-comprovante"
+                        >
                           Confirmar ou recusar
                         </summary>
                         <form onSubmit={confirmar(comprovante)}>
@@ -246,16 +250,21 @@ export const Participantes = ({ token, usuarioId }: { token: string; usuarioId: 
                             rotulo="Valor confirmado (R$)"
                             inicial={comprovante.valorEmCentavos}
                           />
-                          <button type="submit" disabled={enviando}>
+                          <button type="submit" data-testid="confirmar" disabled={enviando}>
                             Confirmar
                           </button>
                         </form>
                         <form onSubmit={recusar(comprovante)}>
                           <label className="campo">
                             Motivo da recusa
-                            <input name="motivo" maxLength={500} required />
+                            <input name="motivo" data-testid="motivo" maxLength={500} required />
                           </label>
-                          <button type="submit" className="secundario" disabled={enviando}>
+                          <button
+                            type="submit"
+                            className="secundario"
+                            data-testid="recusar"
+                            disabled={enviando}
+                          >
                             Recusar
                           </button>
                         </form>
@@ -284,7 +293,14 @@ export const Participantes = ({ token, usuarioId }: { token: string; usuarioId: 
               const situacao = situacaoDe.get(usuario.id);
               const acao = usuario.desativado ? 'Reativar acesso' : 'Desativar acesso';
               return (
-                <tr key={usuario.id}>
+                <tr
+                  key={usuario.id}
+                  data-testid="participante"
+                  data-participacao={
+                    !situacao ? 'nunca-participou' : situacao.ativo ? 'participa' : 'saiu'
+                  }
+                  data-acesso={usuario.desativado ? 'desativado' : 'ativo'}
+                >
                   <th scope="row">{nomeDe(usuario)}</th>
                   <td data-rotulo="Participação">
                     {!situacao ? 'Nunca participou' : situacao.ativo ? 'Participa' : 'Saiu'}
@@ -298,6 +314,7 @@ export const Participantes = ({ token, usuarioId }: { token: string; usuarioId: 
                       <button
                         type="button"
                         className="fantasma"
+                        data-testid={usuario.desativado ? 'reativar-acesso' : 'desativar-acesso'}
                         disabled={enviando}
                         aria-label={`${acao} de ${nomeDe(usuario)}`}
                         onClick={() => mudarAcesso(usuario)}
@@ -317,10 +334,15 @@ export const Participantes = ({ token, usuarioId }: { token: string; usuarioId: 
         {participantes.length === 0 ? (
           <p>Ninguém pediu entrada ainda.</p>
         ) : (
-          <form onSubmit={receber}>
+          <form onSubmit={receber} data-testid="recebimento">
             <label className="campo">
               Participante
-              <select name="participanteId" required defaultValue="">
+              <select
+                name="participanteId"
+                data-testid="escolha-do-participante"
+                required
+                defaultValue=""
+              >
                 <option value="" disabled>
                   Escolha o participante
                 </option>
@@ -339,13 +361,20 @@ export const Participantes = ({ token, usuarioId }: { token: string; usuarioId: 
                   type="radio"
                   name="forma"
                   value="pix"
+                  data-testid="forma-pix"
                   defaultChecked
                   onChange={() => setPix(true)}
                 />
                 <strong>PIX</strong>
               </label>
               <label className="opcao">
-                <input type="radio" name="forma" value="dinheiro" onChange={() => setPix(false)} />
+                <input
+                  type="radio"
+                  name="forma"
+                  value="dinheiro"
+                  data-testid="forma-dinheiro"
+                  onChange={() => setPix(false)}
+                />
                 <strong>Dinheiro</strong>
                 <span>Em mãos.</span>
               </label>
@@ -353,10 +382,16 @@ export const Participantes = ({ token, usuarioId }: { token: string; usuarioId: 
             {pix && (
               <label className="campo">
                 Comprovante do PIX (PDF, JPEG ou PNG, até 5 MB)
-                <input type="file" name="comprovante" accept={ARQUIVOS} required />
+                <input
+                  type="file"
+                  name="comprovante"
+                  data-testid="arquivo"
+                  accept={ARQUIVOS}
+                  required
+                />
               </label>
             )}
-            <button type="submit" disabled={enviando}>
+            <button type="submit" data-testid="receber-pagamento" disabled={enviando}>
               Receber pagamento
             </button>
           </form>
@@ -423,10 +458,10 @@ export const Gastos = ({ token }: { token: string }) => {
       {avisos}
       <section aria-labelledby="registrar-gasto">
         <h2 id="registrar-gasto">Registrar gasto</h2>
-        <form onSubmit={registrar}>
+        <form onSubmit={registrar} data-testid="registro-de-gasto">
           <label className="campo">
             Tipo
-            <select name="tipo" required defaultValue="">
+            <select name="tipo" data-testid="tipo-de-gasto" required defaultValue="">
               <option value="" disabled>
                 Escolha o tipo do gasto
               </option>
@@ -446,6 +481,7 @@ export const Gastos = ({ token }: { token: string }) => {
                   type="radio"
                   name="origem"
                   value={origem}
+                  data-testid={`origem-${origem}`}
                   defaultChecked={origem === 'caixinha'}
                 />
                 <strong>{NOME_DA_ORIGEM[origem]}</strong>
@@ -455,9 +491,9 @@ export const Gastos = ({ token }: { token: string }) => {
           </fieldset>
           <label className="campo">
             Nota (PDF, JPEG ou PNG, até 5 MB)
-            <input type="file" name="nota" accept={ARQUIVOS} required />
+            <input type="file" name="nota" data-testid="arquivo" accept={ARQUIVOS} required />
           </label>
-          <button type="submit" disabled={enviando}>
+          <button type="submit" data-testid="registrar-gasto" disabled={enviando}>
             Registrar gasto
           </button>
         </form>
@@ -482,7 +518,13 @@ export const Gastos = ({ token }: { token: string }) => {
               {gastos.valor.map((gasto) => {
                 const quem = nomes.get(gasto.participanteId) ?? 'Desconhecido';
                 return (
-                  <tr key={gasto.id}>
+                  <tr
+                    key={gasto.id}
+                    data-testid="gasto"
+                    data-tipo={gasto.tipo}
+                    data-origem={gasto.origem}
+                    data-reembolsado={gasto.reembolsado}
+                  >
                     <td data-rotulo="Data">{dataEmCampoGrande(gasto.feitoEm)}</td>
                     <td data-rotulo="Quem pagou">{quem}</td>
                     <td data-rotulo="Tipo">{NOME_DO_TIPO_DE_GASTO[gasto.tipo]}</td>
@@ -497,6 +539,7 @@ export const Gastos = ({ token }: { token: string }) => {
                         <button
                           type="button"
                           className="fantasma"
+                          data-testid="reembolsar"
                           disabled={enviando}
                           aria-label={`Reembolsar ${emReais(gasto.valorEmCentavos)} a ${quem}`}
                           onClick={() => reembolsar(gasto, quem)}
@@ -539,7 +582,7 @@ export const SolicitarComplemento = ({ token }: { token: string }) => {
     if (feito) form.reset();
   });
   return (
-    <section aria-labelledby="solicitar-complemento">
+    <section aria-labelledby="solicitar-complemento" data-testid="solicitacao-de-complemento">
       <h2 id="solicitar-complemento">Solicitar complemento</h2>
       <p>
         Quando o saldo não cobre os gastos. O valor é dividido em partes iguais entre todos os
@@ -548,7 +591,7 @@ export const SolicitarComplemento = ({ token }: { token: string }) => {
       {avisos}
       <form onSubmit={solicitar}>
         <CampoValor rotulo="Valor total (R$)" />
-        <button type="submit" disabled={enviando}>
+        <button type="submit" data-testid="solicitar-complemento" disabled={enviando}>
           Solicitar complemento
         </button>
       </form>
@@ -597,7 +640,7 @@ export const ValorDaCota = ({ token }: { token: string }) => {
           do ano, repete-se o valor do ano anterior.
         </p>
         {avisos}
-        <form onSubmit={definir}>
+        <form onSubmit={definir} data-testid="definicao-do-valor-da-cota">
           <fieldset>
             <legend>Tipo de cota</legend>
             {(['so-cafe', 'completa'] as const).map((tipo) => (
@@ -606,6 +649,7 @@ export const ValorDaCota = ({ token }: { token: string }) => {
                   type="radio"
                   name="tipoDeCota"
                   value={tipo}
+                  data-testid={`tipo-de-cota-${tipo}`}
                   defaultChecked={tipo === 'so-cafe'}
                 />
                 <strong>{NOME_DO_TIPO_DE_COTA[tipo]}</strong>
@@ -616,6 +660,7 @@ export const ValorDaCota = ({ token }: { token: string }) => {
             Ano
             <input
               name="ano"
+              data-testid="ano"
               type="number"
               min={anoAtual}
               step="1"
@@ -624,7 +669,7 @@ export const ValorDaCota = ({ token }: { token: string }) => {
             />
           </label>
           <CampoValor rotulo="Valor mensal (R$)" />
-          <button type="submit" disabled={enviando}>
+          <button type="submit" data-testid="definir-valor-da-cota" disabled={enviando}>
             Definir valor da cota
           </button>
         </form>
