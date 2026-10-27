@@ -106,7 +106,7 @@ test.describe('RF-FIN-02 Enviar comprovante', () => {
       const comprovante = enviadoDe(participante, '30,00');
       await comprovante.getByTestId('editar-comprovante').click();
       const edicao = comprovante.getByTestId('edicao-de-comprovante');
-      await edicao.getByTestId('valor').fill('25');
+      await edicao.getByTestId('valor').fill('25,00');
       await edicao.getByTestId('salvar').click();
       await expect(enviadoDe(participante, '25,00')).toHaveAttribute(
         'data-situacao',

@@ -318,7 +318,7 @@ export const garantirValorDaCota = (gestor: Page) =>
     if ((await definicao.getAttribute('data-ano')) === ano) {
       for (const [tipo, valor] of Object.entries(VALOR_DA_COTA)) {
         const campo = definicao.getByTestId(`valor-${tipo}`);
-        if (await campo.isVisible()) await campo.fill(valor.replace(',', '.'));
+        if (await campo.isVisible()) await campo.fill(valor);
       }
       await definicao.getByTestId('definir-valor-da-cota').click();
       await confirmarAcao(gestor);
@@ -362,7 +362,7 @@ export const receberEmDinheiro = (gestor: Page, nome: string, valor: string) =>
     await irParaReceberPagamento(gestor);
     const recebimento = gestor.getByTestId('recebimento');
     await recebimento.getByTestId('escolha-do-participante').selectOption({ label: nome });
-    await recebimento.getByTestId('valor').fill(valor.replace(',', '.'));
+    await recebimento.getByTestId('valor').fill(valor);
     await recebimento.getByTestId('forma-dinheiro').check();
     await recebimento.getByTestId('receber-pagamento').click();
     await feito(gestor);
@@ -391,7 +391,7 @@ export const enviarComprovante = (participante: Page, valor: string) =>
     await comprovantesDe(participante);
     await participante.getByTestId('ir-enviar-comprovante').click();
     const envio = participante.getByTestId('envio-de-comprovante');
-    await envio.getByTestId('valor').fill(valor.replace(',', '.'));
+    await envio.getByTestId('valor').fill(valor);
     await envio.getByTestId('arquivo').setInputFiles(png('pix.png'));
     await envio.getByTestId('enviar-comprovante').click();
     await expect(enviadoDe(participante, valor)).toHaveAttribute('data-situacao', 'a-confirmar');
@@ -429,7 +429,7 @@ export const confirmarComprovante = (
 ) =>
   test.step(`Gestor confirma o comprovante de R$ ${valor} com R$ ${confirmado}`, async () => {
     const conferencia = await conferir(gestor, nome, valor);
-    await conferencia.getByTestId('valor').fill(confirmado.replace(',', '.'));
+    await conferencia.getByTestId('valor').fill(confirmado);
     await conferencia.getByTestId('confirmar').click();
   });
 
@@ -479,7 +479,7 @@ export const registrarGasto = (
     await gestor.goto('/gastos/registrar-gasto');
     const registro = gestor.getByTestId('registro-de-gasto');
     await registro.getByTestId('tipo-de-gasto').selectOption(tipo);
-    await registro.getByTestId('valor').fill(valor.replace(',', '.'));
+    await registro.getByTestId('valor').fill(valor);
     await registro.getByTestId(`origem-${origem}`).check();
     await registro.getByTestId('arquivo').setInputFiles(png('nota.png'));
     await registro.getByTestId('registrar-gasto').click();

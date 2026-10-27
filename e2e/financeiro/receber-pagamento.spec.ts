@@ -43,7 +43,7 @@ test.describe('RF-FIN-01 Receber pagamento', () => {
     await test.step(`Gestor recebe R$ 10,00 por PIX de ${pessoa.nome}, com o comprovante`, async () => {
       const recebimento = await irParaReceberPagamento(gestor);
       await recebimento.getByTestId('escolha-do-participante').selectOption({ label: pessoa.nome });
-      await recebimento.getByTestId('valor').fill('10');
+      await recebimento.getByTestId('valor').fill('10,00');
       await expect(recebimento.getByTestId('forma-pix')).toBeChecked();
       await recebimento.getByTestId('arquivo').setInputFiles(png('pix.png'));
       await semRolagemHorizontal(gestor);

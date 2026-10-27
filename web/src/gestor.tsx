@@ -33,7 +33,6 @@ import {
   CampoValor,
   Carregando,
   depoisDoPagamento,
-  emCampo,
   FalhaAoCarregar,
   GastosDoAnoAnterior,
   MesNavegavel,
@@ -483,7 +482,7 @@ const Conferencia = ({
   fazer: ReturnType<typeof useComando>['fazer'];
   abrir: () => void;
 }) => {
-  const [valor, setValor] = useState(emCampo(comprovante.valorEmCentavos));
+  const [valor, setValor] = useState(emReais(comprovante.valorEmCentavos));
   const [motivo, setMotivo] = useState('');
   const pendente = situacao?.pendenteEmCentavos ?? 0;
   const confirmar = aoEnviar(() =>
@@ -536,7 +535,7 @@ const Conferencia = ({
         </fieldset>
         <form onSubmit={confirmar}>
           <CampoValor
-            rotulo="Valor a confirmar (R$)"
+            rotulo="Valor a confirmar"
             valor={valor}
             aoMudar={setValor}
             ajuda="Corrija se o comprovante mostrar outro valor."
@@ -741,7 +740,7 @@ export const ReceberPagamento = ({ token }: { token: string }) => {
   const usuario = participantes.find((cada) => cada.id === participanteId);
   const campo =
     valor ??
-    (situacao && situacao.pendenteEmCentavos > 0 ? emCampo(situacao.pendenteEmCentavos) : '');
+    (situacao && situacao.pendenteEmCentavos > 0 ? emReais(situacao.pendenteEmCentavos) : '');
   const centavos = campo ? emCentavos(campo) : 0;
   const depois = usuario && situacao && depoisDoPagamento(nomeDe(usuario), situacao, centavos);
 
@@ -826,7 +825,7 @@ export const ReceberPagamento = ({ token }: { token: string }) => {
               nome="comprovante"
             />
           )}
-          <CampoValor rotulo="Valor recebido (R$)" valor={campo} aoMudar={setValor} />
+          <CampoValor rotulo="Valor recebido" valor={campo} aoMudar={setValor} />
         </div>
         <div className="cartao resumo">
           {usuario && situacao && depois ? (
@@ -1115,7 +1114,7 @@ export const RegistrarGasto = ({
           ))}
         </select>
       </label>
-      <CampoValor rotulo="Valor total (R$)" />
+      <CampoValor rotulo="Valor total" />
       <fieldset className="segmentado">
         <legend>Pago</legend>
         <div>
@@ -1180,7 +1179,7 @@ export const SolicitarComplemento = ({ token }: { token: string }) => {
       {avisos}
       {confirmacao}
       <form onSubmit={solicitar} className="pilha">
-        <CampoValor rotulo="Valor total (R$)" />
+        <CampoValor rotulo="Valor total" />
         <button
           type="submit"
           className="largo"
@@ -1279,7 +1278,7 @@ export const ValorDaCota = ({ token }: { token: string }) => {
               return (
                 <CampoValor
                   key={tipo}
-                  rotulo={`${NOME_DO_TIPO_DE_COTA[tipo]}, por mês (R$)`}
+                  rotulo={`${NOME_DO_TIPO_DE_COTA[tipo]}, por mês`}
                   nome={`valor-${tipo}`}
                   ajuda={atual === undefined ? undefined : `Em ${ano}: ${emReais(atual)}`}
                 />

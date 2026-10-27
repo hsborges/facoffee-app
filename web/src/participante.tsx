@@ -30,6 +30,7 @@ import {
   emCentavos,
   emReais,
   ITENS_DO_TIPO_DE_COTA,
+  mascaraDeReais,
   mesEmCampoGrande,
   mesPorExtenso,
   NOME_DO_TIPO_DE_COTA,
@@ -185,12 +186,9 @@ export const aoEnviar =
     enviar(new FormData(evento.currentTarget), evento.currentTarget);
   };
 
-/** Centavos as a number input takes them: `30.00`. */
-export const emCampo = (centavos: number) => (centavos / 100).toFixed(2);
-
 /**
- * A valor in reais, sent as `nome` (`valor`); `inicial` (in centavos) fills it in. With `aoMudar`,
- * the page holds the valor typed.
+ * A valor in reais, with the mask of `mascaraDeReais` (`R$ 30,00`), sent as `nome` (`valor`);
+ * `inicial` (in centavos) fills it in. With `aoMudar`, the page holds the valor typed, masked.
  */
 export const CampoValor = ({
   rotulo,
@@ -216,18 +214,18 @@ export const CampoValor = ({
       <input
         name={nome}
         data-testid={nome}
-        type="number"
-        min="0.01"
-        max="21474836.47"
-        step="0.01"
-        inputMode="decimal"
+        inputMode="numeric"
+        autoComplete="off"
+        placeholder="R$ 0,00"
         aria-describedby={ajuda ? id : undefined}
         {...(aoMudar
-          ? {
-              value: valor ?? '',
-              onChange: (evento: ChangeEvent<HTMLInputElement>) => aoMudar(evento.target.value),
-            }
-          : { defaultValue: inicial === undefined ? undefined : emCampo(inicial) })}
+          ? { value: valor ?? '' }
+          : { defaultValue: inicial === undefined ? undefined : emReais(inicial) })}
+        onChange={(evento: ChangeEvent<HTMLInputElement>) => {
+          const mascarado = mascaraDeReais(evento.target.value);
+          if (aoMudar) aoMudar(mascarado);
+          else evento.target.value = mascarado;
+        }}
         required={obrigatorio}
       />
       {ajuda && (
@@ -573,10 +571,7 @@ const Comprovantes = ({ token }: { token: string }) => {
                         Editar
                       </summary>
                       <form onSubmit={editar(comprovante)} data-testid="edicao-de-comprovante">
-                        <CampoValor
-                          rotulo="Valor pago (R$)"
-                          inicial={comprovante.valorEmCentavos}
-                        />
+                        <CampoValor rotulo="Valor pago" inicial={comprovante.valorEmCentavos} />
                         <CampoArquivo
                           rotulo="Outro comprovante (opcional)"
                           ajuda="Foto ou PDF, até 5 MB."
@@ -980,7 +975,7 @@ export const EnviarComprovante = ({
   if (situacao.situacao !== 'ok') return <FalhaAoCarregar tentarDeNovo={recarregar} />;
 
   const saldo = situacao.valor;
-  const campo = valor ?? (saldo.pendenteEmCentavos > 0 ? emCampo(saldo.pendenteEmCentavos) : '');
+  const campo = valor ?? (saldo.pendenteEmCentavos > 0 ? emReais(saldo.pendenteEmCentavos) : '');
   const centavos = campo ? emCentavos(campo) : 0;
   const tipo = participacao.situacao === 'ok' ? participacao.valor.tipoDeCota : undefined;
   const cota = tipo && valores.situacao === 'ok' ? valorDe(valores.valor, tipo) : undefined;
@@ -1018,7 +1013,7 @@ export const EnviarComprovante = ({
             nome="comprovante"
           />
           <CampoValor
-            rotulo="Valor pago (R$)"
+            rotulo="Valor pago"
             valor={campo}
             aoMudar={setValor}
             ajuda="Pagou a mais? O que passar vira crédito para os próximos meses."
@@ -1033,7 +1028,7 @@ export const EnviarComprovante = ({
                   className="atalho"
                   data-testid="atalho"
                   aria-pressed={atalho.valorEmCentavos === centavos}
-                  onClick={() => setValor(emCampo(atalho.valorEmCentavos))}
+                  onClick={() => setValor(emReais(atalho.valorEmCentavos))}
                 >
                   {atalho.rotulo} · {emReais(atalho.valorEmCentavos)}
                 </button>

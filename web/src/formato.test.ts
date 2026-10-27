@@ -4,6 +4,7 @@ import {
   emCentavos,
   emReais,
   iniciais,
+  mascaraDeReais,
   mesEmCampoGrande,
   mesPorExtenso,
   nomeDoMes,
@@ -27,11 +28,42 @@ describe('emReais', () => {
 });
 
 describe('emCentavos', () => {
-  it('reads reais typed in a number input as centavos, without float residue', () => {
-    expect(emCentavos('30')).toBe(3000);
-    expect(emCentavos('45.9')).toBe(4590);
-    expect(emCentavos('0.29')).toBe(29);
-    expect(emCentavos('1234.56')).toBe(123456);
+  it('reads a valor field as centavos: its digits, the last two the centavos', () => {
+    expect(emCentavos('R$\u00a030,00')).toBe(3000);
+    expect(emCentavos('R$\u00a01.234,56')).toBe(123456);
+    expect(emCentavos('45,90')).toBe(4590);
+    expect(emCentavos('')).toBe(0);
+  });
+});
+
+describe('mascaraDeReais', () => {
+  it('fills the valor from the centavos as the digits are typed', () => {
+    expect(['4', '45', '459', '4590'].map(mascaraDeReais)).toEqual([
+      'R$\u00a00,04',
+      'R$\u00a00,45',
+      'R$\u00a04,59',
+      'R$\u00a045,90',
+    ]);
+  });
+
+  it('takes the valor typed or pasted with separators, and leaves out what is not a digit', () => {
+    expect(mascaraDeReais('30,00')).toBe('R$\u00a030,00');
+    expect(mascaraDeReais('1.234,56')).toBe('R$\u00a01.234,56');
+    expect(mascaraDeReais('R$ 12a3')).toBe('R$\u00a01,23');
+  });
+
+  it('erases back from the centavos', () => {
+    expect(mascaraDeReais('R$\u00a030,0')).toBe('R$\u00a03,00');
+  });
+
+  it('is empty without a valor, so a required field asks for one', () => {
+    expect(mascaraDeReais('')).toBe('');
+    expect(mascaraDeReais('R$\u00a00,0')).toBe('');
+    expect(mascaraDeReais('abc')).toBe('');
+  });
+
+  it('stops at the most the API takes', () => {
+    expect(mascaraDeReais('99999999999')).toBe('R$\u00a021.474.836,47');
   });
 });
 

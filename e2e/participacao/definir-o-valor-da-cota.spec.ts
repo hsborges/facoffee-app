@@ -24,8 +24,8 @@ test.describe('RF-PAR-05 Definir o valor da cota', () => {
       await gestor.goto('/valor-da-cota');
       const definicao = gestor.getByTestId('definicao-do-valor-da-cota');
       await expect(definicao).toHaveAttribute('data-ano', String(ano));
-      await definicao.getByTestId('valor-so-cafe').fill('25');
-      await definicao.getByTestId('valor-completa').fill('35');
+      await definicao.getByTestId('valor-so-cafe').fill('25,00');
+      await definicao.getByTestId('valor-completa').fill('35,00');
       await semRolagemHorizontal(gestor);
       await definicao.getByTestId('definir-valor-da-cota').click();
       await confirmarAcao(gestor);

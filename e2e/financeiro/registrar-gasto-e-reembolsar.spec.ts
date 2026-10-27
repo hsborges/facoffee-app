@@ -86,7 +86,7 @@ test.describe('RF-FIN-04 Registrar gasto e reembolsar', () => {
       await participante.getByTestId('ir-registrar-gasto').click();
       const registro = participante.getByTestId('registro-de-gasto');
       await registro.getByTestId('tipo-de-gasto').selectOption('cafe');
-      await registro.getByTestId('valor').fill('45.90');
+      await registro.getByTestId('valor').fill('45,90');
       await expect(registro.getByTestId('origem-proprio-bolso')).toBeChecked();
       await registro.getByTestId('arquivo').setInputFiles(png('nota.png'));
       await semRolagemHorizontal(participante);

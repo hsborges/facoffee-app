@@ -5,8 +5,21 @@ const reais = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL
 /** Centavos as reais: `R$ 30,00`. */
 export const emReais = (centavos: number) => reais.format(centavos / 100);
 
-/** Reais as typed in a number input (`45.9`) as centavos: `4590`. */
-export const emCentavos = (reais: string) => Math.round(Number(reais) * 100);
+/** A valor field read as centavos: its digits, the last two the centavos (`R$ 45,90` is `4590`). */
+export const emCentavos = (campo: string) => Number(campo.replace(/\D/g, ''));
+
+// The most a valor takes: the API keeps centavos in a 32-bit integer.
+const MAXIMO_EM_CENTAVOS = 2_147_483_647;
+
+/**
+ * Input mask of a valor in reais: the digits fill it from the centavos, as in bank apps (`4`,
+ * `45`, `459`, `4590` show `R$ 45,90`), and erasing takes them back. Without a valor it is empty,
+ * so a required field asks for one; past the most the API takes, it stays at the most.
+ */
+export const mascaraDeReais = (campo: string) => {
+  const centavos = Math.min(emCentavos(campo), MAXIMO_EM_CENTAVOS);
+  return centavos > 0 ? emReais(centavos) : '';
+};
 
 // The day 1 at UTC, formatted at UTC: the month does not move with the browser time zone.
 const meses = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' });
