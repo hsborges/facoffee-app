@@ -1346,6 +1346,15 @@ td .botao {
   background: var(--pure-white);
 }
 
+/* O logo leva ao início da visão; alvo de 44 px. */
+.topo .inicio {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  border-radius: var(--raio-controle);
+  text-decoration: none;
+}
+
 .topo nav {
   position: fixed;
   inset: auto 0 0;
@@ -1631,7 +1640,7 @@ button.visao.escura:hover {
     border-bottom: 0;
   }
 
-  .topo :is(.marca, .selo-gestor) {
+  .topo :is(.inicio, .selo-gestor) {
     align-self: flex-start;
   }
 

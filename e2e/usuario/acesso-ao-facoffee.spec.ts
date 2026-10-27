@@ -124,6 +124,8 @@ test.describe('RF-USU-01 Acesso ao FACOFFEE', () => {
       await expect(conta).toBeHidden();
       await participante.goto('/gastos');
       await expect(pagina(participante, 'nao-encontrada')).toBeVisible();
+      await participante.getByTestId('ir-ao-inicio').click();
+      await expect(pagina(participante, 'minha-situacao')).toBeVisible();
     });
 
     const comPerfil = await novoUsuario({ gestor: true });
@@ -139,6 +141,10 @@ test.describe('RF-USU-01 Acesso ao FACOFFEE', () => {
       expect(await paginasDoMenu(gestor)).toEqual(['participantes', 'gastos', 'valor-da-cota']);
       await expect((await abrirConta(gestor)).getByTestId('trocar-visao')).toBeVisible();
       await gestor.keyboard.press('Escape');
+      await gestor.getByTestId('menu-gastos').click();
+      await expect(pagina(gestor, 'gastos')).toBeVisible();
+      await gestor.getByTestId('ir-ao-inicio').click();
+      await expect(pagina(gestor, 'participantes')).toBeVisible();
     });
   });
 });

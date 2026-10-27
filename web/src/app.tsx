@@ -253,7 +253,14 @@ export const App = () => {
         Pular para o conteúdo
       </a>
       <header className="topo">
-        <Marca />
+        <Link
+          className="inicio"
+          to={inicio(visao)}
+          aria-label="FACOFFEE, início"
+          data-testid="ir-ao-inicio"
+        >
+          <Marca />
+        </Link>
         {visao === 'gestor' && <span className="selo-gestor">Gestor</span>}
         <nav aria-label="Principal">
           <ul>
