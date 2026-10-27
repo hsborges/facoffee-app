@@ -2,6 +2,8 @@ import type { Browser } from '@playwright/test';
 import {
   aConfirmar,
   chamarApi,
+  conferir,
+  conferirComprovantes,
   confirmarComprovante,
   entrarNoFacoffee,
   enviadoDe,
@@ -59,7 +61,7 @@ test.describe('RF-FIN-02 Enviar comprovante', () => {
     await enviarComprovante(participante, '25,00');
     const antes = await saldoDe(participante);
 
-    await gestor.reload();
+    await conferirComprovantes(gestor);
     await semRolagemHorizontal(gestor);
     await confirmarComprovante(gestor, pessoa.nome, '25,00', '20,00');
     await feito(gestor);
@@ -80,7 +82,7 @@ test.describe('RF-FIN-02 Enviar comprovante', () => {
     await enviarComprovante(participante, '10,00');
     const antes = await saldoDe(participante);
 
-    await gestor.reload();
+    await conferirComprovantes(gestor);
     await recusarComprovante(gestor, pessoa.nome, '10,00', 'Não achei o PIX');
 
     await test.step(`${pessoa.usuario} vê o motivo, e nenhum pagamento é recebido`, async () => {
@@ -130,7 +132,7 @@ test.describe('RF-FIN-02 Enviar comprovante', () => {
       expect(cancelado.status).toBe(404);
     });
 
-    await gestor.reload();
+    await conferirComprovantes(gestor);
     await confirmarComprovante(gestor, pessoa.nome, '25,00');
     await feito(gestor);
 
@@ -155,10 +157,11 @@ test.describe('RF-FIN-02 Enviar comprovante', () => {
     await enviarComprovante(participante, '40,00');
 
     await test.step('Gestor abre o comprovante', async () => {
-      await gestor.reload();
+      await conferirComprovantes(gestor);
+      const conferencia = await conferir(gestor, pessoa.nome, '40,00');
       const [aba] = await Promise.all([
         gestor.waitForEvent('popup'),
-        aConfirmar(gestor, pessoa.nome, '40,00').getByTestId('ver-comprovante').click(),
+        conferencia.getByTestId('ver-comprovante').click(),
       ]);
       await expect.poll(() => aba.url()).toMatch(/^blob:/);
       await aba.close();
@@ -194,7 +197,7 @@ test.describe('RF-FIN-02 Enviar comprovante', () => {
     await enviarComprovante(bia.participante, '12,00');
     const { gestor } = ana;
 
-    await gestor.reload();
+    await conferirComprovantes(gestor);
     await expect(aConfirmar(gestor, ana.pessoa.nome, '11,00')).toBeVisible();
     await confirmarComprovante(gestor, bia.pessoa.nome, '12,00');
     await feito(gestor);
@@ -212,6 +215,30 @@ test.describe('RF-FIN-02 Enviar comprovante', () => {
         await expect(enviados(participante)).toHaveCount(1);
         await expect(enviadoDe(participante, valor)).toHaveAttribute('data-situacao', situacao);
       }
+    });
+  });
+
+  test('RN-FIN-36: o gestor confere o comprovante com uma lista e recusa com um motivo comum', {
+    tag: '@celular',
+  }, async ({ browser }) => {
+    const { pessoa, participante, gestor } = await participanteEGestor(browser);
+    await enviarComprovante(participante, '13,00');
+
+    await conferirComprovantes(gestor);
+    await test.step('O gestor vê a lista do que conferir', async () => {
+      const conferencia = await conferir(gestor, pessoa.nome, '13,00');
+      await expect(conferencia.getByTestId('item-a-conferir')).toHaveCount(3);
+      await semRolagemHorizontal(gestor);
+    });
+    await recusarComprovante(gestor, pessoa.nome, '13,00', 'Comprovante de outro mês', {
+      comum: true,
+    });
+
+    await test.step(`${pessoa.usuario} vê o motivo comum`, async () => {
+      await participante.reload();
+      const recusado = enviadoDe(participante, '13,00');
+      await expect(recusado).toHaveAttribute('data-situacao', 'recusado');
+      await expect(recusado.getByTestId('situacao')).toContainText('Comprovante de outro mês');
     });
   });
 });

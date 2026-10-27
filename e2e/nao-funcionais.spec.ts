@@ -28,9 +28,15 @@ test.describe('Não funcionais', () => {
 
     for (const [caminho, id] of [
       ['/', 'minha-situacao'],
+      ['/enviar-comprovante', 'enviar-comprovante'],
       ['/caixinha', 'caixinha'],
+      ['/caixinha/registrar-gasto', 'registrar-gasto'],
       ['/participantes', 'participantes'],
+      ['/participantes/conferir-comprovante', 'conferir-comprovante'],
+      ['/participantes/receber-pagamento', 'receber-pagamento'],
       ['/gastos', 'gastos'],
+      ['/gastos/registrar-gasto', 'registrar-gasto'],
+      ['/gastos/solicitar-complemento', 'solicitar-complemento'],
       ['/valor-da-cota', 'valor-da-cota'],
     ] as const)
       await test.step(`${caminho} não rola na horizontal`, async () => {

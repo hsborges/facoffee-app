@@ -15,15 +15,17 @@ test.describe('RF-PAR-05 Definir o valor da cota', () => {
   // Not @celular: a valor is defined once per year, and both projects share the stack.
   test('RN-PAR-13: só o gestor define o valor da cota', async ({ browser }) => {
     const gestor = await entrarNoFacoffee(browser, 'gestor', 'gestor');
-    // The next year, defined only here: this year's is defined by whichever test needs it first.
+    // Once this year's is defined, the page defines the next year's, defined only here.
+    await garantirValorDaCota(gestor);
     const ano = new Date().getFullYear() + 1;
 
-    await test.step(`Gestor define R$ 35,00 para a cota completa de ${ano}`, async () => {
+    await test.step(`Gestor define R$ 25,00 e R$ 35,00 para as cotas de ${ano}`, async () => {
       await gestor.goto('/valor-da-cota');
       const definicao = gestor.getByTestId('definicao-do-valor-da-cota');
-      await definicao.getByTestId('tipo-de-cota-completa').check();
-      await definicao.getByTestId('ano').fill(String(ano));
-      await definicao.getByTestId('valor').fill('35');
+      await expect(definicao).toHaveAttribute('data-ano', String(ano));
+      await definicao.getByTestId('valor-so-cafe').fill('25');
+      await definicao.getByTestId('valor-completa').fill('35');
+      await semRolagemHorizontal(gestor);
       await definicao.getByTestId('definir-valor-da-cota').click();
       await feito(gestor);
     });

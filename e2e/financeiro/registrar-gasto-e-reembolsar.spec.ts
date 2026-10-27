@@ -2,11 +2,13 @@ import {
   chamarApi,
   entrarNoFacoffee,
   expect,
+  feito,
   gastoDe,
   lerApi,
   naTelaDoGestor,
   novoUsuario,
   pedirEntrada,
+  png,
   reembolsar,
   registrarGasto,
   registrarGastoPelaApi,
@@ -79,8 +81,18 @@ test.describe('RF-FIN-04 Registrar gasto e reembolsar', () => {
     await pedirEntrada(participante, pessoa.usuario);
     await naTelaDoGestor(gestor, pessoa.nome);
 
-    await test.step(`${pessoa.usuario}, participante, registra um gasto de café do próprio bolso`, async () =>
-      expect(await registrarGastoPelaApi(participante, 4590)).toBe(201));
+    await test.step(`${pessoa.usuario}, participante, registra um gasto de café do próprio bolso`, async () => {
+      await participante.goto('/caixinha');
+      await participante.getByTestId('ir-registrar-gasto').click();
+      const registro = participante.getByTestId('registro-de-gasto');
+      await registro.getByTestId('tipo-de-gasto').selectOption('cafe');
+      await registro.getByTestId('valor').fill('45.90');
+      await expect(registro.getByTestId('origem-proprio-bolso')).toBeChecked();
+      await registro.getByTestId('arquivo').setInputFiles(png('nota.png'));
+      await semRolagemHorizontal(participante);
+      await registro.getByTestId('registrar-gasto').click();
+      await feito(participante);
+    });
     await test.step(`O gasto fica registrado em nome de ${pessoa.nome}`, async () => {
       await gestor.goto('/gastos');
       const gasto = gastoDe(gestor, pessoa.nome, '45,90');
