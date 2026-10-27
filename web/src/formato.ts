@@ -14,6 +14,18 @@ const meses = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric',
 /** A month `AAAA-MM` by name: `novembro de 2026`. */
 export const mesPorExtenso = (mes: string) => meses.format(new Date(`${mes}-01T00:00:00Z`));
 
+const nomesDosMeses = new Intl.DateTimeFormat('pt-BR', { month: 'long', timeZone: 'UTC' });
+
+/** Only the name of a month `AAAA-MM`: `novembro`. */
+export const nomeDoMes = (mes: string) => nomesDosMeses.format(new Date(`${mes}-01T00:00:00Z`));
+
+/** The month `AAAA-MM` that many months after (or, if negative, before) `mes`. */
+export const outroMes = (mes: string, meses: number) => {
+  const dia = new Date(`${mes}-01T00:00:00Z`);
+  dia.setUTCMonth(dia.getUTCMonth() + meses);
+  return dia.toISOString().slice(0, 7);
+};
+
 const mesesEmCampoGrande = new Intl.DateTimeFormat('en-CA', {
   timeZone: 'America/Campo_Grande',
   year: 'numeric',

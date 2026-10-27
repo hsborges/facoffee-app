@@ -6,6 +6,8 @@ import {
   iniciais,
   mesEmCampoGrande,
   mesPorExtenso,
+  nomeDoMes,
+  outroMes,
 } from './formato';
 
 describe('iniciais', () => {
@@ -50,5 +52,19 @@ describe('mesEmCampoGrande', () => {
   it('RNF-03: turns the month at midnight in Campo Grande, not in UTC', () => {
     expect(mesEmCampoGrande(new Date('2026-11-01T03:59:59Z'))).toBe('2026-10');
     expect(mesEmCampoGrande(new Date('2026-11-01T04:00:00Z'))).toBe('2026-11');
+  });
+});
+
+describe('nomeDoMes', () => {
+  it('names only the month of an AAAA-MM', () => {
+    expect(nomeDoMes('2026-10')).toBe('outubro');
+  });
+});
+
+describe('outroMes', () => {
+  it('moves an AAAA-MM month back and forth, across years', () => {
+    expect(outroMes('2026-10', 1)).toBe('2026-11');
+    expect(outroMes('2026-12', 1)).toBe('2027-01');
+    expect(outroMes('2026-01', -1)).toBe('2025-12');
   });
 });

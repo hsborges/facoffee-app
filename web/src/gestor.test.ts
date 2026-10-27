@@ -2,8 +2,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   confirmarComprovante,
   creditoOuPendencia,
+  listaDeConferencia,
   receberPagamento,
   registrarGasto,
+  saldoDepoisDosReembolsos,
 } from './gestor';
 
 const participanteId = '11111111-1111-4111-8111-111111111111';
@@ -139,5 +141,38 @@ describe('creditoOuPendencia', () => {
       'Crédito: R$\u00a060,00',
     );
     expect(creditoOuPendencia(situacao)).toBe('Em dia');
+  });
+});
+
+describe('listaDeConferencia', () => {
+  it('RN-FIN-36: what to check in the comprovante, with the valor informado and the pendente', () => {
+    expect(listaDeConferencia('Ana', 3000, 3000)).toEqual([
+      'O valor informado, R$\u00a030,00, é o que Ana deve.',
+      'A data é deste mês.',
+      'O valor no comprovante bate com o informado. Pode ser de outra pessoa: o pagamento é de Ana.',
+    ]);
+    expect(listaDeConferencia('Ana', 9000, 3000)[0]).toBe(
+      'O valor informado é R$\u00a090,00; Ana deve R$\u00a030,00.',
+    );
+  });
+});
+
+describe('saldoDepoisDosReembolsos', () => {
+  const gasto = {
+    id: 'g',
+    participanteId,
+    tipo: 'cafe',
+    notaId: 'n',
+    feitoEm: '2026-10-25T12:00:00Z',
+  } as const;
+
+  it('RN-FIN-37: takes from the saldo only the gastos do próprio bolso not reembolsados', () => {
+    expect(
+      saldoDepoisDosReembolsos(64650, [
+        { ...gasto, valorEmCentavos: 4590, origem: 'proprio-bolso', reembolsado: false },
+        { ...gasto, valorEmCentavos: 1000, origem: 'proprio-bolso', reembolsado: true },
+        { ...gasto, valorEmCentavos: 2000, origem: 'caixinha', reembolsado: false },
+      ]),
+    ).toBe(60060);
   });
 });

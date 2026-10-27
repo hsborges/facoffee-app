@@ -1,18 +1,48 @@
 import { matchPath } from 'react-router';
 import type { Perfil } from './api';
+import type { NomeDoIcone } from './icones';
 
-/** A link of the main navigation; each one is also a route. */
-export type Item = { readonly caminho: string; readonly titulo: string };
+/** A route, with its title. */
+export type Rota = { readonly caminho: string; readonly titulo: string };
+
+/** A link of the main navigation, with the subpáginas that leave from it (ADR 0034). */
+export type Item = Rota & { readonly icone: NomeDoIcone; readonly subpaginas: readonly Rota[] };
 
 const DO_PARTICIPANTE: readonly Item[] = [
-  { caminho: '/', titulo: 'Minha situação' },
-  { caminho: '/caixinha', titulo: 'Caixinha' },
+  {
+    caminho: '/',
+    titulo: 'Minha situação',
+    icone: 'usuario',
+    subpaginas: [{ caminho: '/enviar-comprovante', titulo: 'Enviar comprovante' }],
+  },
+  {
+    caminho: '/caixinha',
+    titulo: 'Caixinha',
+    icone: 'carteira',
+    subpaginas: [{ caminho: '/caixinha/registrar-gasto', titulo: 'Registrar gasto' }],
+  },
 ];
 
 const DO_GESTOR: readonly Item[] = [
-  { caminho: '/participantes', titulo: 'Participantes' },
-  { caminho: '/gastos', titulo: 'Gastos' },
-  { caminho: '/valor-da-cota', titulo: 'Valor da cota' },
+  {
+    caminho: '/participantes',
+    titulo: 'Participantes',
+    icone: 'pessoas',
+    subpaginas: [
+      { caminho: '/participantes/conferir-comprovante', titulo: 'Conferir comprovante' },
+      { caminho: '/participantes/receber-pagamento', titulo: 'Receber pagamento' },
+    ],
+  },
+  {
+    caminho: '/gastos',
+    titulo: 'Gastos',
+    icone: 'recibo',
+    subpaginas: [
+      { caminho: '/gastos/registrar-gasto', titulo: 'Registrar gasto' },
+      { caminho: '/gastos/solicitar-complemento', titulo: 'Solicitar complemento' },
+    ],
+  },
+  { caminho: '/valor-da-cota', titulo: 'Valor da cota', icone: 'etiqueta', subpaginas: [] },
 ];
 
 /** The two visões of the web (ADR 0029): the gestor pages or the participante pages. */
@@ -22,9 +52,19 @@ export type Visao = 'gestor' | 'participante';
 export const navegacao = (visao: Visao): readonly Item[] =>
   visao === 'gestor' ? DO_GESTOR : DO_PARTICIPANTE;
 
+/** A page of a visão, and the item of the menu it is under (its own, for a page of the menu). */
+export type Pagina = Rota & { readonly menu: string };
+
+/** Every page of a visão, each subpágina right after the page it leaves from. */
+export const paginas = (visao: Visao): readonly Pagina[] =>
+  navegacao(visao).flatMap(({ caminho, titulo, subpaginas }) => [
+    { caminho, titulo, menu: caminho },
+    ...subpaginas.map((subpagina) => ({ ...subpagina, menu: caminho })),
+  ]);
+
 // Same match as the <Route>s: trailing slash and any case.
 const daVisao = (visao: Visao, caminho: string) =>
-  navegacao(visao).some((item) => matchPath(item.caminho, caminho));
+  paginas(visao).some((pagina) => matchPath(pagina.caminho, caminho));
 
 /**
  * Visão to show, or `undefined` while the gestor has not chosen one. Whoever is not gestor always
