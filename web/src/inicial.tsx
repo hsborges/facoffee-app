@@ -65,7 +65,7 @@ export const PaginaInicial = ({ entrar }: { entrar: () => void }) => (
             Professores e técnicos administrativos da FACOM dividem o custo do café e dos demais
             itens da copa. O FACOFFEE organiza quem participa, quem pagou e quanto tem na caixinha.
           </p>
-          <button type="button" className="grande" onClick={entrar}>
+          <button type="button" className="grande" data-testid="entrar" onClick={entrar}>
             Entrar
           </button>
           <p className="nota">Acesso pelo Passaporte UFMS.</p>

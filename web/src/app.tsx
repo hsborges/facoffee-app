@@ -9,13 +9,13 @@ import { PaginaInicial } from './inicial';
 import { navegacao, type Visao, visaoAtual, visaoGuardada } from './navegacao';
 import { Caixinha, MinhaSituacao } from './participante';
 
-const Pagina = ({ titulo, children }: { titulo: string; children: ReactNode }) => {
+const Pagina = ({ id, titulo, children }: { id: string; titulo: string; children: ReactNode }) => {
   useEffect(() => {
     document.title = `${titulo} · FACOFFEE`;
   }, [titulo]);
   return (
     <>
-      <h1>{titulo}</h1>
+      <h1 data-testid={`pagina-${id}`}>{titulo}</h1>
       {children}
     </>
   );
@@ -33,6 +33,9 @@ const Aviso = ({ children }: { children: ReactNode }) => (
 const VISAO = 'facoffee.visao';
 
 const inicio = (visao: Visao) => navegacao(visao)[0]?.caminho ?? '/';
+
+// Names the page in its data-testid: `/` is Minha situação.
+const idDaPagina = (caminho: string) => (caminho === '/' ? 'minha-situacao' : caminho.slice(1));
 
 /**
  * Shows the start page to whoever is not logged in (ADR 0025); after the login through the
@@ -85,13 +88,17 @@ export const App = () => {
   if (!isAuthenticated || !token || !eu)
     return (
       <Aviso>
-        <p role="status">Carregando…</p>
+        <p role="status" data-testid="carregando">
+          Carregando…
+        </p>
       </Aviso>
     );
   if (eu.situacao === 'desativado')
     return (
       <Aviso>
-        <p role="alert">Seu acesso ao FACOFFEE foi desativado.</p>
+        <p role="alert" data-testid="acesso-desativado">
+          Seu acesso ao FACOFFEE foi desativado.
+        </p>
         <button type="button" onClick={sair}>
           Sair
         </button>
@@ -122,10 +129,14 @@ export const App = () => {
       <Aviso>
         <p>Como você quer usar o FACOFFEE agora? Dá para trocar a qualquer momento no menu.</p>
         <div className="acoes">
-          <button type="button" onClick={() => escolher('gestor')}>
+          <button type="button" data-testid="visao-gestor" onClick={() => escolher('gestor')}>
             Visão do gestor
           </button>
-          <button type="button" onClick={() => escolher('participante')}>
+          <button
+            type="button"
+            data-testid="visao-participante"
+            onClick={() => escolher('participante')}
+          >
             Visão do participante
           </button>
           <button type="button" className="fantasma" onClick={sair}>
@@ -161,7 +172,7 @@ export const App = () => {
           <ul>
             {itens.map(({ caminho, titulo }) => (
               <li key={caminho}>
-                <NavLink to={caminho} end>
+                <NavLink to={caminho} end data-testid={`menu-${idDaPagina(caminho)}`}>
                   {titulo}
                 </NavLink>
               </li>
@@ -171,16 +182,18 @@ export const App = () => {
         <button
           type="button"
           className="secundario avatar"
+          data-testid="abrir-conta"
           popoverTarget="conta"
           aria-label={`${iniciais(eu.usuario.nome)}, conta de ${eu.usuario.nome}`}
         >
           {iniciais(eu.usuario.nome)}
         </button>
-        <div id="conta" className="conta" popover="auto">
+        <div id="conta" className="conta" popover="auto" data-testid="conta">
           <p>{eu.usuario.nome}</p>
           {eu.usuario.perfis.includes('gestor') && (
             <Link
               to={inicio(outra)}
+              data-testid="trocar-visao"
               onClick={() => {
                 guardar(outra);
                 document.getElementById('conta')?.hidePopover();
@@ -189,24 +202,28 @@ export const App = () => {
               Trocar para <strong>{outra === 'gestor' ? 'Gestor' : 'Participante'}</strong>
             </Link>
           )}
-          <button type="button" className="fantasma" onClick={sair}>
+          <button type="button" className="fantasma" data-testid="sair" onClick={sair}>
             Sair
           </button>
         </div>
       </header>
-      <main id="conteudo" tabIndex={-1}>
+      <main id="conteudo" tabIndex={-1} data-testid="conteudo">
         <Routes>
           {itens.map(({ caminho, titulo }) => (
             <Route
               key={caminho}
               path={caminho}
-              element={<Pagina titulo={titulo}>{paginas[caminho]}</Pagina>}
+              element={
+                <Pagina id={idDaPagina(caminho)} titulo={titulo}>
+                  {paginas[caminho]}
+                </Pagina>
+              }
             />
           ))}
           <Route
             path="*"
             element={
-              <Pagina titulo="Página não encontrada">
+              <Pagina id="nao-encontrada" titulo="Página não encontrada">
                 <p>Esta página não existe ou não é do seu perfil.</p>
               </Pagina>
             }
