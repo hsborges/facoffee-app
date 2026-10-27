@@ -18,13 +18,25 @@ Protótipo navegável das telas do FACOFFEE, feito no Claude Design a partir da 
 
 No modo Play, os botões e menus levam de uma tela à outra.
 
-## O que muda em relação ao que já está decidido
+## O que muda em relação ao que já estava decidido
 
-O protótipo é uma proposta. Antes de implementar, cada item abaixo precisa de ADR ou de mudança nos requisitos, conforme o [AGENTS.md](../../AGENTS.md):
+| No protótipo | Onde ficou decidido |
+| :--- | :--- |
+| Menu inferior no celular e lateral no desktop; tarefas longas em subpáginas | [ADR 0034](../adr/0034-menu-inferior-no-celular-e-lateral-no-computador.md), que substitui a posição dos menus do [ADR 0029](../adr/0029-visoes-do-gestor-e-do-participante.md) |
+| Cores Mocha texto (`#675F55`) e Espuma (`#F1E6D8`), selos de situação | [Design System](DESIGN_SYSTEM.md) |
+| Valores rápidos ao enviar comprovante (1 mês, até dezembro, semestre) | RN-FIN-34 |
+| Como a situação fica depois de enviar ou receber | RN-FIN-35 |
+| Lista "Confira no comprovante" e motivos comuns de recusa | RN-FIN-36 |
+| Saldo da caixinha, e depois dos reembolsos, na tela Gastos | RN-FIN-37 |
+| *Registrar um gasto que paguei* na Caixinha do participante | RN-FIN-26, que já valia pela API |
 
-- Menu inferior no celular e menu lateral no desktop, no lugar do menu atual ([ADR 0029](../adr/0029-visoes-do-gestor-e-do-participante.md)).
-- Novas cores: Mocha texto (`#675F55`), para texto de apoio sobre o creme, e Espuma (`#F1E6D8`), para fundos de destaque.
-- Saldo da caixinha na tela Gastos do gestor.
-- Valores rápidos ao enviar comprovante (1 mês, até dezembro, semestre).
-- Lista "Confira no comprovante" e motivos comuns de recusa em Conferir comprovante.
-- Simulação do valor da cota de 2027 contra os gastos de 2025.
+## O que ficou de fora
+
+Pede dado que a API ainda não devolve; entra quando a API devolver:
+
+- Simulação do valor da cota do ano seguinte com os participantes de hoje: falta quantos participam com cada tipo de cota.
+- Tipo de cota e detalhe de cada participante em Participantes ("cobre até março", "setembro e outubro"), e as cotas do participante em Receber pagamento: o gestor só lê o total do crédito e da pendência.
+- "O que está devido" em Minha situação: a API não diz quais cotas já estão quitadas; a tela mostra todas as cotas e complementos.
+- Valores da cota na página inicial: só quem está logado lê os valores.
+- *Ver os gastos e as notas* na Caixinha: só o gestor lista os gastos.
+- Contagens na escolha da visão (comprovantes a confirmar, situação) e "Todos são avisados por e-mail" ao definir o valor da cota (RN-NOT-01 ainda não envia esse aviso).
