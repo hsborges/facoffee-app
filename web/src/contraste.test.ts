@@ -39,6 +39,8 @@ const pares = [
   ['alerta-texto', 'alerta-fundo', 4.5],
   ['erro-texto', 'pure-white', 4.5],
   ['erro-texto', 'erro-fundo', 4.5],
+  ['pure-white', 'erro-texto', 4.5],
+  ['pure-white', 'erro-hover', 4.5],
   ['contorno', 'pure-white', 3],
   ['contorno', 'cream-off-white', 3],
   ['espresso-dark', 'espuma', 3],

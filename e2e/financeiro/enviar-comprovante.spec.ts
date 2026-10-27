@@ -4,6 +4,7 @@ import {
   chamarApi,
   conferir,
   conferirComprovantes,
+  confirmarAcao,
   confirmarComprovante,
   entrarNoFacoffee,
   enviadoDe,
@@ -117,6 +118,7 @@ test.describe('RF-FIN-02 Enviar comprovante', () => {
 
     await test.step(`${pessoa.usuario} cancela o envio do de R$ 10,00`, async () => {
       await enviadoDe(participante, '10,00').getByTestId('cancelar-envio').click();
+      await confirmarAcao(participante);
       await expect(enviadoDe(participante, '10,00')).toHaveCount(0);
     });
 

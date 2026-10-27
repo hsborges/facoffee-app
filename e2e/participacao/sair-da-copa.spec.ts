@@ -1,5 +1,6 @@
 import {
   chamarApi,
+  confirmarAcao,
   entrarNoFacoffee,
   expect,
   feito,
@@ -37,6 +38,7 @@ test.describe('RF-PAR-03 Sair da copa', () => {
 
     await test.step(`Gestor desativa o acesso de ${pessoa.nome}`, async () => {
       await linhaDe(gestor, pessoa.nome).getByTestId('desativar-acesso').click();
+      await confirmarAcao(gestor);
       await feito(gestor);
     });
     await naTelaDoGestor(gestor, pessoa.nome, 'saiu');

@@ -110,6 +110,70 @@ export const useComando = (recarregar: () => void) => {
   return { enviando, fazer, avisos };
 };
 
+/** What a confirmação asks: the question, what follows, the action's name and if it is destrutiva. */
+export type Pedido = {
+  readonly titulo: string;
+  readonly texto: string;
+  readonly acao: string;
+  readonly destrutiva?: boolean;
+};
+
+/**
+ * Confirmação of a critical action, in a modal `<dialog>`: it holds the focus, closes with Esc and
+ * starts on Voltar, so Enter does not confirm by accident. `confirmar` opens it and gives whether
+ * the person confirmed; the page renders `confirmacao`.
+ */
+export const useConfirmacao = () => {
+  const dialogo = useRef<HTMLDialogElement>(null);
+  const resposta = useRef<(sim: boolean) => void>(undefined);
+  const [pedido, setPedido] = useState<Pedido>();
+  const titulo = useId();
+  useEffect(() => {
+    const aberto = dialogo.current;
+    if (!pedido || !aberto || aberto.open) return;
+    aberto.returnValue = '';
+    aberto.showModal();
+  }, [pedido]);
+  const confirmar = (novo: Pedido) => {
+    setPedido(novo);
+    return new Promise<boolean>((resolver) => {
+      resposta.current = resolver;
+    });
+  };
+  const confirmacao = (
+    <dialog
+      ref={dialogo}
+      className="confirmacao"
+      data-testid="confirmacao"
+      aria-labelledby={titulo}
+      onClose={() => {
+        resposta.current?.(dialogo.current?.returnValue === 'sim');
+        resposta.current = undefined;
+        setPedido(undefined);
+      }}
+    >
+      <form method="dialog">
+        <h2 id={titulo}>{pedido?.titulo}</h2>
+        <p className="apoio">{pedido?.texto}</p>
+        <div className="acoes">
+          <button type="submit" value="nao" className="contorno" data-testid="voltar">
+            Voltar
+          </button>
+          <button
+            type="submit"
+            value="sim"
+            className={pedido?.destrutiva ? 'perigo' : undefined}
+            data-testid="confirmar-acao"
+          >
+            {pedido?.acao}
+          </button>
+        </div>
+      </form>
+    </dialog>
+  );
+  return { confirmar, confirmacao };
+};
+
 /**
  * Handles a form submit with its data. The form is read before any await: React lets go of the
  * event right after the handler.
@@ -438,6 +502,7 @@ const Comprovantes = ({ token }: { token: string }) => {
     '/api/financeiro/comprovante-enviado/eu',
   );
   const { enviando, fazer, avisos } = useComando(recarregar);
+  const { confirmar, confirmacao } = useConfirmacao();
   if (!comprovantes) return <Carregando />;
   if (comprovantes.situacao !== 'ok') return <FalhaAoCarregar tentarDeNovo={recarregar} />;
 
@@ -454,8 +519,13 @@ const Comprovantes = ({ token }: { token: string }) => {
         'Não foi possível editar o comprovante.',
       ),
     );
-  const cancelar = (comprovante: ComprovanteEnviado) =>
-    confirm(`Cancelar o envio do comprovante de ${emReais(comprovante.valorEmCentavos)}?`) &&
+  const cancelar = async (comprovante: ComprovanteEnviado) =>
+    (await confirmar({
+      titulo: `Cancelar o envio do comprovante de ${emReais(comprovante.valorEmCentavos)}?`,
+      texto: 'O gestor não confere mais este comprovante. Dá para enviar outro quando quiser.',
+      acao: 'Cancelar envio',
+      destrutiva: true,
+    })) &&
     fazer(
       () => comandar(token, `/api/financeiro/comprovante-enviado/${comprovante.id}/cancelar`),
       'Envio cancelado.',
@@ -466,6 +536,7 @@ const Comprovantes = ({ token }: { token: string }) => {
     <section aria-labelledby="comprovantes" data-testid="comprovantes">
       <h2 id="comprovantes">Comprovantes enviados</h2>
       {avisos}
+      {confirmacao}
       {comprovantes.valor.length === 0 ? (
         <p className="cartao apoio">Nenhum comprovante enviado.</p>
       ) : (
@@ -708,6 +779,7 @@ export const MinhaSituacao = ({
   const [enviando, setEnviando] = useState(false);
   const [falha, setFalha] = useState<string>();
   const [feito, setFeito] = useState<string>();
+  const { confirmar, confirmacao } = useConfirmacao();
 
   const recarregar = () => {
     recarregarParticipacao();
@@ -731,12 +803,22 @@ export const MinhaSituacao = ({
   const atual = participacao.situacao === 'ok' ? participacao.valor : undefined;
   const doAno = valores.situacao === 'ok' ? valores.valor : [];
   const minha = situacao.situacao === 'ok' ? situacao.valor : undefined;
-  const pedirSaida = () =>
-    confirm('Sair da copa? Seu crédito ou pendência continua valendo se você voltar.') &&
-    fazer('/api/participacao/sair', ['Saída pedida.', 'Não foi possível pedir a saída.']);
+  const pedirSaida = async () =>
+    (await confirmar({
+      titulo: 'Sair da copa?',
+      texto: 'Seu crédito ou pendência continua valendo se você voltar.',
+      acao: 'Sair da copa',
+      destrutiva: true,
+    })) && fazer('/api/participacao/sair', ['Saída pedida.', 'Não foi possível pedir a saída.']);
   // Once desativado, every leitura answers 403: the person leaves instead of reloading.
   const desativarAcesso = async () => {
-    if (!confirm('Desativar seu acesso ao FACOFFEE? Só o gestor pode reativá-lo.')) return;
+    const sim = await confirmar({
+      titulo: 'Desativar seu acesso ao FACOFFEE?',
+      texto: 'Sua participação termina, e só o gestor pode reativar o acesso.',
+      acao: 'Desativar meu acesso',
+      destrutiva: true,
+    });
+    if (!sim) return;
     setEnviando(true);
     setFalha(undefined);
     if ((await comandar(token, `/api/usuario/${usuarioId}/desativar`)).feito) return sair();
@@ -757,18 +839,27 @@ export const MinhaSituacao = ({
       <p role="status" className="aviso-feito" data-testid="aviso-feito">
         {feito}
       </p>
+      {confirmacao}
       {!atual?.participando && (
         <EntrarNaCopa
           inicial={tipoDaCota}
           valores={doAno}
           desabilitado={enviando}
-          entrar={(tipoDeCota) =>
-            fazer(
-              '/api/participacao/entrar',
-              ['Entrada pedida.', 'Não foi possível pedir a entrada.'],
-              { tipoDeCota },
-            )
-          }
+          entrar={async (tipoDeCota) => {
+            const valor = valorDe(doAno, tipoDeCota);
+            const mes = nomeDoMes(mesEmCampoGrande(new Date()));
+            const sim = await confirmar({
+              titulo: `Entrar na copa com a cota ${NOME_DO_TIPO_DE_COTA[tipoDeCota].toLowerCase()}?`,
+              texto: `Você já passa a dever a cota de ${mes}${valor === undefined ? '' : `, de ${emReais(valor)}`}. Dá para trocar o tipo de cota depois, valendo a partir do mês seguinte.`,
+              acao: 'Entrar na copa',
+            });
+            if (sim)
+              fazer(
+                '/api/participacao/entrar',
+                ['Entrada pedida.', 'Não foi possível pedir a entrada.'],
+                { tipoDeCota },
+              );
+          }}
         />
       )}
       <div className="colunas">

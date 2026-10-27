@@ -2,6 +2,7 @@ import type { Page } from '@playwright/test';
 import {
   abrirConta,
   chamarApi,
+  confirmarAcao,
   entrarNoFacoffee,
   expect,
   lerApi,
@@ -22,6 +23,8 @@ const mudarAcesso = (gestor: Page, nome: string, para: 'desativado' | 'ativo') =
     await gestor.goto('/participantes');
     const linha = linhaDe(gestor, nome);
     await linha.getByTestId(para === 'desativado' ? 'desativar-acesso' : 'reativar-acesso').click();
+    // Only desativar is critical: it asks for confirmação.
+    if (para === 'desativado') await confirmarAcao(gestor);
     await expect(linha).toHaveAttribute('data-acesso', para);
   });
 
@@ -39,6 +42,7 @@ test.describe('RF-USU-01 Acesso ao FACOFFEE', () => {
     const propria = await entrarNoFacoffee(browser, bia.usuario);
     await test.step(`${bia.usuario} desativa o próprio acesso`, async () => {
       await propria.getByTestId('desativar-meu-acesso').click();
+      await confirmarAcao(propria);
       await expect(propria.getByTestId('entrar')).toBeVisible();
       await gestor.reload();
       await expect(linhaDe(gestor, bia.nome)).toHaveAttribute('data-acesso', 'desativado');

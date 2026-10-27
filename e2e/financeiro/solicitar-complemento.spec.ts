@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import {
+  confirmarAcao,
   entrarNoFacoffee,
   expect,
   feito,
@@ -41,6 +42,7 @@ test.describe('RF-FIN-05 Solicitar complemento', () => {
       const solicitacao = gestor.getByTestId('solicitacao-de-complemento');
       await solicitacao.getByTestId('valor').fill(total);
       await solicitacao.getByTestId('solicitar-complemento').click();
+      await confirmarAcao(gestor);
       await feito(gestor);
     });
 

@@ -1,5 +1,6 @@
 import {
   chamarApi,
+  confirmarAcao,
   entrarNoFacoffee,
   expect,
   feito,
@@ -27,6 +28,7 @@ test.describe('RF-PAR-05 Definir o valor da cota', () => {
       await definicao.getByTestId('valor-completa').fill('35');
       await semRolagemHorizontal(gestor);
       await definicao.getByTestId('definir-valor-da-cota').click();
+      await confirmarAcao(gestor);
       await feito(gestor);
     });
 

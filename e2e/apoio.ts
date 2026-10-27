@@ -110,7 +110,6 @@ export const entrarNoFacoffee = (
 ) =>
   test.step(`Entrar no FACOFFEE como ${usuario}`, async () => {
     const page = await (await browser.newContext()).newPage();
-    page.on('dialog', (dialogo) => dialogo.accept());
     await page.goto('/');
     await semRolagemHorizontal(page);
     await page.getByTestId('entrar').click();
@@ -164,6 +163,7 @@ export const pedirEntrada = (page: Page, usuario: string, tipo: TipoDeCota = 'so
   test.step(`${usuario} pede entrada com a cota ${tipo}`, async () => {
     await page.getByTestId(`tipo-de-cota-${tipo}`).check();
     await page.getByTestId('pedir-entrada').click();
+    await confirmarAcao(page);
     await expect(participando(page, tipo)).toBeVisible();
   });
 
@@ -171,6 +171,7 @@ export const pedirEntrada = (page: Page, usuario: string, tipo: TipoDeCota = 'so
 export const pedirSaida = (page: Page, usuario: string) =>
   test.step(`${usuario} pede a saída`, async () => {
     await page.getByTestId('pedir-saida').click();
+    await confirmarAcao(page);
     await expect(page.getByTestId('nao-participa')).toBeVisible();
   });
 
@@ -215,6 +216,18 @@ export const naTelaDoGestor = (
       comDados(gestor, 'participante', { participacao }).filter({ hasText: nome }),
     );
   });
+
+/** The confirmação open on the page: a page may have more than one, closed. */
+export const confirmacaoAberta = (page: Page) =>
+  page.getByTestId('confirmacao').filter({ visible: true });
+
+/** Confirms the critical action asked in the confirmação that just opened. */
+export const confirmarAcao = async (page: Page) => {
+  const confirmacao = confirmacaoAberta(page);
+  await expect(confirmacao).toBeVisible();
+  await confirmacao.getByTestId('confirmar-acao').click();
+  await expect(confirmacao).toHaveCount(0);
+};
 
 /** The comando of the page (or of `escopo`) is done: its aviso is filled, and no falha. */
 export const feito = async (escopo: Page | Locator) => {
@@ -308,6 +321,7 @@ export const garantirValorDaCota = (gestor: Page) =>
         if (await campo.isVisible()) await campo.fill(valor.replace(',', '.'));
       }
       await definicao.getByTestId('definir-valor-da-cota').click();
+      await confirmarAcao(gestor);
       await feito(gestor);
     }
     await gestor.goto('/caixinha');
@@ -486,6 +500,7 @@ export const reembolsar = (gestor: Page, nome: string, valor: string) =>
     await gestor.goto('/gastos');
     const gasto = gastoDe(gestor, nome, valor);
     await gasto.getByTestId('reembolsar').click();
+    await confirmarAcao(gestor);
     await expect(gasto).toHaveAttribute('data-reembolsado', 'true');
   });
 

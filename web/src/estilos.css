@@ -37,6 +37,7 @@
   --alerta-texto: #8a4a12;
   --alerta-fundo: #fbebdb;
   --erro-texto: #a12f22;
+  --erro-hover: #82251b;
   --erro-fundo: #f8e1de;
 
   --fonte-titulo: "Montserrat", "Plus Jakarta Sans", "Poppins", sans-serif;
@@ -258,6 +259,17 @@ button.destrutivo {
 button:is(.destrutivo, .link):hover {
   background: none;
   text-decoration-thickness: 2px;
+}
+
+/* Destrutivo forte: a ação que confirma, na confirmação de uma ação crítica. */
+button.perigo {
+  border-color: var(--erro-texto);
+  background: var(--erro-texto);
+}
+
+button.perigo:hover {
+  border-color: var(--erro-hover);
+  background: var(--erro-hover);
 }
 
 button:disabled {
@@ -606,6 +618,39 @@ button.atalho[aria-pressed="true"] {
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+/* Confirmação de ação crítica: `<dialog>` modal, no centro da tela. */
+.confirmacao {
+  width: min(28rem, 100% - 2rem);
+  margin: auto;
+  padding: 1.5rem;
+  border: 0;
+  border-radius: var(--raio-card);
+  color: var(--espresso-dark);
+  background: var(--pure-white);
+  box-shadow: 0 24px 48px -12px rgba(65, 60, 49, 0.35);
+}
+
+.confirmacao::backdrop {
+  background: rgba(65, 60, 49, 0.5);
+}
+
+.confirmacao form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.confirmacao h2 {
+  font-size: 1.25rem;
+}
+
+.confirmacao .acoes {
+  margin-top: 0.75rem;
+}
+
+.confirmacao .acoes > * {
+  flex: 1 1 9rem;
 }
 
 /* Avisos. */

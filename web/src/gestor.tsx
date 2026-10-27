@@ -40,6 +40,7 @@ import {
   Selo,
   situacaoDe,
   useComando,
+  useConfirmacao,
   useLeitura,
   ValoresDaCota,
 } from './participante';
@@ -194,6 +195,7 @@ export const Participantes = ({ token, usuarioId }: { token: string; usuarioId: 
     recarregarComprovantes();
   };
   const { enviando, fazer, avisos } = useComando(recarregar);
+  const { confirmar, confirmacao } = useConfirmacao();
   const [filtro, setFiltro] = useState<Filtro>('todos');
   const [busca, setBusca] = useState('');
 
@@ -219,7 +221,7 @@ export const Participantes = ({ token, usuarioId }: { token: string; usuarioId: 
       passa(filtro, situacaoDoId.get(usuario.id)) && nomeDe(usuario).toLowerCase().includes(termo),
   );
 
-  const mudarAcesso = (usuario: UsuarioRegistrado) => {
+  const mudarAcesso = async (usuario: UsuarioRegistrado) => {
     const nome = nomeDe(usuario);
     if (usuario.desativado)
       return fazer(
@@ -227,7 +229,14 @@ export const Participantes = ({ token, usuarioId }: { token: string; usuarioId: 
         `Acesso de ${nome} reativado.`,
         'Não foi possível reativar o acesso.',
       );
-    if (!confirm(`Desativar o acesso de ${nome}? A participação termina, se houver.`)) return;
+    const sim = await confirmar({
+      titulo: `Desativar o acesso de ${nome}?`,
+      texto:
+        'A participação termina, se houver. Reativar o acesso depois não devolve a participação.',
+      acao: 'Desativar acesso',
+      destrutiva: true,
+    });
+    if (!sim) return;
     return fazer(
       () => comandar(token, `/api/usuario/${usuario.id}/desativar`),
       `Acesso de ${nome} desativado.`,
@@ -244,6 +253,7 @@ export const Participantes = ({ token, usuarioId }: { token: string; usuarioId: 
         </Link>
       </div>
       {avisos}
+      {confirmacao}
       <div className="painel">
         {aConfirmar.length > 0 && (
           <Link
@@ -882,6 +892,7 @@ export const Gastos = ({ token }: { token: string }) => {
     recarregarCaixinha();
   };
   const { enviando, fazer, avisos } = useComando(recarregar);
+  const { confirmar, confirmacao } = useConfirmacao();
   const [mes, setMes] = useState(() => mesEmCampoGrande(new Date()));
   const [falhaAoAbrir, setFalhaAoAbrir] = useState(false);
 
@@ -902,10 +913,12 @@ export const Gastos = ({ token }: { token: string }) => {
   );
   const verNota = async (gasto: Gasto) =>
     setFalhaAoAbrir(!(await abrirArquivo(token, `/api/financeiro/nota/${gasto.notaId}`)));
-  const reembolsar = (gasto: Gasto) =>
-    confirm(
-      `Reembolsar ${emReais(gasto.valorEmCentavos)} a ${quemPagou(gasto)}? Sai da caixinha.`,
-    ) &&
+  const reembolsar = async (gasto: Gasto) =>
+    (await confirmar({
+      titulo: `Reembolsar ${emReais(gasto.valorEmCentavos)} a ${quemPagou(gasto)}?`,
+      texto: 'O valor sai da caixinha agora.',
+      acao: `Reembolsar ${quemPagou(gasto)}`,
+    })) &&
     fazer(
       () => comandar(token, `/api/financeiro/gasto/${gasto.id}/reembolsar`),
       'Reembolso feito.',
@@ -930,6 +943,7 @@ export const Gastos = ({ token }: { token: string }) => {
         </Link>
       </div>
       {avisos}
+      {confirmacao}
       {falhaAoAbrir && <p role="alert">Não foi possível abrir a nota.</p>}
       <div className="colunas">
         <section className="cartao escuro" aria-labelledby="saldo-da-caixinha">
@@ -1134,15 +1148,17 @@ export const RegistrarGasto = ({
  */
 export const SolicitarComplemento = ({ token }: { token: string }) => {
   const { enviando, fazer, avisos } = useComando(() => {});
+  const { confirmar, confirmacao } = useConfirmacao();
   const navigate = useNavigate();
   const solicitar = aoEnviar(async (dados) => {
     const valorEmCentavos = emCentavos(String(dados.get('valor')));
-    if (
-      !confirm(
-        `Solicitar complemento de ${emReais(valorEmCentavos)}, dividido entre os participantes ativos?`,
-      )
-    )
-      return;
+    const sim = await confirmar({
+      titulo: `Solicitar complemento de ${emReais(valorEmCentavos)}?`,
+      texto:
+        'O valor é dividido em partes iguais entre todos os participantes ativos, inclusive os pendentes.',
+      acao: 'Solicitar complemento',
+    });
+    if (!sim) return;
     const feito = 'Complemento solicitado.';
     const solicitado = await fazer(
       () => comandar(token, '/api/financeiro/solicitar-complemento', { valorEmCentavos }),
@@ -1162,6 +1178,7 @@ export const SolicitarComplemento = ({ token }: { token: string }) => {
         participantes ativos, inclusive os pendentes.
       </p>
       {avisos}
+      {confirmacao}
       <form onSubmit={solicitar} className="pilha">
         <CampoValor rotulo="Valor total (R$)" />
         <button
@@ -1198,6 +1215,7 @@ export const ValorDaCota = ({ token }: { token: string }) => {
     recarregarValores();
   };
   const { enviando, fazer, avisos } = useComando(recarregarValores);
+  const { confirmar, confirmacao } = useConfirmacao();
   if (!caixinha || !valores) return <Carregando />;
   if (caixinha.situacao !== 'ok' || valores.situacao !== 'ok')
     return <FalhaAoCarregar tentarDeNovo={recarregar} />;
@@ -1216,12 +1234,12 @@ export const ValorDaCota = ({ token }: { token: string }) => {
     const resumo = definicoes
       .map((d) => `${NOME_DO_TIPO_DE_COTA[d.tipoDeCota]}, ${emReais(d.valorEmCentavos)}`)
       .join('; ');
-    if (
-      !confirm(
-        `Definir os valores por mês de ${alvo} (${resumo})? Depois, não mudam durante o ano.`,
-      )
-    )
-      return;
+    const sim = await confirmar({
+      titulo: `Definir os valores de ${alvo}?`,
+      texto: `${resumo}, por mês. Depois de definido, o valor não muda durante o ano.`,
+      acao: `Definir valores de ${alvo}`,
+    });
+    if (!sim) return;
     await fazer(
       async () => {
         for (const definicao of definicoes) {
@@ -1248,6 +1266,7 @@ export const ValorDaCota = ({ token }: { token: string }) => {
             : `Se não definir até 1º de janeiro, ${alvo} repete os valores de ${ano}.`}
         </p>
         {avisos}
+        {confirmacao}
         <form
           onSubmit={definir}
           data-testid="definicao-do-valor-da-cota"
