@@ -19,8 +19,8 @@ Com `docs/requisitos/` ([ADR 0032](0032-requisitos-rastreaveis-em-bdd.md)), cada
 - **Cada teste é independente**: usuários novos (`novoUsuario`), sem depender da ordem nem de outro teste, e roda sozinho (`--grep "RN-PAR-02"`). O que é definido uma vez por stack, como o valor da cota do ano, é definido pelo primeiro teste que precisa dele. Continuam em série (`workers: 1`); os testes das telas levam a tag `@celular`.
 - **Os helpers ficam em `e2e/apoio.ts`.**
 - **Elementos pelo `data-testid`**, não pelo texto, rótulo ou papel: mudar um texto do web não quebra o teste, e um teste novo não depende da redação de outra tela. O `data-testid` é em português, kebab-case, sem acento, com termos do glossário (`pedir-entrada`, `comprovante-a-confirmar`). O que se repete (linhas de uma tabela) leva o mesmo `data-testid` e é filtrado pelos dados do próprio teste (o nome da pessoa, o valor); o estado vai em atributos `data-*` com os valores da API (`data-situacao="a-confirmar"`, `data-tipo-de-cota="so-cafe"`). O teste confere o estado que o comando produz, não a mensagem de sucesso. Fica de fora só o formulário de login, que é do Keycloak e já tem `id`s estáveis.
-- **Além do que o ADR 0023 já tira de fora do web** (e-mail, *Crédito e pendentes* de todos, *Todo início de mês*), o teste chama a API com a sessão da pessoa para o que o web não deixa tentar: os pedidos recusados (um participante recebendo pagamento, a entrada repetida) e o gasto registrado por quem não é gestor.
-- **`pnpm lint` exige que toda `RF` seja citada por um `e2e/**/*.spec.ts`**; as `RN` continuam exigindo ao menos um teste em qualquer nível. `node scripts/check-requisitos.ts --matriz` lista, por `RF`, os specs e2e e, por `RN`, os testes.
+- **Além do que o ADR 0023 já tira de fora do web** (e-mail, *Crédito e pendentes* de todos, *Todo início de mês*), o teste chama a API com a sessão da pessoa para o que o web não deixa tentar: os pedidos recusados (um participante recebendo pagamento, a entrada repetida) e o gasto registrado por quem não é gestor. Também lê pela API o que o web não mostra e o teste precisa: os ids (do usuário, do comprovante, do gasto) e os números que compara antes e depois (a situação do participante, o saldo da caixinha, a caixinha do mês).
+- **`pnpm lint` exige que toda `RF` seja citada pelo seu spec no caminho espelhado**; as `RN` continuam exigindo ao menos um teste em qualquer nível. `node scripts/check-requisitos.ts --matriz` lista, por `RF`, os specs e2e e, por `RN`, os testes.
 
 ## Consequências
 
@@ -40,4 +40,3 @@ Riscos:
 
 - Os testes compartilham a stack: o que um conta (participantes ativos, saldo da caixinha) muda com o que outro faz. Por isso comparam antes e depois, dentro do mesmo teste, e rodam em série.
 - Sem localizar por papel e nome acessível, o teste deixa de conferir de passagem os rótulos que o leitor de tela anuncia; a acessibilidade fica com a revisão e com o Design System ([ADR 0028](0028-mobile-first.md)).
-- O lint só confere que a `RF` é citada num spec e2e, não que o spec está no caminho espelhado; a revisão do PR confere.
