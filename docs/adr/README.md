@@ -36,3 +36,4 @@ Registros de decisões de arquitetura. Um arquivo por decisão: `NNNN-titulo.md`
 | [0030](0030-pagamento-iniciado-pelo-participante.md) | Pagamento iniciado pelo participante | Aceito; envio e recusa sem evento substituídos por 0031 |
 | [0031](0031-avisos-do-comprovante-enviado.md) | Avisos do comprovante enviado | Aceito |
 | [0032](0032-requisitos-rastreaveis-em-bdd.md) | Requisitos rastreáveis em BDD | Aceito |
+| [0033](0033-e2e-como-teste-de-aceitacao-da-funcionalidade.md) | E2E como teste de aceitação da funcionalidade | Aceito |

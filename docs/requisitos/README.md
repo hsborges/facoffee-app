@@ -8,7 +8,7 @@ Fonte única dos requisitos e das regras de negócio do FACOFFEE, especificados 
 | Regra de negócio | `RN-<CTX>-NN` | `Regra`, com um ou mais `Cenário` |
 | Requisito não funcional | `RNF-NN` | `Cenário`, quando verificável por teste |
 
-`<CTX>`: `PAR` (Participação), `FIN` (Financeiro), `USU` (Usuário), `NOT` (Notificação), `AGE` (Agendador), `WEB` (Web). Os testes citam o ID da regra no nome (`it('RN-FIN-07: ...')`); `node scripts/check-requisitos.ts --matriz` gera a matriz de rastreabilidade.
+`<CTX>`: `PAR` (Participação), `FIN` (Financeiro), `USU` (Usuário), `NOT` (Notificação), `AGE` (Agendador), `WEB` (Web). Os testes citam o ID da regra no nome (`it('RN-FIN-07: ...')`). Cada funcionalidade tem o seu teste de aceitação em `e2e/`, no mesmo caminho trocando `.md` por `.spec.ts` (`e2e/participacao/entrar-na-copa.spec.ts`), com o ID no `test.describe` ([ADR 0033](../adr/0033-e2e-como-teste-de-aceitacao-da-funcionalidade.md)): funcionalidade nova vem com o seu spec. `node scripts/check-requisitos.ts --matriz` gera a matriz de rastreabilidade.
 
 | ID | Funcionalidade | Contexto | Regras |
 |---|---|---|---|
