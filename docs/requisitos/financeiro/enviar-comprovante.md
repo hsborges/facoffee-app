@@ -178,7 +178,7 @@ Regra: RN-FIN-14 O gestor vê os comprovantes a confirmar; o participante, só o
 
 ### RN-FIN-34 No envio, o valor pago começa no pendente, com atalhos de um mês, até dezembro e um semestre de cota
 
-- Termo: [Cota](../../dominio/GLOSSARIO.md#cota), [Pendente](../../dominio/GLOSSARIO.md#pendente) · Origem: [protótipo do redesign](../../design/PROTOTYPE.md)
+- Termo: [Cota](../../dominio/GLOSSARIO.md#cota), [Pendente](../../dominio/GLOSSARIO.md#pendente) · Origem: [protótipo](../../design/PROTOTYPE.md)
 
 Os atalhos usam o valor da cota do tipo de cota do participante no ano atual (RN-PAR-16) e contam a partir do mês atual. Atalho de mesmo valor que outro não se repete, como *Até dezembro* em dezembro. Sem valor da cota definido, não há atalhos.
 
@@ -200,7 +200,7 @@ Regra: RN-FIN-34 No envio, o valor pago começa no pendente, com atalhos de um m
 
 ### RN-FIN-36 O gestor só confirma o comprovante depois de conferir a lista, e recusa com um motivo comum ou o seu
 
-- Termo: [Comprovante](../../dominio/GLOSSARIO.md#comprovante), [Gestor](../../dominio/GLOSSARIO.md#gestor) · Origem: [protótipo do redesign](../../design/PROTOTYPE.md)
+- Termo: [Comprovante](../../dominio/GLOSSARIO.md#comprovante), [Gestor](../../dominio/GLOSSARIO.md#gestor) · Origem: [protótipo](../../design/PROTOTYPE.md)
 
 A lista *Confira no comprovante* tem passos curtos, cada um o contrário de um motivo comum: é um comprovante de PIX legível, o valor é o que o gestor vai confirmar e a data é deste mês. *Confirmar* só fica disponível com todos marcados; corrigir o valor desmarca o passo do valor, que passa a dizer o novo. *Recusar* não depende da lista. Os motivos comuns preenchem o motivo da recusa (RN-FIN-10), que o gestor ainda pode mudar.
 

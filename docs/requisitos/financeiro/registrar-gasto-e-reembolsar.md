@@ -119,7 +119,7 @@ Regra: RN-FIN-26 Qualquer participante registra um gasto
 
 ### RN-FIN-37 Em Gastos, o gestor vê o saldo da caixinha e quanto sobra depois dos reembolsos
 
-- Termo: [Caixinha](../../dominio/GLOSSARIO.md#caixinha), [Reembolso](../../dominio/GLOSSARIO.md#reembolso) · Origem: [protótipo do redesign](../../design/PROTOTYPE.md)
+- Termo: [Caixinha](../../dominio/GLOSSARIO.md#caixinha), [Reembolso](../../dominio/GLOSSARIO.md#reembolso) · Origem: [protótipo](../../design/PROTOTYPE.md)
 
 Assim o gestor decide se precisa solicitar complemento (RF-FIN-05) sem trocar de visão. Os gastos pagos do próprio bolso ainda não reembolsados ficam à parte, em *A reembolsar*.
 

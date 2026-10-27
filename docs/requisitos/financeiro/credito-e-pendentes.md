@@ -149,7 +149,7 @@ Regra: RN-FIN-21 O crédito não é devolvido em dinheiro
 
 ### RN-FIN-35 Antes de pagar, a pessoa vê como a situação fica depois
 
-- Termo: [Crédito](../../dominio/GLOSSARIO.md#crédito), [Pendente](../../dominio/GLOSSARIO.md#pendente) · Origem: [protótipo do redesign](../../design/PROTOTYPE.md)
+- Termo: [Crédito](../../dominio/GLOSSARIO.md#crédito), [Pendente](../../dominio/GLOSSARIO.md#pendente) · Origem: [protótipo](../../design/PROTOTYPE.md)
 
 Vale no envio do comprovante (RF-FIN-02), para o participante, e no recebimento do pagamento (RF-FIN-01), para o gestor. É só uma prévia: o crédito ou a pendência continua calculado pelo Financeiro.
 

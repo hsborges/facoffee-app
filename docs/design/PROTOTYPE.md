@@ -2,19 +2,20 @@
 
 Protótipo navegável das telas do FACOFFEE, feito no Claude Design a partir da [visão de produto](../produto/VISAO.md), do [glossário](../dominio/GLOSSARIO.md), dos [requisitos](../requisitos/README.md) e do [Design System](DESIGN_SYSTEM.md).
 
-- **Protótipo:** [FACOFFEE Prototype](https://claude.ai/artifact/7ypfHujXYVCwRNjhknVJXb). Abre só para quem recebeu acesso pelo menu de compartilhar do artefato.
-- **Exportação em PDF:** em cinco partes, uma por fileira, na tabela abaixo.
-- **Status:** implementado no `web/`, menos o que pede dado que a API ainda não tem (abaixo).
+- **Protótipo:** [FACOFFEE Design](https://claude.ai/artifact/7ypfHujXYVCwRNjhknVJXb), um canvas do Claude Design, fonte única das telas. Abre só para quem recebeu acesso pelo menu de compartilhar do artefato.
+- **Status:** implementado no `web/`, menos o que pede dado que a API ainda não tem (abaixo). O canvas acompanha o `web/`: mudança de tela atualiza o canvas no mesmo PR ([AGENTS.md](../../AGENTS.md#protótipo)).
 
 ## O que tem
 
-| Fileira | Telas | PDF |
-| :--- | :--- | :--- |
-| Fundamentos e entrada | Cores, tipografia, situação, ações, campos e ícones; página inicial antes do login | [`PROTOTYPE-1-fundamentos-e-entrada.pdf`](PROTOTYPE-1-fundamentos-e-entrada.pdf) |
-| Visão do participante (celular) | Entrar na copa, Minha situação, Enviar comprovante, Caixinha, Menu da conta, Confirmação de ação crítica e Desativar meu acesso | [`PROTOTYPE-2-participante-celular.pdf`](PROTOTYPE-2-participante-celular.pdf) |
-| Visão do gestor (celular) | Escolher a visão, Participantes, Conferir comprovante, Receber pagamento, Gastos e Valor da cota | [`PROTOTYPE-3-gestor-celular.pdf`](PROTOTYPE-3-gestor-celular.pdf) |
-| Desktop, participante | Entrar na copa, Minha situação, Enviar comprovante, Caixinha e Desativar meu acesso a partir de `48rem`, com menu lateral | [`PROTOTYPE-4-participante-desktop.pdf`](PROTOTYPE-4-participante-desktop.pdf) |
-| Desktop, gestor | Escolher a visão, Participantes, Conferir comprovante, Receber pagamento, Gastos e Valor da cota a partir de `48rem`, com tabelas | [`PROTOTYPE-5-gestor-desktop.pdf`](PROTOTYPE-5-gestor-desktop.pdf) |
+Uma fileira do canvas por grupo de telas:
+
+| Fileira | Telas |
+| :--- | :--- |
+| Fundamentos e entrada | Cores, tipografia, situação, ações, campos e ícones; página inicial antes do login |
+| Visão do participante | Entrar na copa, Minha situação, Enviar comprovante, Caixinha, Menu da conta, Confirmação de ação crítica e Desativar meu acesso, no celular |
+| Visão do gestor | Escolher a visão, Participantes, Conferir comprovante, Receber pagamento, Gastos e Valor da cota, no celular |
+| Desktop · visão do participante | Entrar na copa, Minha situação, Enviar comprovante, Caixinha e Desativar meu acesso a partir de `48rem`, com menu lateral |
+| Desktop · visão do gestor | Escolher a visão, Participantes, Conferir comprovante, Receber pagamento, Gastos e Valor da cota a partir de `48rem`, com tabelas |
 
 No modo Play, os botões e menus levam de uma tela à outra.
 
@@ -26,7 +27,7 @@ No modo Play, os botões e menus levam de uma tela à outra.
 | Cores Mocha texto (`#675F55`) e Espuma (`#F1E6D8`), selos de situação | [Design System](DESIGN_SYSTEM.md) |
 | Valores rápidos ao enviar comprovante (1 mês, até dezembro, semestre) | RN-FIN-34 |
 | Como a situação fica depois de enviar ou receber | RN-FIN-35 |
-| Lista "Confira no comprovante" e motivos comuns de recusa | RN-FIN-36 |
+| Lista "Confira no comprovante", que libera *Confirmar*, e motivos comuns de recusa | RN-FIN-36 |
 | Saldo da caixinha, e depois dos reembolsos, na tela Gastos | RN-FIN-37 |
 | *Registrar um gasto que paguei* na Caixinha do participante | RN-FIN-26, que já valia pela API |
 | Confirmação antes de toda ação crítica | RNF-12 |
