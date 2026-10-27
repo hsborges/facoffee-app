@@ -430,6 +430,8 @@ export const confirmarComprovante = (
   test.step(`Gestor confirma o comprovante de R$ ${valor} com R$ ${confirmado}`, async () => {
     const conferencia = await conferir(gestor, nome, valor);
     await conferencia.getByTestId('valor').fill(confirmado);
+    // After the valor: correcting it unchecks its step (RN-FIN-36).
+    for (const item of await conferencia.getByTestId('item-a-conferir').all()) await item.check();
     await conferencia.getByTestId('confirmar').click();
   });
 

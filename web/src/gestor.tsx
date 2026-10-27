@@ -111,17 +111,14 @@ export const creditoOuPendencia = (situacao: CreditoEPendente) =>
       ? `Crédito: ${emReais(situacao.creditoEmCentavos)}`
       : 'Em dia';
 
-/** RN-FIN-36: what the gestor checks in the comprovante of `nome`, who owes `pendente`. */
-export const listaDeConferencia = (
-  nome: string,
-  valorInformadoEmCentavos: number,
-  pendenteEmCentavos: number,
-) => [
-  valorInformadoEmCentavos === pendenteEmCentavos
-    ? `O valor informado, ${emReais(valorInformadoEmCentavos)}, é o que ${nome} deve.`
-    : `O valor informado é ${emReais(valorInformadoEmCentavos)}; ${nome} deve ${emReais(pendenteEmCentavos)}.`,
-  'A data é deste mês.',
-  `O valor no comprovante bate com o informado. Pode ser de outra pessoa: o pagamento é de ${nome}.`,
+/**
+ * RN-FIN-36: the steps the gestor checks in the comprovante before confirmar it, each the opposite
+ * of a motivo comum; the valor is the one to confirmar.
+ */
+export const listaDeConferencia = (valorEmCentavos: number) => [
+  'É um comprovante de PIX, legível',
+  `O valor é ${emReais(valorEmCentavos)}`,
+  'A data é deste mês',
 ];
 
 /** RN-FIN-36: the motivos that fill the motivo da recusa. */
@@ -484,7 +481,17 @@ const Conferencia = ({
 }) => {
   const [valor, setValor] = useState(emReais(comprovante.valorEmCentavos));
   const [motivo, setMotivo] = useState('');
-  const pendente = situacao?.pendenteEmCentavos ?? 0;
+  // The steps checked, by their text: a corrected valor changes its step, which is unchecked.
+  const [conferidos, setConferidos] = useState<ReadonlySet<string>>(new Set());
+  const lista = listaDeConferencia(valor ? emCentavos(valor) : 0);
+  const conferido = lista.every((item) => conferidos.has(item));
+  const marcar = (item: string, marcado: boolean) =>
+    setConferidos((antes) => {
+      const depois = new Set(antes);
+      if (marcado) depois.add(item);
+      else depois.delete(item);
+      return depois;
+    });
   const confirmar = aoEnviar(() =>
     fazer(
       () => confirmarComprovante(token, comprovante, emCentavos(valor)),
@@ -524,14 +531,22 @@ const Conferencia = ({
             </small>
           </p>
         </div>
-        <fieldset className="cartao">
+        <fieldset className="cartao" aria-describedby="de-outra-pessoa">
           <legend>Confira no comprovante</legend>
-          {listaDeConferencia(nome, comprovante.valorEmCentavos, pendente).map((item) => (
+          {lista.map((item) => (
             <label key={item} className="opcao">
-              <input type="checkbox" data-testid="item-a-conferir" />
+              <input
+                type="checkbox"
+                data-testid="item-a-conferir"
+                checked={conferidos.has(item)}
+                onChange={(evento) => marcar(item, evento.target.checked)}
+              />
               <span>{item}</span>
             </label>
           ))}
+          <p id="de-outra-pessoa" className="nota">
+            O PIX pode ter saído da conta de outra pessoa: o pagamento é de {nome}.
+          </p>
         </fieldset>
         <form onSubmit={confirmar}>
           <CampoValor
@@ -540,10 +555,21 @@ const Conferencia = ({
             aoMudar={setValor}
             ajuda="Corrija se o comprovante mostrar outro valor."
           />
-          <button type="submit" className="largo" data-testid="confirmar" disabled={enviando}>
+          <button
+            type="submit"
+            className="largo"
+            data-testid="confirmar"
+            disabled={enviando || !conferido}
+            aria-describedby={conferido ? undefined : 'falta-conferir'}
+          >
             <Icone nome="check" />
             Confirmar {emReais(valor ? emCentavos(valor) : 0)}
           </button>
+          {!conferido && (
+            <p id="falta-conferir" className="nota">
+              Marque os itens da lista para confirmar.
+            </p>
+          )}
         </form>
         <details className="recusa">
           <summary className="botao contorno largo" data-testid="abrir-recusa">

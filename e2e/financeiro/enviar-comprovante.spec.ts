@@ -220,17 +220,32 @@ test.describe('RF-FIN-02 Enviar comprovante', () => {
     });
   });
 
-  test('RN-FIN-36: o gestor confere o comprovante com uma lista e recusa com um motivo comum', {
+  test('RN-FIN-36: o gestor só confirma o comprovante depois de conferir a lista, e recusa com um motivo comum', {
     tag: '@celular',
   }, async ({ browser }) => {
     const { pessoa, participante, gestor } = await participanteEGestor(browser);
     await enviarComprovante(participante, '13,00');
 
     await conferirComprovantes(gestor);
-    await test.step('O gestor vê a lista do que conferir', async () => {
+    await test.step('O gestor só confirma depois de marcar todos os passos da lista', async () => {
       const conferencia = await conferir(gestor, pessoa.nome, '13,00');
-      await expect(conferencia.getByTestId('item-a-conferir')).toHaveCount(3);
+      const itens = conferencia.getByTestId('item-a-conferir');
+      const confirmar = conferencia.getByTestId('confirmar');
+      await expect(itens).toHaveCount(3);
       await semRolagemHorizontal(gestor);
+      for (const item of await itens.all()) {
+        await expect(confirmar).toBeDisabled();
+        await item.check();
+      }
+      await expect(confirmar).toBeEnabled();
+    });
+    await test.step('Corrigir o valor desmarca o passo do valor', async () => {
+      const conferencia = gestor.getByTestId('conferencia');
+      await conferencia.getByTestId('valor').fill('12,00');
+      await expect(conferencia.getByTestId('confirmar')).toBeDisabled();
+      await expect(
+        conferencia.locator('[data-testid="item-a-conferir"]:not(:checked)'),
+      ).toHaveCount(1);
     });
     await recusarComprovante(gestor, pessoa.nome, '13,00', 'Comprovante de outro mês', {
       comum: true,

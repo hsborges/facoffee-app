@@ -145,15 +145,13 @@ describe('creditoOuPendencia', () => {
 });
 
 describe('listaDeConferencia', () => {
-  it('RN-FIN-36: what to check in the comprovante, with the valor informado and the pendente', () => {
-    expect(listaDeConferencia('Ana', 3000, 3000)).toEqual([
-      'O valor informado, R$\u00a030,00, é o que Ana deve.',
-      'A data é deste mês.',
-      'O valor no comprovante bate com o informado. Pode ser de outra pessoa: o pagamento é de Ana.',
+  it('RN-FIN-36: short steps to check in the comprovante, the valor being the one to confirmar', () => {
+    expect(listaDeConferencia(3000)).toEqual([
+      'É um comprovante de PIX, legível',
+      'O valor é R$\u00a030,00',
+      'A data é deste mês',
     ]);
-    expect(listaDeConferencia('Ana', 9000, 3000)[0]).toBe(
-      'O valor informado é R$\u00a090,00; Ana deve R$\u00a030,00.',
-    );
+    expect(listaDeConferencia(2550)[1]).toBe('O valor é R$\u00a025,50');
   });
 });
 
