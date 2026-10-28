@@ -229,9 +229,7 @@ it('receives a pagamento por PIX and publishes Pagamento recebido, once per comp
         comprovanteId,
       }),
     });
-  const recebido = await receber();
-  expect(recebido.status).toBe(201);
-  const { id } = (await recebido.json()) as { id: string };
+  expect((await receber()).status).toBe(204);
   expect((await receber()).status).toBe(409);
 
   expect(await eventually(async () => publicados.length > 0)).toBe(true);
@@ -239,7 +237,7 @@ it('receives a pagamento por PIX and publishes Pagamento recebido, once per comp
   expect(publicados).toMatchObject([
     {
       type: 'finance.payment-received',
-      payload: { paymentId: id, participantId: participante, amountInCents: 3000, method: 'pix' },
+      payload: { participantId: participante, amountInCents: 3000, method: 'pix' },
     },
   ]);
 });
@@ -261,8 +259,8 @@ it('receives repeated pagamentos em dinheiro, only from a participante Financeir
       },
       body: JSON.stringify({ participanteId, valorEmCentavos: 1500, forma: 'dinheiro' }),
     });
-  expect((await receber(participante)).status).toBe(201);
-  expect((await receber(participante)).status).toBe(201);
+  expect((await receber(participante)).status).toBe(204);
+  expect((await receber(participante)).status).toBe(204);
 
   const desconhecido = await receber(randomUUID());
   expect(desconhecido.status).toBe(404);
@@ -285,7 +283,7 @@ it('turns a pagamento adiantado into crédito, abatido by the next cotas, across
 
   publicar(entrou(participante));
   publicar(cotaDevida(participante, '2026-11'));
-  await quando({ ativo: true, creditoEmCentavos: 0, pendenteEmCentavos: 3000 });
+  await quando({ participando: true, creditoEmCentavos: 0, pendenciaEmCentavos: 3000 });
 
   const pago = await fetch(`${url}/receber-pagamento`, {
     method: 'POST',
@@ -296,17 +294,17 @@ it('turns a pagamento adiantado into crédito, abatido by the next cotas, across
       forma: 'dinheiro',
     }),
   });
-  expect(pago.status).toBe(201);
-  await quando({ ativo: true, creditoEmCentavos: 6000, pendenteEmCentavos: 0 });
+  expect(pago.status).toBe(204);
+  await quando({ participando: true, creditoEmCentavos: 6000, pendenciaEmCentavos: 0 });
 
   publicar(cotaDevida(participante, '2026-12'));
   publicar(saiu(participante));
-  await quando({ ativo: false, creditoEmCentavos: 3000, pendenteEmCentavos: 0 });
+  await quando({ participando: false, creditoEmCentavos: 3000, pendenciaEmCentavos: 0 });
 
   publicar(entrou(participante));
   publicar(cotaDevida(participante, '2027-03'));
   publicar(cotaDevida(participante, '2027-04'));
-  await quando({ ativo: true, creditoEmCentavos: 0, pendenteEmCentavos: 3000 });
+  await quando({ participando: true, creditoEmCentavos: 0, pendenciaEmCentavos: 3000 });
   expect(await situacao()).toMatchObject({
     cotas: ['2027-04', '2027-03', '2026-12', '2026-11'].map((mes) => ({
       mes,
@@ -319,7 +317,7 @@ it('turns a pagamento adiantado into crédito, abatido by the next cotas, across
   const todos = (await (await fetch(`${url}/participante`, { headers: gestor })).json()) as {
     id: string;
   }[];
-  expect(todos.find((p) => p.id === participante)).toMatchObject({ pendenteEmCentavos: 3000 });
+  expect(todos.find((p) => p.id === participante)).toMatchObject({ pendenciaEmCentavos: 3000 });
   expect(
     (await fetch(`${url}/participante`, { headers: { 'x-user-id': participante } })).status,
   ).toBe(403);
@@ -361,8 +359,8 @@ it('registers a gasto do próprio bolso with its own nota, once per nota, by a k
   expect(comNotaAlheia.status).toBe(404);
   expect(await comNotaAlheia.json()).toEqual({ error: 'nota-nao-encontrada' });
   const desconhecido = await registrar(outro, await guardarNota(outro));
-  expect(desconhecido.status).toBe(404);
-  expect(await desconhecido.json()).toEqual({ error: 'participante-nao-encontrado' });
+  expect(desconhecido.status).toBe(409);
+  expect(await desconhecido.json()).toEqual({ error: 'nunca-participou' });
 
   const registrado = await registrar(participante);
   expect(registrado.status).toBe(201);
@@ -377,7 +375,7 @@ it('registers a gasto do próprio bolso with its own nota, once per nota, by a k
       origem: 'proprio-bolso',
       tipo: 'cafe',
       notaId,
-      feitoEm: expect.any(Date),
+      registradoEm: expect.any(Date),
     },
   ]);
 });
@@ -424,10 +422,7 @@ it('reembolsa a gasto do próprio bolso once and publishes Reembolso feito', asy
     });
 
   const [primeiro, concorrente] = await Promise.all([reembolsar(doBolso), reembolsar(doBolso)]);
-  expect([primeiro.status, concorrente.status].sort()).toEqual([201, 409]);
-  const { id } = (await (primeiro.status === 201 ? primeiro : concorrente).json()) as {
-    id: string;
-  };
+  expect([primeiro.status, concorrente.status].sort()).toEqual([204, 409]);
   expect((await reembolsar(doBolso)).status).toBe(409);
   expect((await reembolsar(await registrar('caixinha'))).status).toBe(409);
   expect((await reembolsar(randomUUID())).status).toBe(404);
@@ -448,7 +443,6 @@ it('reembolsa a gasto do próprio bolso once and publishes Reembolso feito', asy
     {
       type: 'finance.reimbursement-made',
       payload: {
-        reimbursementId: id,
         expenseId: doBolso,
         participantId: participante,
         amountInCents: 4590,
@@ -512,7 +506,7 @@ it('keeps Saldo da caixinha and Gastos do ano anterior, with gastos pela caixinh
   const gasto = (
     valorEmCentavos: number,
     origem: 'caixinha' | 'proprio-bolso',
-    feitoEm: string,
+    registradoEm: string,
     tipo: 'cafe' | 'reposicao' = 'cafe',
   ) => ({
     id: randomUUID(),
@@ -521,7 +515,7 @@ it('keeps Saldo da caixinha and Gastos do ano anterior, with gastos pela caixinh
     origem,
     tipo,
     notaId: randomUUID(),
-    feitoEm: new Date(feitoEm),
+    registradoEm: new Date(registradoEm),
   });
   await database.db.insert(gastos).values([
     gasto(700, 'caixinha', `${ano + 1}-01-01T03:59:00Z`), // 31/12 23:59 in Campo Grande
@@ -596,7 +590,7 @@ it('sums the Caixinha do mês per tipo de gasto, matching the Saldo da caixinha'
     origem: 'caixinha',
     tipo: 'cafe',
     notaId: randomUUID(),
-    feitoEm: new Date(`${mes}-01T03:59:00Z`),
+    registradoEm: new Date(`${mes}-01T03:59:00Z`),
   });
 
   const depois = await doMes();
@@ -665,8 +659,7 @@ it('divides a complemento among the participantes ativos and abate the crédito 
     headers: { ...gestor, 'content-type': 'application/json' },
     body: JSON.stringify({ valorEmCentavos: valorTotal }),
   });
-  expect(solicitado.status).toBe(201);
-  const { id } = (await solicitado.json()) as { id: string };
+  expect(solicitado.status).toBe(204);
   publicar(entrou(entrouDepois));
   publicar(saiu(pendente));
 
@@ -679,7 +672,7 @@ it('divides a complemento among the participantes ativos and abate the crédito 
       shares: { participantId: string; amountInCents: number }[];
     }
   >;
-  expect(payload).toMatchObject({ topUpId: id, totalAmountInCents: valorTotal });
+  expect(payload).toMatchObject({ totalAmountInCents: valorTotal });
   expect(payload.shares.map((s) => s.participantId)).toEqual(ativos);
   expect(payload.shares.reduce((total, s) => total + s.amountInCents, 0)).toBe(valorTotal);
   const parte = (quem: string) =>
@@ -688,17 +681,21 @@ it('divides a complemento among the participantes ativos and abate the crédito 
 
   const situacao = async (quem: string) =>
     (await fetch(`${url}/participante/eu`, { headers: { 'x-user-id': quem } })).json();
-  expect(await eventually(async () => (await situacao(entrouDepois)).ativo === true)).toBe(true);
-  expect(await eventually(async () => (await situacao(pendente)).ativo === false)).toBe(true);
+  expect(await eventually(async () => (await situacao(entrouDepois)).participando === true)).toBe(
+    true,
+  );
+  expect(await eventually(async () => (await situacao(pendente)).participando === false)).toBe(
+    true,
+  );
   expect(await situacao(comCredito)).toMatchObject({
     creditoEmCentavos: 10000 - (parte(comCredito) ?? 0),
   });
   expect(await situacao(pendente)).toMatchObject({
-    pendenteEmCentavos: 3000 + (parte(pendente) ?? 0),
-    complementos: [{ id, parteEmCentavos: parte(pendente) }],
+    pendenciaEmCentavos: 3000 + (parte(pendente) ?? 0),
+    complementos: [{ id: payload.topUpId, parteEmCentavos: parte(pendente) }],
   });
-  expect(await situacao(entrouDepois)).toMatchObject({ pendenteEmCentavos: 0 });
-  expect(await situacao(saiuAntes)).toMatchObject({ pendenteEmCentavos: 0 });
+  expect(await situacao(entrouDepois)).toMatchObject({ pendenciaEmCentavos: 0 });
+  expect(await situacao(saiuAntes)).toMatchObject({ pendenciaEmCentavos: 0 });
 });
 
 it('counts a comprovante enviado as pagamento only once confirmado, for the valor confirmado', async () => {
@@ -725,8 +722,8 @@ it('counts a comprovante enviado as pagamento only once confirmado, for the valo
   const ler = async <T>(caminho: string, headers: Record<string, string> = doParticipante) =>
     (await (await fetch(`${url}${caminho}`, { headers })).json()) as T;
   const situacao = () =>
-    ler<{ pendenteEmCentavos: number; creditoEmCentavos: number }>('/participante/eu');
-  expect(await eventually(async () => (await situacao()).pendenteEmCentavos === 3000)).toBe(true);
+    ler<{ pendenciaEmCentavos: number; creditoEmCentavos: number }>('/participante/eu');
+  expect(await eventually(async () => (await situacao()).pendenciaEmCentavos === 3000)).toBe(true);
   const comandar = (caminho: string, headers: Record<string, string>, body?: unknown) =>
     fetch(`${url}${caminho}`, {
       method: 'POST',
@@ -776,14 +773,13 @@ it('counts a comprovante enviado as pagamento only once confirmado, for the valo
   expect(aConfirmar).not.toContain(cancelado.id);
   // Before the confirmação, neither the situação nor the saldo changes.
   const saldoAntes = await saldo();
-  expect(await situacao()).toMatchObject({ pendenteEmCentavos: 3000 });
+  expect(await situacao()).toMatchObject({ pendenciaEmCentavos: 3000 });
 
   const confirmou = await comandar(`/comprovante-enviado/${confirmado.id}/confirmar`, gestor, {
     valorEmCentavos: 5000,
     comprovanteId: confirmado.comprovanteId,
   });
-  expect(confirmou.status).toBe(201);
-  const { id: pagamentoId } = (await confirmou.json()) as { id: string };
+  expect(confirmou.status).toBe(204);
   const recusar = (id: string, motivo: string) =>
     comandar(`/comprovante-enviado/${id}/recusar`, gestor, { motivo });
   expect((await recusar(recusado.id, '')).status).toBe(400);
@@ -798,11 +794,11 @@ it('counts a comprovante enviado as pagamento only once confirmado, for the valo
     recusar(disputado.id, 'Repetido'),
   ]);
   expect(disputa.filter((r) => r.status === 409)).toHaveLength(1);
-  const extra = disputa[0]?.status === 201 ? 1000 : 0;
+  const extra = disputa[0]?.status === 204 ? 1000 : 0;
 
   expect(await situacao()).toMatchObject({
     creditoEmCentavos: 2000 + extra,
-    pendenteEmCentavos: 0,
+    pendenciaEmCentavos: 0,
   });
   expect((await saldo()) - saldoAntes).toBe(5000 + extra);
   expect(await ler('/comprovante-enviado/eu')).toMatchObject([
@@ -825,7 +821,7 @@ it('counts a comprovante enviado as pagamento only once confirmado, for the valo
   const pagamentos = doTipo('finance.payment-received');
   expect(pagamentos).toHaveLength(extra ? 2 : 1);
   expect(pagamentos[0]).toMatchObject({
-    payload: { paymentId: pagamentoId, participantId: participante, amountInCents: 5000 },
+    payload: { participantId: participante, amountInCents: 5000 },
   });
   // Edição and cancelamento publish nothing; the repeated envio was not saved.
   expect(doTipo('finance.receipt-sent').map((e) => e.payload)).toEqual(
@@ -890,7 +886,7 @@ it('keeps a comprovante enviado to an arquivo no pagamento used and to the versi
     forma: 'pix',
     comprovanteId: recebido,
   });
-  expect(pagamento.status).toBe(201);
+  expect(pagamento.status).toBe(204);
   const reenviado = await comandar('/enviar-comprovante', doParticipante, {
     valorEmCentavos: 3000,
     comprovanteId: recebido,

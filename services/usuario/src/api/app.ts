@@ -3,6 +3,7 @@ import type { Result } from '../domain/result.js';
 import {
   type DesativarErro,
   perfisDos,
+  type ReativarErro,
   type SemPermissao,
   type Usuario,
   type UsuarioRegistrado,
@@ -26,10 +27,12 @@ export type ApiDependencies = {
   readonly reativar: (
     solicitante: Pick<Usuario, 'perfis'>,
     usuarioId: string,
-  ) => Promise<Result<void, SemPermissao>>;
+  ) => Promise<Result<void, ReativarErro>>;
   readonly health: () => Promise<Readonly<Record<string, boolean>>>;
   readonly logger: Logger;
 };
+
+const STATUS_DO_ERRO = { 'sem-permissao': 403, 'usuario-nao-encontrado': 404 } as const;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -78,7 +81,7 @@ export const createApp = ({
     })
     .onError((error, c) => {
       logger.error('unhandled error', { error });
-      return c.json({ error: 'internal-error' }, 500);
+      return c.json({ error: 'erro-interno' }, 500);
     })
     .get('/health', async (c) => {
       const dependencies = await health();
@@ -87,12 +90,12 @@ export const createApp = ({
     })
     .get('/eu', (c) => {
       const usuario = usuarioLogado(c);
-      return usuario ? c.json(usuario) : c.json({ error: 'unauthorized' }, 401);
+      return usuario ? c.json(usuario) : c.json({ error: 'nao-autenticado' }, 401);
     })
     // Traefik ForwardAuth target (ADR 0011): any non-2xx response stops the request.
     .all('/acesso', async (c) => {
       const usuario = usuarioLogado(c);
-      if (!usuario) return c.json({ error: 'unauthorized' }, 401);
+      if (!usuario) return c.json({ error: 'nao-autenticado' }, 401);
       if (UUID.test(usuario.id) && (await registrarAcesso(usuario)) === 'desativado') {
         return c.json({ error: 'acesso-desativado' }, 403);
       }
@@ -100,34 +103,40 @@ export const createApp = ({
     })
     .get('/', async (c) => {
       const solicitante = usuarioLogado(c);
-      if (!solicitante) return c.json({ error: 'unauthorized' }, 401);
+      if (!solicitante) return c.json({ error: 'nao-autenticado' }, 401);
       const result = await listar(solicitante);
       return result.ok ? c.json(result.value) : c.json({ error: result.error }, 403);
     })
     // Internal: the gateway has no route here and always sends X-User-Id, so a request carrying
     // it came through the gateway somehow and is refused.
     .get('/contato/gestor', async (c) =>
-      c.req.header('x-user-id') ? c.json({ error: 'not-found' }, 404) : c.json(await gestores()),
+      c.req.header('x-user-id')
+        ? c.json({ error: 'nao-encontrado' }, 404)
+        : c.json(await gestores()),
     )
     .get('/contato/:id', async (c) => {
       const id = c.req.param('id');
       const encontrado =
         !c.req.header('x-user-id') && UUID.test(id) ? await contato(id) : undefined;
-      return encontrado ? c.json(encontrado) : c.json({ error: 'not-found' }, 404);
+      return encontrado ? c.json(encontrado) : c.json({ error: 'nao-encontrado' }, 404);
     })
     .post('/:id/desativar', async (c) => {
       const solicitante = usuarioLogado(c);
-      if (!solicitante) return c.json({ error: 'unauthorized' }, 401);
+      if (!solicitante) return c.json({ error: 'nao-autenticado' }, 401);
       const id = c.req.param('id');
-      if (!UUID.test(id)) return c.json({ error: 'not-found' }, 404);
-      const result = await desativar(solicitante, id);
-      return result.ok ? c.body(null, 204) : c.json({ error: result.error }, 403);
+      if (!UUID.test(id)) return c.json({ error: 'usuario-nao-encontrado' }, 404);
+      const result = await desativar(solicitante, id.toLowerCase());
+      return result.ok
+        ? c.body(null, 204)
+        : c.json({ error: result.error }, STATUS_DO_ERRO[result.error]);
     })
     .post('/:id/reativar', async (c) => {
       const solicitante = usuarioLogado(c);
-      if (!solicitante) return c.json({ error: 'unauthorized' }, 401);
+      if (!solicitante) return c.json({ error: 'nao-autenticado' }, 401);
       const id = c.req.param('id');
-      if (!UUID.test(id)) return c.json({ error: 'not-found' }, 404);
-      const result = await reativar(solicitante, id);
-      return result.ok ? c.body(null, 204) : c.json({ error: result.error }, 403);
+      if (!UUID.test(id)) return c.json({ error: 'usuario-nao-encontrado' }, 404);
+      const result = await reativar(solicitante, id.toLowerCase());
+      return result.ok
+        ? c.body(null, 204)
+        : c.json({ error: result.error }, STATUS_DO_ERRO[result.error]);
     });

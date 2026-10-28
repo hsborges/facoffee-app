@@ -8,7 +8,7 @@ describe('perfisDos', () => {
   it('keeps only the FACOFFEE perfis', () => {
     expect(
       perfisDos(['default-roles-facoffee', 'participante', 'offline_access', 'gestor']),
-    ).toEqual(['gestor', 'participante']);
+    ).toEqual(['gestor']);
   });
 
   it('no perfil when the usuário has none of them', () => {
@@ -18,11 +18,11 @@ describe('perfisDos', () => {
 
 describe('somenteGestor', () => {
   it('accepts the gestor and refuses everyone else', () => {
-    expect(somenteGestor({ perfis: ['gestor', 'participante'] })).toEqual({
+    expect(somenteGestor({ perfis: ['gestor'] })).toEqual({
       ok: true,
       value: undefined,
     });
-    expect(somenteGestor({ perfis: ['participante'] })).toEqual({
+    expect(somenteGestor({ perfis: [] })).toEqual({
       ok: false,
       error: 'sem-permissao',
     });
@@ -52,12 +52,12 @@ describe('desativar', () => {
   });
 
   it('RN-USU-01: the participante deactivates their own access', () => {
-    const solicitante = { id: participante, perfis: ['participante'] as const };
+    const solicitante = { id: participante, perfis: [] as const };
     expect(desativar(solicitante, participante, contexto).ok).toBe(true);
   });
 
   it('RN-USU-01: only the gestor deactivates someone else', () => {
-    const solicitante = { id: gestor, perfis: ['participante'] as const };
+    const solicitante = { id: gestor, perfis: [] as const };
     expect(desativar(solicitante, participante, contexto)).toEqual({
       ok: false,
       error: 'sem-permissao',

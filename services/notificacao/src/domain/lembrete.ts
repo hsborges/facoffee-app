@@ -3,7 +3,7 @@ import { type Aviso, emReais, positivo, uuid } from './aviso.js';
 /** A participante ativo who is pendente, as told by Financeiro, with their most recent cota. */
 export type Pendente = {
   readonly id: string;
-  readonly pendenteEmCentavos: number;
+  readonly pendenciaEmCentavos: number;
   readonly cota: { readonly mes: string; readonly valorEmCentavos: number } | null;
 };
 
@@ -34,7 +34,7 @@ export const pendentesDe = (resposta: unknown): readonly Pendente[] | undefined 
     resposta.every(
       (p) =>
         uuid(p?.id) &&
-        positivo(p.pendenteEmCentavos) &&
+        positivo(p.pendenciaEmCentavos) &&
         (p.cota === null ||
           (typeof p.cota?.mes === 'string' &&
             MES.test(p.cota.mes) &&
@@ -66,22 +66,22 @@ export const diaEmCampoGrande = (agora: Date): Quando => {
 
 const ACERTAR = 'Quando puder, acerte com o gestor, por PIX ou em dinheiro.';
 
-const avisoDaCota = (id: string, pendenteEmCentavos: number, mes: string, valor: number) => {
+const avisoDaCota = (id: string, pendenciaEmCentavos: number, mes: string, valor: number) => {
   const mesPorExtenso = formatoDoMes.format(new Date(`${mes}-15T00:00:00Z`));
   return {
     participanteId: id,
     assunto: `Cota de ${mesPorExtenso}`,
     texto:
       `A cota de ${mesPorExtenso}, de ${emReais(valor)}, já está devida. ` +
-      `Hoje, você tem ${emReais(pendenteEmCentavos)} pendente. ${ACERTAR}`,
+      `Hoje, você tem ${emReais(pendenciaEmCentavos)} pendente. ${ACERTAR}`,
   };
 };
 
-const lembrete = (id: string, pendenteEmCentavos: number) => ({
+const lembrete = (id: string, pendenciaEmCentavos: number) => ({
   participanteId: id,
   assunto: 'Lembrete da copa',
   texto:
-    `Só um lembrete: você tem ${emReais(pendenteEmCentavos)} pendente. ${ACERTAR} ` +
+    `Só um lembrete: você tem ${emReais(pendenciaEmCentavos)} pendente. ${ACERTAR} ` +
     'Se já acertou, desconsidere este e-mail.',
 });
 
@@ -102,19 +102,19 @@ export const lembretesDevidos = (
   if (hora < horaDosLembretes) return [];
   const registrado = (participanteId: string, tipo: TipoDeLembrete) =>
     registrados.some((r) => r.participanteId === participanteId && r.tipo === tipo);
-  return pendentes.flatMap(({ id, pendenteEmCentavos, cota }): Lembrete[] => {
+  return pendentes.flatMap(({ id, pendenciaEmCentavos, cota }): Lembrete[] => {
     const lembrar = dia >= DIA_DO_LEMBRETE && !registrado(id, 'lembrete');
     if (cota?.mes === mes && !registrado(id, 'cota-devida'))
       return [
         {
           participanteId: id,
           tipo: 'cota-devida',
-          aviso: avisoDaCota(id, pendenteEmCentavos, mes, cota.valorEmCentavos),
+          aviso: avisoDaCota(id, pendenciaEmCentavos, mes, cota.valorEmCentavos),
         },
         ...(lembrar ? [{ participanteId: id, tipo: 'lembrete' as const }] : []),
       ];
     return lembrar
-      ? [{ participanteId: id, tipo: 'lembrete', aviso: lembrete(id, pendenteEmCentavos) }]
+      ? [{ participanteId: id, tipo: 'lembrete', aviso: lembrete(id, pendenciaEmCentavos) }]
       : [];
   });
 };

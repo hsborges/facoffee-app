@@ -17,13 +17,13 @@ Guardados num bucket S3 ([ADR 0018](../../docs/adr/0018-armazenamento-de-comprov
 | Rota | Quem |
 |---|---|
 | `POST /guardar-comprovante` (com `participanteId`) → `201 { id }` | o gestor, para qualquer participante; o participante, só para si ([ADR 0030](../../docs/adr/0030-pagamento-iniciado-pelo-participante.md)) |
-| `POST /guardar-nota` → `201 { id }` | qualquer participante |
-| `GET /comprovante/:id` | o participante do comprovante e o gestor; outros recebem 404 |
-| `GET /nota/:id` | qualquer participante |
+| `POST /guardar-nota` → `201 { id }` | qualquer usuário logado; só um participante registra o gasto com ela |
+| `GET /comprovante/:id` | o participante do comprovante e o gestor; outros recebem 404 (`comprovante-nao-encontrado`) |
+| `GET /nota/:id` | qualquer usuário logado; inexistente, 404 (`nota-nao-encontrada`) |
 
 ## Receber pagamento
 
-`POST /receber-pagamento` (só o gestor), em JSON: `participanteId` (quem tem as cotas quitadas, mesmo que outra pessoa tenha pago; um pagamento por participante), `valorEmCentavos`, `forma` (`pix` ou `dinheiro`) e, no PIX, `comprovanteId` (o `id` de `/guardar-comprovante`). Responde `201 { id }` e publica *Pagamento recebido* pela outbox. Todo pagamento entra na caixinha (ver [Caixinha](#caixinha)).
+`POST /receber-pagamento` (só o gestor), em JSON: `participanteId` (quem tem as cotas quitadas, mesmo que outra pessoa tenha pago; um pagamento por participante), `valorEmCentavos`, `forma` (`pix` ou `dinheiro`) e, no PIX, `comprovanteId` (o `id` de `/guardar-comprovante`). Responde `204` e publica *Pagamento recebido* pela outbox. Todo pagamento entra na caixinha (ver [Caixinha](#caixinha)).
 
 | Recusa | Status |
 |---|---|
@@ -39,10 +39,10 @@ O participante envia o próprio comprovante, que fica a confirmar até o gestor 
 
 | Rota | Quem | Resposta |
 |---|---|---|
-| `POST /enviar-comprovante`, JSON `{ valorEmCentavos, comprovanteId }` (o `id` de `/guardar-comprovante`, guardado para si) | o participante | `201 { id }`; publica *Comprovante enviado* pela outbox ([ADR 0031](../../docs/adr/0031-avisos-do-comprovante-enviado.md)) |
+| `POST /enviar-comprovante`, JSON `{ valorEmCentavos, comprovanteId }` (o `id` de `/guardar-comprovante`, guardado para si) | o participante, inclusive quem saiu | `201 { id }`; publica *Comprovante enviado* pela outbox ([ADR 0031](../../docs/adr/0031-avisos-do-comprovante-enviado.md)) |
 | `POST /comprovante-enviado/:id/editar`, JSON `{ valorEmCentavos, comprovanteId }` (o mesmo ou outro arquivo guardado para si) | o participante do comprovante | `204` |
 | `POST /comprovante-enviado/:id/cancelar` | o participante do comprovante | `204` |
-| `POST /comprovante-enviado/:id/confirmar`, JSON `{ valorEmCentavos, comprovanteId }` (o valor confirmado, que pode corrigir o informado, e o arquivo conferido) | só o gestor | `201 { id }` do pagamento; publica *Pagamento recebido* pela outbox |
+| `POST /comprovante-enviado/:id/confirmar`, JSON `{ valorEmCentavos, comprovanteId }` (o valor confirmado, que pode corrigir o informado, e o arquivo conferido) | só o gestor | `204`; publica *Pagamento recebido* pela outbox |
 | `POST /comprovante-enviado/:id/recusar`, JSON `{ motivo }` (até 500 caracteres) | só o gestor | `204`; publica *Comprovante recusado* pela outbox |
 | `GET /comprovante-enviado` → `200 [{ id, participanteId, comprovanteId, valorEmCentavos, enviadoEm, situacao }]`, os a confirmar, do mais antigo ao mais recente | só o gestor (os demais, 403) | |
 | `GET /comprovante-enviado/eu` → `200 [...]`, os próprios, do mais recente ao mais antigo, com `valorConfirmadoEmCentavos` no confirmado e `motivo` no recusado | o participante | |
@@ -51,7 +51,8 @@ O participante envia o próprio comprovante, que fica a confirmar até o gestor 
 |---|---|
 | sem valor inteiro positivo, sem `comprovanteId` ou recusa sem `motivo` (`pedido-invalido`); motivo em branco (`recusa-sem-motivo`) | 400 |
 | confirmar ou recusar sem ser o gestor (`sem-permissao`) | 403 |
-| arquivo não guardado para quem envia (`comprovante-nao-encontrado`); quem envia não é um participante que Financeiro conhece (`participante-nao-encontrado`) | 404 |
+| arquivo não guardado para quem envia (`comprovante-nao-encontrado`) | 404 |
+| quem envia nunca participou (`nunca-participou`) | 409 |
 | comprovante que não existe ou, ao editar e cancelar, de outro participante (`comprovante-enviado-nao-encontrado`) | 404 |
 | comprovante já confirmado ou recusado (`comprovante-ja-analisado`) | 409 |
 | ao confirmar, arquivo trocado pelo participante depois que o gestor o conferiu (`comprovante-alterado`) | 409 |
@@ -59,17 +60,17 @@ O participante envia o próprio comprovante, que fica a confirmar até o gestor 
 
 ## Registrar gasto
 
-`POST /registrar-gasto` (qualquer participante), em JSON: `valorEmCentavos` (o valor total), `origem` (`caixinha` ou `proprio-bolso`), `tipo` (`cafe`, `outros-itens`, `conserto-e-manutencao` ou `reposicao`; sem ele, 400) e `notaId` (o `id` de `/guardar-nota`, guardada por quem registra). Quem registra é quem pagou, e é quem recebe o reembolso no gasto do próprio bolso. Responde `201 { id }`. *Gasto feito* é interno: fica só na tabela `gastos`, sem publicar nada. O gasto do próprio bolso não sai da caixinha; só o reembolso sai (`saidaDaCaixinha` em `src/domain/gasto.ts`).
+`POST /registrar-gasto` (qualquer participante), em JSON: `valorEmCentavos` (o valor total), `origem` (`caixinha` ou `proprio-bolso`), `tipo` (`cafe`, `outros-itens`, `conserto-e-manutencao` ou `reposicao`; sem ele, 400) e `notaId` (o `id` de `/guardar-nota`, guardada por quem registra). Quem registra é quem pagou, e é quem recebe o reembolso no gasto do próprio bolso. Responde `201 { id }`, o id que `/gasto/:id/reembolsar` recebe. *Gasto feito* é interno: fica só na tabela `gastos`, sem publicar nada. O gasto do próprio bolso não sai da caixinha; só o reembolso sai (`saidaDaCaixinha` em `src/domain/gasto.ts`).
 
 | Recusa | Status |
 |---|---|
 | nota não guardada por quem registra (`nota-nao-encontrada`) | 404 |
-| quem registra não é um participante que Financeiro conhece (`participante-nao-encontrado`) | 404 |
+| quem registra nunca participou (`nunca-participou`) | 409 |
 | nota já usada em outro gasto (`nota-ja-usada`) | 409 |
 
 ## Reembolsar
 
-`POST /gasto/:id/reembolsar` (só o gestor), sem corpo. Devolve o valor total do gasto pago do próprio bolso a quem o registrou: responde `201 { id }` e publica *Reembolso feito* pela outbox. Fica na tabela `reembolsos`, onde o `gasto_id` único impede reembolsar o mesmo gasto duas vezes, mesmo com pedidos simultâneos. É aqui que o dinheiro do gasto do próprio bolso sai da caixinha.
+`POST /gasto/:id/reembolsar` (só o gestor), sem corpo. Devolve o valor total do gasto pago do próprio bolso a quem o registrou: responde `204` e publica *Reembolso feito* pela outbox. Fica na tabela `reembolsos`, onde o `gasto_id` único impede reembolsar o mesmo gasto duas vezes, mesmo com pedidos simultâneos. É aqui que o dinheiro do gasto do próprio bolso sai da caixinha.
 
 | Recusa | Status |
 |---|---|
@@ -80,26 +81,26 @@ O participante envia o próprio comprovante, que fica a confirmar até o gestor 
 
 ## Gastos
 
-`GET /gasto` (só o gestor; os demais, 403) → `200 [{ id, participanteId, valorEmCentavos, origem, tipo, notaId, feitoEm, reembolsado }]`, do mais recente ao mais antigo. É de onde o gestor escolhe o gasto a reembolsar; `reembolsado` é sempre `false` no gasto pago pela caixinha.
+`GET /gasto` (só o gestor; os demais, 403) → `200 [{ id, participanteId, valorEmCentavos, origem, tipo, notaId, registradoEm, reembolsado }]`, do mais recente ao mais antigo. É de onde o gestor escolhe o gasto a reembolsar; `reembolsado` é sempre `false` no gasto pago pela caixinha.
 
 ## Solicitar complemento
 
-`POST /solicitar-complemento` (só o gestor), em JSON: `valorEmCentavos` (o valor total, que o gestor calcula). Divide em partes iguais entre os participantes ativos no momento, inclusive os pendentes e sem olhar o tipo de cota; os centavos que sobram vão um para cada, na ordem do id, e a soma das partes é sempre o valor total. Responde `201 { id }` e publica *Complemento solicitado* pela outbox. Fica nas tabelas `complementos` e `partes`; cada parte é devida como uma cota, então quem entra depois não deve e quem sai depois continua devendo.
+`POST /solicitar-complemento` (só o gestor), em JSON: `valorEmCentavos` (o valor total, que o gestor calcula). Divide em partes iguais entre os participantes ativos no momento, inclusive os pendentes e sem olhar o tipo de cota; os centavos que sobram vão um para cada, na ordem do id, e a soma das partes é sempre o valor total. Responde `204` e publica *Complemento solicitado* pela outbox. Fica nas tabelas `complementos` e `partes`; cada parte é devida como uma cota, então quem entra depois não deve e quem sai depois continua devendo.
 
 | Recusa | Status |
 |---|---|
 | não é o gestor (`sem-permissao`) | 403 |
-| nenhum participante ativo (`sem-participantes-ativos`) | 409 |
+| nenhum participante ativo (`ninguem-participando`) | 409 |
 | valor menor que o número de participantes ativos (`parte-menor-que-um-centavo`) | 409 |
 
 ## Caixinha
 
-`GET /caixinha` (qualquer participante) → `200 { saldoEmCentavos, gastosDoAnoAnteriorEmCentavos, gastosDoAnoAnteriorPorTipoEmCentavos: { cafe, outros-itens, conserto-e-manutencao, reposicao } }`.
+`GET /caixinha` (qualquer usuário logado) → `200 { saldoEmCentavos, gastosDoAnoAnteriorEmCentavos, gastosDoAnoAnteriorPorTipoEmCentavos: { cafe, outros-itens, conserto-e-manutencao, reposicao } }`.
 
 - *Saldo da caixinha*: pagamentos recebidos − gastos pagos pela caixinha − reembolsos. O gasto do próprio bolso só sai no reembolso. Fica negativo quando os gastos passam do que entrou.
 - *Gastos do ano anterior*: soma de todos os gastos, de qualquer origem, feitos no ano anterior pelo horário de Campo Grande ([ADR 0015](../../docs/adr/0015-fuso-horario-do-dominio.md)), no total e por tipo de gasto. Só totais: não mostra a situação de ninguém.
 
-`GET /caixinha/:mes` (qualquer participante; `mes` em `AAAA-MM`, senão 404) → `200 { mes, saldoNoInicioEmCentavos, recebidoEmCentavos, gastosPorTipoEmCentavos: { cafe, outros-itens, conserto-e-manutencao, reposicao }, saldoNoFimEmCentavos }`, a leitura *Caixinha do mês*. O que saiu por tipo são os gastos pagos pela caixinha e os reembolsos feitos no mês, cada um pelo tipo do seu gasto; assim saldo no fim = saldo no início + recebido − gastos, e no mês atual é o saldo da caixinha. O mês vira pelo horário de Campo Grande. Só totais: não mostra a situação de ninguém.
+`GET /caixinha/:mes` (qualquer usuário logado; `mes` em `AAAA-MM`, senão 400) → `200 { mes, saldoNoInicioEmCentavos, recebidoEmCentavos, gastosPorTipoEmCentavos: { cafe, outros-itens, conserto-e-manutencao, reposicao }, saldoNoFimEmCentavos }`, a leitura *Caixinha do mês*. O que saiu por tipo são os gastos pagos pela caixinha e os reembolsos feitos no mês, cada um pelo tipo do seu gasto; assim saldo no fim = saldo no início + recebido − gastos, e no mês atual é o saldo da caixinha. O mês vira pelo horário de Campo Grande. Só totais: não mostra a situação de ninguém.
 
 ## Crédito e pendentes
 
@@ -107,9 +108,9 @@ Pagamentos recebidos − cotas devidas − partes de complementos: positivo é c
 
 | Rota | Quem |
 |---|---|
-| `GET /participante` → `200 [{ id, ativo, creditoEmCentavos, pendenteEmCentavos }]` | só o gestor (os demais, 403) |
-| `GET /participante/eu` → `200 { id, ativo, creditoEmCentavos, pendenteEmCentavos, cotas: [{ mes, tipoDeCota, valorEmCentavos }], complementos: [{ id, solicitadoEm, parteEmCentavos }] }`, cotas e partes da mais recente à mais antiga | o próprio participante; 404 se Financeiro não o conhece |
-| `GET /pendente` → `200 [{ id, pendenteEmCentavos, cota: { mes, tipoDeCota, valorEmCentavos } \| null }]`, só os participantes ativos pendentes, com a cota mais recente | rota interna, para Notificação lembrar os pendentes; fora do gateway e 404 com `X-User-Id` ([ADR 0027](../../docs/adr/0027-lembrete-aos-pendentes.md)) |
+| `GET /participante` → `200 [{ id, participando, creditoEmCentavos, pendenciaEmCentavos }]` | só o gestor (os demais, 403) |
+| `GET /participante/eu` → `200 { id, participando, creditoEmCentavos, pendenciaEmCentavos, cotas: [{ mes, tipoDeCota, valorEmCentavos }], complementos: [{ id, solicitadoEm, parteEmCentavos }] }`, cotas e partes da mais recente à mais antiga | o próprio participante; 404 se Financeiro não o conhece |
+| `GET /pendente` → `200 [{ id, pendenciaEmCentavos, cota: { mes, tipoDeCota, valorEmCentavos } \| null }]`, só os participantes ativos pendentes, com a cota mais recente | rota interna, para Notificação lembrar os pendentes; fora do gateway e 404 com `X-User-Id` ([ADR 0027](../../docs/adr/0027-lembrete-aos-pendentes.md)) |
 
 ## Eventos consumidos
 

@@ -28,7 +28,7 @@ export type Gasto = {
   readonly tipo: TipoDeGasto;
   /** The nota guardada with `/guardar-nota`. */
   readonly notaId: string;
-  readonly feitoEm: Date;
+  readonly registradoEm: Date;
 };
 
 /** What a participante informs when registering a gasto. */

@@ -28,7 +28,7 @@ export const listarCreditoEPendentes =
 /** A participante ativo who is pendente, with their most recent cota, if any. */
 export type Pendente = {
   readonly id: string;
-  readonly pendenteEmCentavos: number;
+  readonly pendenciaEmCentavos: number;
   readonly cota: Cota | null;
 };
 
@@ -41,12 +41,12 @@ export const listarPendentes =
   async (): Promise<readonly Pendente[]> => {
     const pendentes = (await buscarTotais())
       .map(situacao)
-      .filter((s) => s.ativo && s.pendenteEmCentavos > 0);
+      .filter((s) => s.participando && s.pendenciaEmCentavos > 0);
     // ponytail: one query per pendente; a few dozen participantes at most.
     return Promise.all(
-      pendentes.map(async ({ id, pendenteEmCentavos }) => ({
+      pendentes.map(async ({ id, pendenciaEmCentavos }) => ({
         id,
-        pendenteEmCentavos,
+        pendenciaEmCentavos,
         cota: (await buscarDevido(id)).cotas[0] ?? null,
       })),
     );

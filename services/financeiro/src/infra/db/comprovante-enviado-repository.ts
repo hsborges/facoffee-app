@@ -70,7 +70,7 @@ export const comprovanteEnviadoRepository = (db: Executor): ComprovantesEnviados
         .select({ id: participantes.id })
         .from(participantes)
         .where(eq(participantes.id, comprovante.participanteId));
-      if (!conhecido) return fail('participante-nao-encontrado' as const);
+      if (!conhecido) return fail('nunca-participou' as const);
       if (await usadoEmPagamento(tx, comprovante.comprovanteId)) {
         return fail('comprovante-ja-usado' as const);
       }

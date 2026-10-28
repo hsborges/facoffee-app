@@ -4,7 +4,8 @@ import { fail, ok, type Result } from '../domain/result.js';
 import type { Clock } from './pagamentos.js';
 
 /** Why a gasto was not saved. */
-export type SalvarGastoErro = 'participante-nao-encontrado' | 'nota-ja-usada';
+/** Why a gasto was not saved: who registers never participated, or the nota was already used. */
+export type SalvarGastoErro = 'nunca-participou' | 'nota-ja-usada';
 
 /** Persistence of gastos. */
 export type Gastos = {
@@ -51,7 +52,7 @@ export const registrarGasto =
       ...pedido,
       id: clock.newId(),
       participanteId: solicitante.id,
-      feitoEm: clock.now(),
+      registradoEm: clock.now(),
     };
     const salvo = await gastos.salvar(gasto);
     return salvo.ok ? ok(gasto.id) : salvo;

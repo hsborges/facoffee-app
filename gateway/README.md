@@ -12,7 +12,7 @@ Ponto de entrada HTTPS e, no ambiente local, HTTP (rede pública, [ADR 0022](../
 
 Toda rota `/api/*` exige `Authorization: Bearer <access token do Keycloak>`. Sem token ou com token inválido: 401. Com token válido, o serviço recebe `X-User-Id` (o `sub`), `X-User-Roles` (papéis do realm, separados por vírgula), `X-User-Name` (o `name`) e `X-User-Email` (o `email`); nome e e-mail vêm codificados com `encodeURIComponent` ([ADR 0008](../docs/adr/0008-dados-do-usuario-logado.md)). Header ausente no token vai vazio. Em seguida, o serviço Usuário registra o usuário e confere se o acesso foi desativado: 403 e a requisição para ([ADR 0011](../docs/adr/0011-acesso-desativado.md), [ADR 0012](../docs/adr/0012-registro-do-usuario-no-primeiro-acesso.md)).
 
-Rotas, respostas e autenticação estão em [`openapi.yaml`](openapi.yaml) (OpenAPI 3.1, [ADR 0009](../docs/adr/0009-openapi-da-api-publica.md)), navegável no Swagger UI em https://localhost/docs, sem token; em *Authorize*, `login` entra com usuário e senha do Keycloak. Serviço que expõe ou muda uma rota atualiza esse arquivo no mesmo PR.
+Rotas, respostas e autenticação estão em [`openapi.yaml`](openapi.yaml) (OpenAPI 3.1, [ADR 0009](../docs/adr/0009-openapi-da-api-publica.md)), navegável no Swagger UI em https://localhost/docs, sem token. O documento é público e não traz o endereço do Keycloak ([ADR 0035](../docs/adr/0035-normalizacao-da-api-publica.md)): em *Authorize*, `bearer` recebe o access token de uma sessão do FACOFFEE web, no Session Storage do navegador, na chave `oidc.user:…`, campo `access_token`. Serviço que expõe ou muda uma rota atualiza esse arquivo no mesmo PR.
 
 | Caminho | Conteúdo |
 |---|---|

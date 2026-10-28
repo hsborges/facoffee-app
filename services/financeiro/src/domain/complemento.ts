@@ -25,10 +25,7 @@ export type ComplementoSolicitado = Event<
 >;
 
 /** Why a complemento was refused. */
-export type SolicitarErro =
-  | 'sem-permissao'
-  | 'sem-participantes-ativos'
-  | 'parte-menor-que-um-centavo';
+export type SolicitarErro = 'sem-permissao' | 'ninguem-participando' | 'parte-menor-que-um-centavo';
 
 /**
  * Splits `valor` in partes iguais, without considering the tipo de cota. The centavos that do not
@@ -60,7 +57,7 @@ export const solicitar = (
   SolicitarErro
 > => {
   if (!solicitante.perfis.includes('gestor')) return fail('sem-permissao');
-  if (ativos.length === 0) return fail('sem-participantes-ativos');
+  if (ativos.length === 0) return fail('ninguem-participando');
   if (valorTotalEmCentavos < ativos.length) return fail('parte-menor-que-um-centavo');
   const { complementoId, eventId, agora } = contexto;
   const partes = dividir(valorTotalEmCentavos, ativos);

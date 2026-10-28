@@ -57,7 +57,7 @@ const gastoDoBolso: Gasto = {
   origem: 'proprio-bolso',
   tipo: 'cafe',
   notaId: outro,
-  feitoEm: new Date(),
+  registradoEm: new Date(),
 };
 const gastoDaCaixinha: Gasto = {
   ...gastoDoBolso,
@@ -238,13 +238,21 @@ describe('comprovante', () => {
 
   it('RN-FIN-04: 404 for another participante, as if it did not exist', async () => {
     const { api, id } = await guardado();
-    expect((await api.request(`/comprovante/${id}`, { headers: doOutro })).status).toBe(404);
-    expect((await api.request('/comprovante/abc', { headers: gestor })).status).toBe(404);
+    for (const [caminho, headers] of [
+      [`/comprovante/${id}`, doOutro],
+      ['/comprovante/abc', gestor],
+    ] as const) {
+      const response = await api.request(caminho, { headers });
+      expect(response.status).toBe(404);
+      expect(await response.json()).toEqual({ error: 'comprovante-nao-encontrado' });
+    }
   });
 
   it('401 without the logged-in person', async () => {
     const { api, id } = await guardado();
-    expect((await api.request(`/comprovante/${id}`)).status).toBe(401);
+    const anonimo = await api.request(`/comprovante/${id}`);
+    expect(anonimo.status).toBe(401);
+    expect(await anonimo.json()).toEqual({ error: 'nao-autenticado' });
     const form = formulario({ arquivo: PNG, participanteId: participante });
     expect((await enviar(api, '/guardar-comprovante', {}, form)).status).toBe(401);
   });
@@ -309,7 +317,11 @@ describe('nota', () => {
 
   it('404 for a nota that does not exist and 401 without the logged-in person', async () => {
     const api = app();
-    expect((await api.request(`/nota/${outro}`, { headers: doOutro })).status).toBe(404);
+    for (const id of [outro, 'abc']) {
+      const response = await api.request(`/nota/${id}`, { headers: doOutro });
+      expect(response.status).toBe(404);
+      expect(await response.json()).toEqual({ error: 'nota-nao-encontrada' });
+    }
     expect((await api.request(`/nota/${outro}`)).status).toBe(401);
   });
 });
@@ -324,15 +336,15 @@ describe('POST /receber-pagamento', () => {
     );
   const emDinheiro = { participanteId: participante, valorEmCentavos: 3000, forma: 'dinheiro' };
 
-  it('RN-FIN-05: 201 with the id of the pagamento por PIX, referencing its comprovante', async () => {
+  it('RN-FIN-05: 204 for a pagamento por PIX, referencing its comprovante', async () => {
     const api = app();
     const form = formulario({ arquivo: PNG, participanteId: participante });
     const comprovante = await enviar(api, '/guardar-comprovante', gestor, form);
     const { id: comprovanteId } = (await comprovante.json()) as { id: string };
 
     const response = await receber(api, gestor, { ...emDinheiro, forma: 'pix', comprovanteId });
-    expect(response.status).toBe(201);
-    expect(await response.json()).toEqual({ id: expect.any(String) });
+    expect(response.status).toBe(204);
+    expect(await response.text()).toBe('');
   });
 
   it.each([
@@ -352,12 +364,12 @@ describe('POST /receber-pagamento', () => {
         forma: 'pix',
         comprovanteId: id.toUpperCase(),
       });
-      expect(response.status).toBe(201);
+      expect(response.status).toBe(204);
     },
   );
 
-  it('201 for a pagamento em dinheiro', async () => {
-    expect((await receber(app(), gestor, emDinheiro)).status).toBe(201);
+  it('204 for a pagamento em dinheiro', async () => {
+    expect((await receber(app(), gestor, emDinheiro)).status).toBe(204);
   });
 
   it('400 for a pagamento por PIX without comprovante', async () => {
@@ -505,8 +517,7 @@ describe('comprovante enviado', () => {
     }
 
     const confirmado = await confirmar(gestor, comValor);
-    expect(confirmado.status).toBe(201);
-    expect(await confirmado.json()).toEqual({ id: expect.any(String) });
+    expect(confirmado.status).toBe(204);
     expect(await ler(api, '/comprovante-enviado/eu', doParticipante)).toMatchObject([
       { situacao: 'confirmado', valorEmCentavos: 3000, valorConfirmadoEmCentavos: 2000 },
     ]);
@@ -581,6 +592,15 @@ describe('comprovante enviado', () => {
     expect((await api.request('/comprovante-enviado')).status).toBe(401);
     expect((await api.request('/comprovante-enviado/eu')).status).toBe(401);
   });
+  it('409 for someone who never participated', async () => {
+    const api = app({ enviarComprovante: async () => fail('nunca-participou') });
+    const response = await json(api, '/enviar-comprovante', doParticipante, {
+      valorEmCentavos: 3000,
+      comprovanteId: outro,
+    });
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: 'nunca-participou' });
+  });
 });
 
 describe('POST /registrar-gasto', () => {
@@ -623,6 +643,14 @@ describe('POST /registrar-gasto', () => {
     }
   });
 
+  it('409 for someone who never participated', async () => {
+    const api = app({ registrarGasto: async () => fail('nunca-participou') });
+    const body = { valorEmCentavos: 4590, origem: 'caixinha', tipo: 'cafe', notaId: outro };
+    const response = await registrar(api, doParticipante, body);
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ error: 'nunca-participou' });
+  });
+
   it('400 for an invalid pedido and 401 without the logged-in person', async () => {
     const valido = { valorEmCentavos: 4590, origem: 'caixinha', tipo: 'cafe', notaId: outro };
     for (const body of [
@@ -648,11 +676,10 @@ describe('POST /gasto/:id/reembolsar', () => {
   const reembolsar = (api: ReturnType<typeof app>, headers: Record<string, string>, id: string) =>
     api.request(`/gasto/${id}/reembolsar`, { method: 'POST', headers });
 
-  it('RN-FIN-25: 201 with the id of the reembolso, then 409 for the same gasto', async () => {
+  it('RN-FIN-25: 204, then 409 for the same gasto', async () => {
     const api = app();
     const response = await reembolsar(api, gestor, gastoDoBolso.id.toUpperCase());
-    expect(response.status).toBe(201);
-    expect(await response.json()).toEqual({ id: expect.any(String) });
+    expect(response.status).toBe(204);
 
     const repetido = await reembolsar(api, gestor, gastoDoBolso.id);
     expect(repetido.status).toBe(409);
@@ -688,7 +715,11 @@ describe('GET /gasto', () => {
     );
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual([
-      { ...gastoDoBolso, feitoEm: gastoDoBolso.feitoEm.toISOString(), reembolsado: false },
+      {
+        ...gastoDoBolso,
+        registradoEm: gastoDoBolso.registradoEm.toISOString(),
+        reembolsado: false,
+      },
     ]);
   });
 
@@ -708,10 +739,8 @@ describe('POST /solicitar-complemento', () => {
       body: JSON.stringify(corpo),
     });
 
-  it('201 with the id of the complemento', async () => {
-    const response = await solicitar(gestor, { valorEmCentavos: 1001 });
-    expect(response.status).toBe(201);
-    expect(await response.json()).toEqual({ id: expect.any(String) });
+  it('204 for the gestor', async () => {
+    expect((await solicitar(gestor, { valorEmCentavos: 1001 })).status).toBe(204);
   });
 
   it('RN-FIN-28: 409 when the parte would be less than one centavo', async () => {
@@ -754,11 +783,11 @@ describe('GET /caixinha/:mes', () => {
     expect(await response.json()).toMatchObject({ mes: '2026-10', saldoNoFimEmCentavos: 1200 });
   });
 
-  it('404 for a month not in AAAA-MM and 401 without the logged-in person', async () => {
+  it('400 for a month not in AAAA-MM and 401 without the logged-in person', async () => {
     for (const mes of ['2026-13', '2026-1', 'outubro']) {
       const response = await app().request(`/caixinha/${mes}`, { headers: doParticipante });
-      expect(response.status).toBe(404);
-      expect(await response.json()).toEqual({ error: 'not-found' });
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ error: 'pedido-invalido' });
     }
     expect((await app().request('/caixinha/2026-10')).status).toBe(401);
   });
@@ -767,9 +796,9 @@ describe('GET /caixinha/:mes', () => {
 describe('Crédito e pendentes', () => {
   const situacao = {
     id: participante,
-    ativo: true,
+    participando: true,
     creditoEmCentavos: 6000,
-    pendenteEmCentavos: 0,
+    pendenciaEmCentavos: 0,
   };
 
   it('RN-FIN-19: GET /participante gives the gestor every participante', async () => {
@@ -805,7 +834,7 @@ describe('Crédito e pendentes', () => {
   });
 
   it('GET /pendente is internal: gives Notificação the pendentes, without identity', async () => {
-    const pendentes = [{ id: participante, pendenteEmCentavos: 3000, cota: devido.cotas[0] }];
+    const pendentes = [{ id: participante, pendenciaEmCentavos: 3000, cota: devido.cotas[0] }];
     const response = await app({ listarPendentes: async () => pendentes }).request('/pendente');
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual(pendentes);

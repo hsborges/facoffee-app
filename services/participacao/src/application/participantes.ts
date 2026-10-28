@@ -15,6 +15,8 @@ import { fail, ok, type Result } from '../domain/result.js';
 /** Persistence of participantes. */
 export type Repository = {
   readonly buscar: (id: string) => Promise<Participante | undefined>;
+  /** Everyone who ever participated, whoever left included. */
+  readonly listar: () => Promise<readonly Participante[]>;
   /**
    * Persists the entrada and its events (outbox) in the same transaction, unless the person is
    * already participando; resolves `false` then, without saving anything.
@@ -82,6 +84,20 @@ export const consultarParticipante =
     return participante
       ? ok(participanteNoMes(participante, mesDe(clock.now())))
       : fail('participante-nao-encontrado');
+  };
+
+/**
+ * Leitura *Participantes*, only for the gestor: everyone who ever participated, with the tipo de
+ * cota in effect now and the troca still waiting, if any.
+ */
+export const listarParticipantes =
+  (repository: Pick<Repository, 'listar'>, clock: Pick<Clock, 'now'>) =>
+  async (solicitante: {
+    readonly perfis: readonly string[];
+  }): Promise<Result<readonly Participante[], 'sem-permissao'>> => {
+    if (!solicitante.perfis.includes('gestor')) return fail('sem-permissao');
+    const mes = mesDe(clock.now());
+    return ok((await repository.listar()).map((p) => participanteNoMes(p, mes)));
   };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

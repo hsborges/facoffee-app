@@ -8,7 +8,7 @@ const gasto: Gasto = {
   origem: 'caixinha',
   tipo: 'cafe',
   notaId: '11111111-1111-4111-8111-111111111111',
-  feitoEm: new Date('2026-11-01T03:00:00Z'),
+  registradoEm: new Date('2026-11-01T03:00:00Z'),
 };
 
 describe('saidaDaCaixinha', () => {

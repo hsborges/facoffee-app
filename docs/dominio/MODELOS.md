@@ -5,8 +5,8 @@
 | **Escopo** | Divisão de custos da copa da FACOM |
 | **Sistema** | FACOFFEE |
 | **Disciplina** | Técnicas Avançadas de Desenvolvimento de Software (2026/2) |
-| **Versão** | 2.14 |
-| **Data** | 2026-10-27 |
+| **Versão** | 2.15 |
+| **Data** | 2026-10-28 |
 | **Status** | Aprovado |
 | **Base** | [Glossário da Linguagem Ubíqua](GLOSSARIO.md) (versão 2.10) e arquitetura do FACOFFEE ([arquitetura/visao-geral.png](../arquitetura/visao-geral.png)) |
 
@@ -229,6 +229,7 @@ O contexto Participação também recebe um evento do contexto Usuário:
 | **Valores da cota** | Participação | O valor de cada tipo de cota no ano atual, ou num ano pedido. | Todos os participantes, para saber quanto custa cada tipo de cota e compará-lo com os gastos do ano anterior; o gestor, para ver o que já definiu para o ano seguinte. |
 | **Comprovantes enviados** | Financeiro | Os comprovantes enviados pelos participantes, com a situação de cada um: a confirmar, confirmado (com o valor confirmado) ou recusado (com o motivo). | O gestor, só os a confirmar, para analisar; o participante, só os próprios, para acompanhar. |
 | **Participantes ativos** | Financeiro | Quem entrou e ainda não saiu, segundo os eventos de Participação. | O complemento, para ser dividido em partes iguais. |
+| **Participantes** | Participação | Quem já participou, se participa agora e com qual tipo de cota no mês atual, com a troca que ainda espera o mês seguinte. | Só o gestor, para saber quem participa e com qual tipo de cota (RN-PAR-17). |
 
 ### Agregados
 
@@ -259,7 +260,7 @@ O contexto Participação também recebe um evento do contexto Usuário:
 
 ## 3. Contextos delimitados
 
-O FACOFFEE divide o domínio em três contextos de negócio e usa um contexto de apoio. O diagrama completo da arquitetura está em [arquitetura/visao-geral.png](../arquitetura/visao-geral.png).
+O FACOFFEE divide o domínio em três contextos de negócio e usa um contexto de apoio. O diagrama completo da arquitetura está em [arquitetura/visao-geral-v2.png](../arquitetura/visao-geral-v2.png).
 
 | Contexto | Tipo | Responsabilidade | Termos do glossário |
 |---|---|---|---|
@@ -319,3 +320,4 @@ Nenhum no momento.
 | 2.12 | 2026-10-26 | Novos eventos *Comprovante enviado* e *Comprovante recusado*, de Financeiro para Notificação, com as políticas de avisar o gestor de cada comprovante enviado e o participante da recusa; Notificação consulta os gestores em Usuário ([ADR 0031](../adr/0031-avisos-do-comprovante-enviado.md), #88). Base atualizada para o glossário 2.9. |
 | 2.13 | 2026-10-26 | A coluna *Regras que garante* dos agregados passa a apontar para as regras de negócio em [docs/requisitos/](../requisitos/README.md), por ID, sem repetir o texto ([ADR 0032](../adr/0032-requisitos-rastreaveis-em-bdd.md), #96). Base atualizada para o glossário 2.10. |
 | 2.14 | 2026-10-27 | A leitura *Valores da cota* também responde por um ano pedido, para o gestor ver o que já definiu para o ano seguinte (RN-PAR-16). |
+| 2.15 | 2026-10-28 | Nova leitura *Participantes* (Participação), só para o gestor, com o tipo de cota de cada um (RN-PAR-17, [ADR 0035](../adr/0035-normalizacao-da-api-publica.md)). O diagrama da arquitetura passa à [v2](../arquitetura/visao-geral-v2.png). |

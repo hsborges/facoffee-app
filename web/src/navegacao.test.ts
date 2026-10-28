@@ -63,10 +63,10 @@ describe('paginas', () => {
 });
 
 describe('visaoAtual', () => {
-  const GESTOR = ['gestor', 'participante'] as const;
+  const GESTOR = ['gestor'] as const;
 
   it('whoever is not gestor always sees the visão do participante, on any page', () => {
-    for (const perfis of [['participante'], []] as const)
+    for (const perfis of [[]] as const)
       for (const caminho of ['/', '/gastos', '/nada'])
         expect(visaoAtual(perfis, undefined, caminho)).toBe('participante');
   });

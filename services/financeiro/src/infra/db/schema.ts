@@ -89,7 +89,7 @@ export const gastos = pgTable('gastos', {
   origem: text('origem').$type<Origem>().notNull(),
   tipo: text('tipo').$type<TipoDeGasto>().notNull(),
   notaId: uuid('nota_id').notNull().unique(),
-  feitoEm: instant('feito_em').notNull(),
+  registradoEm: instant('feito_em').notNull(),
 });
 
 /** Reembolsos feitos; the unique gasto_id keeps a gasto from being reembolsado twice. */

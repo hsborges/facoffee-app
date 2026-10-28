@@ -10,8 +10,8 @@ const ana: Contato = {
 };
 const semContato = '2b3c4d5e-6f70-4a81-9b2c-3d4e5f6a7b8c';
 const pendentes: Pendente[] = [
-  { id: ana.id, pendenteEmCentavos: 3000, cota: { mes: '2026-11', valorEmCentavos: 3000 } },
-  { id: semContato, pendenteEmCentavos: 3000, cota: { mes: '2026-11', valorEmCentavos: 3000 } },
+  { id: ana.id, pendenciaEmCentavos: 3000, cota: { mes: '2026-11', valorEmCentavos: 3000 } },
+  { id: semContato, pendenciaEmCentavos: 3000, cota: { mes: '2026-11', valorEmCentavos: 3000 } },
 ];
 // 10 de novembro, 9h em Campo Grande.
 const dia10 = new Date('2026-11-10T13:00:00Z');

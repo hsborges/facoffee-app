@@ -65,6 +65,7 @@ describe('GET /verify', () => {
       const response = await verify(authorization);
       expect(response.status).toBe(401);
       expect(response.headers.get('www-authenticate')).toBe('Bearer');
+      expect(await response.json()).toEqual({ error: 'nao-autenticado' });
     }
   });
 

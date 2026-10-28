@@ -25,6 +25,9 @@ export type ApiDependencies = {
   readonly consultarParticipante: (
     id: string,
   ) => Promise<Result<Participante, 'participante-nao-encontrado'>>;
+  readonly listarParticipantes: (solicitante: {
+    readonly perfis: readonly string[];
+  }) => Promise<Result<readonly Participante[], 'sem-permissao'>>;
   readonly consultarValoresDaCota: (ano?: number) => Promise<readonly ValorDaCota[]>;
   readonly iniciarAno: () => Promise<{ readonly valoresRepetidos: number }>;
   readonly iniciarMes: () => Promise<{
@@ -39,6 +42,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const isTipoDeCota = (valor: unknown): valor is TipoDeCota =>
   TIPOS_DE_COTA.includes(valor as TipoDeCota);
+
+const perfisDe = (c: Context) => (c.req.header('x-user-roles') ?? '').split(',');
 
 // The id becomes participantId, a uuid in the event contracts.
 const idLogado = (c: Context) => {
@@ -55,15 +60,16 @@ const inteiroPositivo = (valor: unknown): valor is number =>
 
 const STATUS_DO_ERRO = {
   'sem-permissao': 403,
-  'ano-passado': 400,
+  'ano-passado': 409,
   'valor-ja-definido': 409,
 } as const;
 
 /**
  * HTTP API of the Participação context, for the logged-in person: `POST /entrar`,
  * `POST /trocar-tipo-de-cota`, `POST /sair`, the leitura `GET /participante/eu` and, for the
- * gestor, `POST /definir-valor-da-cota`. Leitura *Valores da cota*: `GET /tipo-de-cota`, the valor
- * of each tipo de cota in the current year, or in the one of `?ano`, for anyone logged in.
+ * gestor, `POST /definir-valor-da-cota` and the leitura *Participantes*, `GET /participante`.
+ * Leitura *Valores da cota*: `GET /valor-da-cota`, the valor of each tipo de cota in the current
+ * year, or in the one of `?ano`, for anyone logged in.
  * Identity comes from the gateway in `X-User-Id` and `X-User-Roles` (ADR 0007); without it, 401.
  * `POST /iniciar-ano` and `POST /iniciar-mes` are the agendador's triggers, on the internal
  * network only: the gateway does not route them (ADR 0017).
@@ -75,6 +81,7 @@ export const createApp = ({
   pedirSaida,
   definirValor,
   consultarParticipante,
+  listarParticipantes,
   consultarValoresDaCota,
   iniciarAno,
   iniciarMes,
@@ -95,7 +102,7 @@ export const createApp = ({
     })
     .onError((error, c) => {
       logger.error('unhandled error', { error });
-      return c.json({ error: 'internal-error' }, 500);
+      return c.json({ error: 'erro-interno' }, 500);
     })
     .get('/health', async (c) => {
       const dependencies = await health();
@@ -104,7 +111,7 @@ export const createApp = ({
     })
     .post('/entrar', async (c) => {
       const id = idLogado(c);
-      if (!id) return c.json({ error: 'unauthorized' }, 401);
+      if (!id) return c.json({ error: 'nao-autenticado' }, 401);
       const { tipoDeCota } = await corpo(c);
       if (!isTipoDeCota(tipoDeCota)) return c.json({ error: 'tipo-de-cota-invalido' }, 400);
       const result = await pedirEntrada(id, tipoDeCota);
@@ -112,7 +119,7 @@ export const createApp = ({
     })
     .post('/trocar-tipo-de-cota', async (c) => {
       const id = idLogado(c);
-      if (!id) return c.json({ error: 'unauthorized' }, 401);
+      if (!id) return c.json({ error: 'nao-autenticado' }, 401);
       const { tipoDeCota } = await corpo(c);
       if (!isTipoDeCota(tipoDeCota)) return c.json({ error: 'tipo-de-cota-invalido' }, 400);
       const result = await trocarTipo(id, tipoDeCota);
@@ -120,18 +127,23 @@ export const createApp = ({
     })
     .post('/sair', async (c) => {
       const id = idLogado(c);
-      if (!id) return c.json({ error: 'unauthorized' }, 401);
+      if (!id) return c.json({ error: 'nao-autenticado' }, 401);
       const result = await pedirSaida(id);
       return result.ok ? c.body(null, 204) : c.json({ error: result.error }, 409);
     })
     .get('/participante/eu', async (c) => {
       const id = idLogado(c);
-      if (!id) return c.json({ error: 'unauthorized' }, 401);
+      if (!id) return c.json({ error: 'nao-autenticado' }, 401);
       const result = await consultarParticipante(id);
       return result.ok ? c.json(result.value) : c.json({ error: result.error }, 404);
     })
-    .get('/tipo-de-cota', async (c) => {
-      if (!idLogado(c)) return c.json({ error: 'unauthorized' }, 401);
+    .get('/participante', async (c) => {
+      if (!idLogado(c)) return c.json({ error: 'nao-autenticado' }, 401);
+      const result = await listarParticipantes({ perfis: perfisDe(c) });
+      return result.ok ? c.json(result.value) : c.json({ error: result.error }, 403);
+    })
+    .get('/valor-da-cota', async (c) => {
+      if (!idLogado(c)) return c.json({ error: 'nao-autenticado' }, 401);
       const pedido = c.req.query('ano');
       if (pedido === undefined) return c.json(await consultarValoresDaCota());
       const ano = /^\d+$/.test(pedido) ? Number(pedido) : undefined;
@@ -139,13 +151,15 @@ export const createApp = ({
       return c.json(await consultarValoresDaCota(ano));
     })
     .post('/definir-valor-da-cota', async (c) => {
-      if (!idLogado(c)) return c.json({ error: 'unauthorized' }, 401);
+      if (!idLogado(c)) return c.json({ error: 'nao-autenticado' }, 401);
       const { tipoDeCota, ano, valorEmCentavos } = await corpo(c);
       const valido =
         isTipoDeCota(tipoDeCota) && inteiroPositivo(ano) && inteiroPositivo(valorEmCentavos);
       if (!valido) return c.json({ error: 'pedido-invalido' }, 400);
-      const perfis = (c.req.header('x-user-roles') ?? '').split(',');
-      const result = await definirValor({ perfis }, { tipoDeCota, ano, valorEmCentavos });
+      const result = await definirValor(
+        { perfis: perfisDe(c) },
+        { tipoDeCota, ano, valorEmCentavos },
+      );
       return result.ok
         ? c.body(null, 204)
         : c.json({ error: result.error }, STATUS_DO_ERRO[result.error]);

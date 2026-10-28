@@ -45,7 +45,7 @@ export const createApp = ({ issuer, clientId, keys }: VerifierConfig) =>
       // azp: the Passaporte UFMS issues tokens to other systems too.
       if (!verified?.payload.sub || verified.payload.azp !== clientId) {
         c.header('WWW-Authenticate', 'Bearer');
-        return c.json({ error: 'unauthorized' }, 401);
+        return c.json({ error: 'nao-autenticado' }, 401);
       }
       c.header('X-User-Id', verified.payload.sub);
       c.header('X-User-Roles', realmRoles(verified.payload.realm_access).join(','));

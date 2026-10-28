@@ -6,6 +6,7 @@ import { iniciarMes } from './application/cotas.js';
 import {
   consultarParticipante,
   encerrarAoDesativarAcesso,
+  listarParticipantes,
   pedirEntrada,
   pedirSaida,
   trocarTipo,
@@ -54,6 +55,7 @@ export const startService = async (config: Config, logger: Logger) => {
     pedirSaida: pedirSaida(repository, clock),
     definirValor: definirValor(valores, clock),
     consultarParticipante: consultarParticipante(repository, clock),
+    listarParticipantes: listarParticipantes(repository, clock),
     consultarValoresDaCota: consultarValoresDaCota(valores, clock),
     iniciarAno: iniciarAno(valores, clock),
     iniciarMes: iniciarMes(cotaRepository(database.db), valores, clock),

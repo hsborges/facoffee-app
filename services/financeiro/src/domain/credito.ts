@@ -13,9 +13,10 @@ export type Totais = {
 /** Leitura *Crédito e pendentes* of one participante; at most one of the two valores is not zero. */
 export type Situacao = {
   readonly id: string;
-  readonly ativo: boolean;
+  /** Whether the person participates now: entered and has not left. */
+  readonly participando: boolean;
   readonly creditoEmCentavos: number;
-  readonly pendenteEmCentavos: number;
+  readonly pendenciaEmCentavos: number;
 };
 
 /** What one participante owes, newest first: the cotas devidas and their partes de complementos. */
@@ -40,8 +41,8 @@ export const situacao = ({ id, ativo, devidoEmCentavos, pagoEmCentavos }: Totais
   const saldo = pagoEmCentavos - devidoEmCentavos;
   return {
     id,
-    ativo,
+    participando: ativo,
     creditoEmCentavos: Math.max(saldo, 0),
-    pendenteEmCentavos: Math.max(-saldo, 0),
+    pendenciaEmCentavos: Math.max(-saldo, 0),
   };
 };

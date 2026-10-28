@@ -1,5 +1,6 @@
 import {
   chamarApi,
+  comDados,
   entrarNoFacoffee,
   expect,
   naTelaDoGestor,
@@ -7,6 +8,7 @@ import {
   participando,
   pedirEntrada,
   pedirSaida,
+  recarregarAte,
   semRolagemHorizontal,
   test,
 } from '../apoio.ts';
@@ -51,5 +53,25 @@ test.describe('RF-PAR-01 Entrar na copa', () => {
 
     await pedirEntrada(participante, pessoa.usuario, 'so-cafe');
     await naTelaDoGestor(gestor, pessoa.nome);
+  });
+
+  test('RN-PAR-17: só o gestor vê quem participa e com qual tipo de cota', async ({ browser }) => {
+    const pessoa = await novoUsuario();
+    const participante = await entrarNoFacoffee(browser, pessoa.usuario);
+    await pedirEntrada(participante, pessoa.usuario, 'completa');
+
+    const gestor = await entrarNoFacoffee(browser, 'gestor', 'gestor');
+    await test.step('O gestor vê o tipo de cota de quem participa', async () => {
+      await gestor.goto('/participantes');
+      const linha = comDados(gestor, 'participante', {
+        participacao: 'participa',
+        'tipo-de-cota': 'completa',
+      });
+      await recarregarAte(gestor, linha.filter({ hasText: pessoa.nome }));
+    });
+    await test.step('Um participante tenta ver todos: o pedido é recusado', async () => {
+      const todos = await chamarApi(participante, 'GET /api/participacao/participante');
+      expect(todos).toMatchObject({ status: 403, corpo: { error: 'sem-permissao' } });
+    });
   });
 });

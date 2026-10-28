@@ -17,7 +17,7 @@ export const createApp = ({ health, lembrarPendentes, logger }: ApiDependencies)
   new Hono()
     .onError((error, c) => {
       logger.error('unhandled error', { error });
-      return c.json({ error: 'internal-error' }, 500);
+      return c.json({ error: 'erro-interno' }, 500);
     })
     .get('/health', async (c) => {
       const dependencies = await health();

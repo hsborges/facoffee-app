@@ -36,7 +36,7 @@ export const caixinhaRepository = (db: Executor): BuscarCaixinha => ({
     db
       .select({ tipo: gastos.tipo, valorEmCentavos: total(gastos.valorEmCentavos) })
       .from(gastos)
-      .where(sql`extract(year from ${gastos.feitoEm} at time zone ${FUSO}) = ${ano}`)
+      .where(sql`extract(year from ${gastos.registradoEm} at time zone ${FUSO}) = ${ano}`)
       .groupBy(gastos.tipo),
   movimento: async (mes, periodo) => {
     const [[recebido], pelaCaixinha, reembolsados] = await Promise.all([
@@ -47,7 +47,7 @@ export const caixinhaRepository = (db: Executor): BuscarCaixinha => ({
       db
         .select({ tipo: gastos.tipo, valorEmCentavos: total(gastos.valorEmCentavos) })
         .from(gastos)
-        .where(and(eq(gastos.origem, 'caixinha'), noPeriodo(gastos.feitoEm, mes, periodo)))
+        .where(and(eq(gastos.origem, 'caixinha'), noPeriodo(gastos.registradoEm, mes, periodo)))
         .groupBy(gastos.tipo),
       db
         .select({ tipo: gastos.tipo, valorEmCentavos: total(gastos.valorEmCentavos) })

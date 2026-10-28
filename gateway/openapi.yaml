@@ -5,13 +5,17 @@ info:
   description: |
     API do FACOFFEE.
 
-    Todas as rotas exigem autenticação. Para testar aqui, clique em **Authorize** e entre com
-    usuário e senha (`login`) ou informe um access token (`bearer`). Usuário com acesso
-    desativado recebe 403 em todas as rotas.
+    Todas as rotas exigem um access token do FACOFFEE no header `Authorization: Bearer`. Para
+    testar aqui, clique em **Authorize** e informe o token. Usuário com acesso desativado recebe
+    403 em todas as rotas.
+
+    Os erros respondem `{ "error": "<código>" }`, com um código em português por motivo: 400 para
+    o pedido malformado, 401 sem autenticação, 403 sem permissão, 404 para o recurso que não
+    existe ou que a pessoa não pode ver, e 409 quando uma regra de negócio recusa o pedido.
+    Comandos respondem 204, ou 201 com o identificador do que criaram quando outra rota o recebe.
 servers:
   - url: /
 security:
-  - login: [openid]
   - bearer: []
 tags:
   - name: usuario
@@ -39,7 +43,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/UsuarioRegistrado'
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/SomenteGestor'
         '500':
@@ -47,7 +51,7 @@ paths:
   /api/usuario/eu:
     get:
       tags: [usuario]
-      operationId: obterUsuarioLogado
+      operationId: consultarUsuarioLogado
       summary: Usuário logado
       description: Dados e perfis de acesso do usuário autenticado.
       responses:
@@ -58,7 +62,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Usuario'
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/AcessoDesativado'
         '500':
@@ -69,21 +73,16 @@ paths:
       operationId: desativarAcesso
       summary: Desativar acesso
       description: |
-        Desativa o acesso de um usuário ao FACOFFEE. O gestor desativa o acesso de qualquer
-        pessoa; os demais, só o próprio. Desativar um acesso já desativado não tem efeito.
+        Desativa o acesso de um usuário ao FACOFFEE, o que encerra a participação, se houver. O
+        gestor desativa o acesso de qualquer pessoa; os demais, só o próprio. Desativar um acesso
+        já desativado não tem efeito.
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: Identificador do usuário.
-          schema:
-            type: string
-            format: uuid
+        - $ref: '#/components/parameters/IdDoUsuario'
       responses:
         '204':
           description: Acesso desativado.
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
         '403':
           description: Sem permissão para desativar o acesso de outra pessoa, ou acesso desativado.
           content:
@@ -98,13 +97,7 @@ paths:
                   value:
                     error: acesso-desativado
         '404':
-          description: Identificador inválido.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Erro'
-              example:
-                error: not-found
+          $ref: '#/components/responses/UsuarioNaoEncontrado'
         '500':
           $ref: '#/components/responses/ErroInterno'
   /api/usuario/{id}/reativar:
@@ -117,28 +110,16 @@ paths:
         participação: para voltar a participar, a pessoa pede a entrada de novo. Reativar um
         acesso ativo não tem efeito.
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: Identificador do usuário.
-          schema:
-            type: string
-            format: uuid
+        - $ref: '#/components/parameters/IdDoUsuario'
       responses:
         '204':
           description: Acesso reativado.
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/SomenteGestor'
         '404':
-          description: Identificador inválido.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Erro'
-              example:
-                error: not-found
+          $ref: '#/components/responses/UsuarioNaoEncontrado'
         '500':
           $ref: '#/components/responses/ErroInterno'
   /api/participacao/entrar:
@@ -171,7 +152,7 @@ paths:
               example:
                 error: tipo-de-cota-invalido
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/AcessoDesativado'
         '409':
@@ -215,7 +196,7 @@ paths:
               example:
                 error: tipo-de-cota-invalido
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/AcessoDesativado'
         '409':
@@ -234,7 +215,7 @@ paths:
         '204':
           description: Saída feita.
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/AcessoDesativado'
         '409':
@@ -244,7 +225,7 @@ paths:
   /api/participacao/participante/eu:
     get:
       tags: [participacao]
-      operationId: obterParticipacao
+      operationId: consultarParticipacao
       summary: Minha participação
       description: |
         Se o usuário logado está participando, o tipo de cota que vale no mês atual (horário de
@@ -258,7 +239,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Participacao'
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/AcessoDesativado'
         '404':
@@ -271,7 +252,31 @@ paths:
                 error: participante-nao-encontrado
         '500':
           $ref: '#/components/responses/ErroInterno'
-  /api/participacao/tipo-de-cota:
+  /api/participacao/participante:
+    get:
+      tags: [participacao]
+      operationId: listarParticipantes
+      summary: Participantes
+      description: |
+        Quem já participou da copa, inclusive quem saiu, com o tipo de cota que vale no mês atual
+        (horário de Campo Grande) e a troca que ainda espera o mês seguinte, se houver. Só o gestor
+        lista os participantes; cada um vê a própria participação em `participante/eu`.
+      responses:
+        '200':
+          description: Participantes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Participacao'
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SomenteGestor'
+        '500':
+          $ref: '#/components/responses/ErroInterno'
+  /api/participacao/valor-da-cota:
     get:
       tags: [participacao]
       operationId: listarValoresDaCota
@@ -298,18 +303,7 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
-                  required: [tipoDeCota, ano, valorEmCentavos]
-                  properties:
-                    tipoDeCota:
-                      $ref: '#/components/schemas/TipoDeCota'
-                    ano:
-                      type: integer
-                      description: Ano em que o valor vale.
-                    valorEmCentavos:
-                      type: integer
-                      minimum: 1
-                      description: Valor mensal em centavos de real.
+                  $ref: '#/components/schemas/ValorDaCota'
               example:
                 - tipoDeCota: so-cafe
                   ano: 2027
@@ -326,7 +320,7 @@ paths:
               example:
                 error: pedido-invalido
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/AcessoDesativado'
         '500':
@@ -344,49 +338,35 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [tipoDeCota, ano, valorEmCentavos]
-              properties:
-                tipoDeCota:
-                  $ref: '#/components/schemas/TipoDeCota'
-                ano:
-                  type: integer
-                  description: Ano em que o valor vale.
-                  example: 2027
-                valorEmCentavos:
-                  type: integer
-                  minimum: 1
-                  maximum: 2147483647
-                  description: Valor mensal em centavos de real.
-                  example: 2500
+              $ref: '#/components/schemas/ValorDaCota'
       responses:
         '204':
           description: Valor definido.
         '400':
-          description: Pedido inválido, ou ano que já passou.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Erro'
-              examples:
-                pedidoInvalido:
-                  value:
-                    error: pedido-invalido
-                anoPassado:
-                  value:
-                    error: ano-passado
-        '401':
-          $ref: '#/components/responses/NaoAutorizado'
-        '403':
-          $ref: '#/components/responses/SomenteGestor'
-        '409':
-          description: O valor desse tipo de cota já foi definido para o ano.
+          description: Pedido inválido.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Erro'
               example:
-                error: valor-ja-definido
+                error: pedido-invalido
+        '401':
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/SomenteGestor'
+        '409':
+          description: O ano já passou, ou o valor desse tipo de cota já foi definido para o ano.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              examples:
+                anoPassado:
+                  value:
+                    error: ano-passado
+                valorJaDefinido:
+                  value:
+                    error: valor-ja-definido
         '500':
           $ref: '#/components/responses/ErroInterno'
   /api/financeiro/guardar-comprovante:
@@ -395,10 +375,10 @@ paths:
       operationId: guardarComprovante
       summary: Guardar comprovante
       description: |
-        Guarda o comprovante de um pagamento por PIX de um participante. O gestor guarda para
-        qualquer participante, ao receber o pagamento; o participante guarda só para si mesmo, para
-        enviá-lo ao gestor. Devolve o identificador do comprovante, usado ao receber o pagamento ou
-        ao enviar o comprovante.
+        Guarda o comprovante de um pagamento por PIX de um participante: o arquivo, ainda sem valor.
+        O gestor guarda para qualquer participante, ao receber o pagamento; o participante guarda
+        só para si mesmo, para enviá-lo ao gestor. Devolve o identificador do comprovante, que
+        `receber-pagamento`, `enviar-comprovante` e `comprovante-enviado/{id}/editar` recebem.
       requestBody:
         required: true
         content:
@@ -421,7 +401,7 @@ paths:
         '400':
           $ref: '#/components/responses/ArquivoRecusado'
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
         '403':
           description: |
             Quem não é gestor guardando comprovante de outro participante, ou acesso desativado.
@@ -446,8 +426,9 @@ paths:
       operationId: guardarNota
       summary: Guardar nota
       description: |
-        Guarda a nota fiscal ou o recibo de um gasto. Qualquer participante guarda. Devolve o
-        identificador da nota, usado por quem a guardou ao registrar o gasto.
+        Guarda a nota fiscal ou o recibo de um gasto. Qualquer usuário logado guarda; só um
+        participante registra o gasto com ela. Devolve o identificador da nota, que quem a guardou
+        informa em `registrar-gasto`.
       requestBody:
         required: true
         content:
@@ -464,7 +445,7 @@ paths:
         '400':
           $ref: '#/components/responses/ArquivoRecusado'
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/AcessoDesativado'
         '413':
@@ -482,48 +463,16 @@ paths:
         participante cujas cotas ele quita; para várias pessoas, registra-se um pagamento para cada
         uma. O pagamento por PIX exige o comprovante, guardado antes em
         `guardar-comprovante` para o mesmo participante; cada comprovante vale para um pagamento
-        só. Todo pagamento entra na caixinha.
+        só. O pagamento em dinheiro não tem comprovante. Todo pagamento entra na caixinha.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [participanteId, valorEmCentavos, forma]
-              properties:
-                participanteId:
-                  type: string
-                  format: uuid
-                  description: |
-                    Participante cujas cotas o pagamento quita, mesmo que outra pessoa tenha
-                    entregado o dinheiro.
-                valorEmCentavos:
-                  type: integer
-                  minimum: 1
-                  maximum: 2147483647
-                  description: Valor recebido em centavos de real.
-                  example: 3000
-                forma:
-                  type: string
-                  enum: [pix, dinheiro]
-                  description: Forma do pagamento; `dinheiro` é o pagamento em mãos.
-                comprovanteId:
-                  type: [string, 'null']
-                  format: uuid
-                  description: Comprovante do PIX; obrigatório no PIX, ausente ou nulo no dinheiro.
+              $ref: '#/components/schemas/PedidoDePagamento'
       responses:
-        '201':
+        '204':
           description: Pagamento recebido.
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [id]
-                properties:
-                  id:
-                    type: string
-                    format: uuid
-                    description: Identificador do pagamento.
         '400':
           description: |
             Pedido inválido ou acima de 4 KB, pagamento por PIX sem comprovante ou pagamento em
@@ -543,7 +492,7 @@ paths:
                   value:
                     error: comprovante-so-no-pix
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/SomenteGestor'
         '404':
@@ -575,10 +524,11 @@ paths:
       operationId: enviarComprovante
       summary: Enviar comprovante
       description: |
-        O usuário logado envia ao gestor o comprovante do PIX que fez, com o valor pago. O
-        comprovante fica a confirmar e não conta como pagamento até o gestor confirmar; até lá, não
-        muda o crédito, a pendência nem o saldo da caixinha. O arquivo é guardado antes em
-        `guardar-comprovante`, para o próprio usuário logado; cada arquivo é enviado uma vez só.
+        O participante logado envia ao gestor o comprovante do PIX que fez, com o valor pago. O
+        comprovante enviado fica a confirmar e não conta como pagamento até o gestor confirmar; até
+        lá, não muda o crédito, a pendência nem o saldo da caixinha. O comprovante é guardado antes
+        em `guardar-comprovante`, para o próprio participante; cada comprovante é enviado uma vez
+        só. Quem saiu da copa também envia, para quitar o que ficou pendente.
       requestBody:
         required: true
         content:
@@ -597,34 +547,38 @@ paths:
                   id:
                     type: string
                     format: uuid
-                    description: Identificador do comprovante enviado.
+                    description: |
+                      Identificador do comprovante enviado, que `comprovante-enviado/{id}/editar` e
+                      `comprovante-enviado/{id}/cancelar` recebem.
         '400':
           $ref: '#/components/responses/PedidoInvalido'
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/AcessoDesativado'
         '404':
-          description: Arquivo não guardado para o usuário logado, ou ele nunca participou.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Erro'
-              examples:
-                comprovanteNaoEncontrado:
-                  value:
-                    error: comprovante-nao-encontrado
-                participanteNaoEncontrado:
-                  value:
-                    error: participante-nao-encontrado
-        '409':
-          description: O arquivo já foi enviado em outro comprovante ou usado em outro pagamento.
+          description: Comprovante não guardado para o participante logado.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Erro'
               example:
-                error: comprovante-ja-usado
+                error: comprovante-nao-encontrado
+        '409':
+          description: |
+            O usuário logado nunca participou da copa, ou o comprovante já foi enviado ou usado em
+            um pagamento.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              examples:
+                nuncaParticipou:
+                  value:
+                    error: nunca-participou
+                comprovanteJaUsado:
+                  value:
+                    error: comprovante-ja-usado
         '500':
           $ref: '#/components/responses/ErroInterno'
   /api/financeiro/comprovante-enviado:
@@ -634,7 +588,7 @@ paths:
       summary: Comprovantes a confirmar
       description: |
         Os comprovantes enviados pelos participantes que ainda estão a confirmar, do mais antigo ao
-        mais recente. Só o gestor lista.
+        mais recente. Só o gestor lista; os confirmados e os recusados não aparecem.
       responses:
         '200':
           description: Comprovantes a confirmar.
@@ -645,7 +599,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/ComprovanteEnviado'
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/SomenteGestor'
         '500':
@@ -656,7 +610,7 @@ paths:
       operationId: listarMeusComprovantes
       summary: Meus comprovantes enviados
       description: |
-        Os comprovantes que o usuário logado enviou, do mais recente ao mais antigo, com a
+        Os comprovantes que o participante logado enviou, do mais recente ao mais antigo, com a
         situação de cada um: a confirmar, confirmado (com o valor confirmado) ou recusado (com o
         motivo). O envio cancelado não aparece.
       responses:
@@ -669,7 +623,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/ComprovanteEnviado'
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/AcessoDesativado'
         '500':
@@ -680,9 +634,9 @@ paths:
       operationId: editarComprovante
       summary: Editar comprovante
       description: |
-        O usuário logado troca o valor pago e o arquivo de um comprovante que enviou, enquanto
-        está a confirmar. O arquivo pode ser o mesmo ou outro, guardado antes em
-        `guardar-comprovante` para o próprio usuário logado.
+        O participante logado troca o valor pago e o comprovante de um envio seu, enquanto está a
+        confirmar. O comprovante pode ser o mesmo ou outro, guardado antes em
+        `guardar-comprovante` para o próprio participante.
       parameters:
         - $ref: '#/components/parameters/IdDoComprovanteEnviado'
       requestBody:
@@ -697,12 +651,13 @@ paths:
         '400':
           $ref: '#/components/responses/PedidoInvalido'
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/AcessoDesativado'
         '404':
           description: |
-            Comprovante que não existe ou não é do usuário logado, ou arquivo não guardado para ele.
+            Comprovante enviado que não existe ou não é do participante logado, ou comprovante não
+            guardado para ele.
           content:
             application/json:
               schema:
@@ -716,8 +671,8 @@ paths:
                     error: comprovante-nao-encontrado
         '409':
           description: |
-            O comprovante já foi confirmado ou recusado, ou o arquivo já foi enviado em outro
-            comprovante ou usado em outro pagamento.
+            O comprovante enviado já foi confirmado ou recusado, ou o comprovante já foi enviado em
+            outro envio ou usado em um pagamento.
           content:
             application/json:
               schema:
@@ -737,15 +692,15 @@ paths:
       operationId: cancelarComprovante
       summary: Cancelar comprovante
       description: |
-        O usuário logado cancela o envio de um comprovante, enquanto está a confirmar. O
-        comprovante cancelado não conta como pagamento e deixa de aparecer.
+        O participante logado cancela o envio de um comprovante, enquanto está a confirmar. O
+        comprovante enviado cancelado não conta como pagamento e deixa de aparecer.
       parameters:
         - $ref: '#/components/parameters/IdDoComprovanteEnviado'
       responses:
         '204':
           description: Envio cancelado.
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/AcessoDesativado'
         '404':
@@ -764,8 +719,8 @@ paths:
         pode corrigir o valor informado pelo participante. Vale o valor confirmado: o pagamento
         quita as cotas do participante e entra na caixinha, como o pagamento recebido em
         `receber-pagamento`. Cada comprovante é confirmado ou recusado uma vez só. Só o gestor
-        confirma. O pedido informa o arquivo que o gestor conferiu; se o participante trocou o
-        arquivo depois disso, a confirmação é recusada.
+        confirma. O pedido informa o comprovante que o gestor conferiu; se o participante trocou o
+        comprovante depois disso, a confirmação é recusada.
       parameters:
         - $ref: '#/components/parameters/IdDoComprovanteEnviado'
       requestBody:
@@ -785,32 +740,24 @@ paths:
                 comprovanteId:
                   type: string
                   format: uuid
-                  description: Arquivo do comprovante que o gestor conferiu.
+                  description: |
+                    O comprovante que o gestor conferiu, o `comprovanteId` lido em
+                    `comprovante-enviado`.
       responses:
-        '201':
+        '204':
           description: Comprovante confirmado e pagamento recebido.
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [id]
-                properties:
-                  id:
-                    type: string
-                    format: uuid
-                    description: Identificador do pagamento.
         '400':
           $ref: '#/components/responses/PedidoInvalido'
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/SomenteGestor'
         '404':
           $ref: '#/components/responses/ComprovanteEnviadoNaoEncontrado'
         '409':
           description: |
-            O comprovante já foi confirmado ou recusado, o participante trocou o arquivo depois
-            que o gestor o conferiu, ou o arquivo já foi usado em outro pagamento.
+            O comprovante enviado já foi confirmado ou recusado, o participante trocou o comprovante
+            depois que o gestor o conferiu, ou o comprovante já foi usado em outro pagamento.
           content:
             application/json:
               schema:
@@ -869,7 +816,7 @@ paths:
                   value:
                     error: recusa-sem-motivo
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/SomenteGestor'
         '404':
@@ -884,10 +831,10 @@ paths:
       operationId: registrarGasto
       summary: Registrar gasto
       description: |
-        Registra uma compra, um conserto, uma manutenção ou uma reposição que a pessoa logada
-        pagou, com dinheiro da caixinha ou do próprio bolso. Qualquer participante registra gastos.
-        Basta o tipo, o valor total e a nota, guardada antes em `guardar-nota` pela própria pessoa
-        logada; cada nota vale para um gasto só. O gasto pago do próprio bolso só sai da caixinha no
+        Registra uma compra, um conserto, uma manutenção ou uma reposição que o participante logado
+        pagou, com dinheiro da caixinha ou do próprio bolso. Qualquer participante registra gastos,
+        inclusive quem já saiu. Basta o tipo, o valor total e a nota, guardada antes em
+        `guardar-nota` pelo próprio participante; cada nota vale para um gasto só. O gasto pago do próprio bolso só sai da caixinha no
         reembolso.
       requestBody:
         required: true
@@ -925,7 +872,7 @@ paths:
                   id:
                     type: string
                     format: uuid
-                    description: Identificador do gasto.
+                    description: Identificador do gasto, que `gasto/{id}/reembolsar` recebe.
         '400':
           description: Pedido inválido ou acima de 4 KB; um gasto sem tipo é inválido.
           content:
@@ -935,35 +882,37 @@ paths:
               example:
                 error: pedido-invalido
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
+        '403':
+          $ref: '#/components/responses/AcessoDesativado'
         '404':
-          description: Nota não guardada pela pessoa logada, ou ela não é um participante conhecido.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Erro'
-              examples:
-                notaNaoEncontrada:
-                  value:
-                    error: nota-nao-encontrada
-                participanteNaoEncontrado:
-                  value:
-                    error: participante-nao-encontrado
-        '409':
-          description: A nota já foi usada em outro gasto.
+          description: Nota não guardada pelo participante logado.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Erro'
               example:
-                error: nota-ja-usada
+                error: nota-nao-encontrada
+        '409':
+          description: O usuário logado nunca participou da copa, ou a nota já foi usada em outro gasto.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              examples:
+                nuncaParticipou:
+                  value:
+                    error: nunca-participou
+                notaJaUsada:
+                  value:
+                    error: nota-ja-usada
         '500':
           $ref: '#/components/responses/ErroInterno'
   /api/financeiro/gasto/{id}/reembolsar:
     post:
       tags: [financeiro]
       operationId: reembolsarGasto
-      summary: Reembolsar
+      summary: Reembolsar gasto
       description: |
         Devolve o valor total de um gasto pago do próprio bolso a quem o registrou. Só o gestor
         reembolsa, e cada gasto é reembolsado uma vez só. O dinheiro desse gasto sai da caixinha
@@ -977,20 +926,10 @@ paths:
             type: string
             format: uuid
       responses:
-        '201':
+        '204':
           description: Reembolso feito.
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [id]
-                properties:
-                  id:
-                    type: string
-                    format: uuid
-                    description: Identificador do reembolso.
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/SomenteGestor'
         '404':
@@ -1023,8 +962,8 @@ paths:
       summary: Solicitar complemento
       description: |
         Pede um valor extra aos participantes quando o saldo da caixinha não cobre os gastos. Só o
-        gestor solicita complementos. O valor é dividido em partes iguais entre todos os
-        participantes ativos no momento, inclusive os pendentes e sem considerar o tipo de cota;
+        gestor solicita complementos. O valor é dividido em partes iguais entre todos que
+        participam no momento, inclusive os pendentes e sem considerar o tipo de cota;
         os centavos que não dividem vão um para cada participante, e a soma das partes é sempre o
         valor total. Quem entra depois não deve parte; quem sai depois continua devendo. A parte
         é abatida automaticamente do crédito do participante.
@@ -1043,18 +982,8 @@ paths:
                   description: Valor total do complemento em centavos de real.
                   example: 1001
       responses:
-        '201':
+        '204':
           description: Complemento solicitado.
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [id]
-                properties:
-                  id:
-                    type: string
-                    format: uuid
-                    description: Identificador do complemento.
         '400':
           description: Pedido inválido ou acima de 4 KB.
           content:
@@ -1064,21 +993,21 @@ paths:
               example:
                 error: pedido-invalido
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/SomenteGestor'
         '409':
           description: |
-            Não há participante ativo, ou o valor é menor que o número de participantes ativos e
-            alguma parte ficaria sem nenhum centavo.
+            Ninguém participa no momento, ou o valor é menor que o número de participantes e alguma
+            parte ficaria sem nenhum centavo.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Erro'
               examples:
-                semParticipantesAtivos:
+                ninguemParticipando:
                   value:
-                    error: sem-participantes-ativos
+                    error: ninguem-participando
                 parteMenorQueUmCentavo:
                   value:
                     error: parte-menor-que-um-centavo
@@ -1090,8 +1019,8 @@ paths:
       operationId: consultarCaixinha
       summary: Caixinha
       description: |
-        Saldo da caixinha e gastos do ano anterior, no total e por tipo de gasto. Qualquer
-        participante consulta; mostra só os totais, sem a situação de ninguém.
+        Saldo da caixinha e gastos do ano anterior, no total e por tipo de gasto. Qualquer usuário
+        logado consulta; mostra só os totais, sem a situação de ninguém.
       responses:
         '200':
           description: Saldo e gastos do ano anterior.
@@ -1116,9 +1045,9 @@ paths:
                     type: integer
                     minimum: 0
                     description: |
-                      Soma dos gastos feitos no ano anterior, pagos pela caixinha ou do próprio
-                      bolso, em centavos de real; o ano vira à meia-noite de Campo Grande (MS). É
-                      a base para o valor da cota.
+                      Soma dos gastos registrados no ano anterior, pagos pela caixinha ou do
+                      próprio bolso, em centavos de real; o ano vira à meia-noite de Campo Grande
+                      (MS). É a base para o valor da cota.
                   gastosDoAnoAnteriorPorTipoEmCentavos:
                     $ref: '#/components/schemas/PorTipoDeGasto'
                     description: Os mesmos gastos do ano anterior, por tipo de gasto, em centavos de real.
@@ -1131,7 +1060,7 @@ paths:
                   conserto-e-manutencao: 30000
                   reposicao: 6000
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/AcessoDesativado'
         '500':
@@ -1143,18 +1072,16 @@ paths:
       summary: Caixinha do mês
       description: |
         O que entrou na caixinha no mês, o que saiu por tipo de gasto e quanto sobrou. Qualquer
-        participante consulta; mostra só os totais, sem a situação de ninguém. O mês vira à
+        usuário logado consulta; mostra só os totais, sem a situação de ninguém. O mês vira à
         meia-noite de Campo Grande (MS). Saldo no fim = saldo no início + recebido − gastos de todos
         os tipos; no mês atual, é o saldo da caixinha.
       parameters:
         - name: mes
           in: path
           required: true
-          description: O mês, no formato `AAAA-MM`.
+          description: O mês.
           schema:
-            type: string
-            pattern: '^\d{4}-(0[1-9]|1[0-2])$'
-            example: '2026-10'
+            $ref: '#/components/schemas/Mes'
       responses:
         '200':
           description: Caixinha do mês.
@@ -1172,8 +1099,7 @@ paths:
                   ]
                 properties:
                   mes:
-                    type: string
-                    description: O mês, no formato `AAAA-MM`.
+                    $ref: '#/components/schemas/Mes'
                   saldoNoInicioEmCentavos:
                     type: integer
                     description: Saldo da caixinha no início do mês, em centavos de real.
@@ -1201,17 +1127,17 @@ paths:
                   reposicao: 2500
                 saldoNoFimEmCentavos: 24500
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/AcessoDesativado'
-        '404':
+        '400':
           description: O mês não está no formato `AAAA-MM`.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Erro'
               example:
-                error: not-found
+                error: pedido-invalido
         '500':
           $ref: '#/components/responses/ErroInterno'
   /api/financeiro/gasto:
@@ -1232,7 +1158,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/Gasto'
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/SomenteGestor'
         '500':
@@ -1255,7 +1181,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/CreditoEPendente'
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/SomenteGestor'
         '500':
@@ -1263,11 +1189,11 @@ paths:
   /api/financeiro/participante/eu:
     get:
       tags: [financeiro]
-      operationId: obterCreditoEPendente
+      operationId: consultarCreditoEPendente
       summary: Meu crédito ou pendência
       description: |
-        Crédito e pendência do usuário logado, com as cotas e as partes de complementos que ele
-        deve ou já deveu.
+        Crédito e pendência do participante logado, com todas as cotas e partes de complementos que
+        ele deve ou já deveu, pagas ou não.
       responses:
         '200':
           description: Situação do usuário logado.
@@ -1276,7 +1202,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/MinhaSituacao'
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/AcessoDesativado'
         '404':
@@ -1303,11 +1229,17 @@ paths:
         '200':
           $ref: '#/components/responses/Arquivo'
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/AcessoDesativado'
         '404':
-          $ref: '#/components/responses/ArquivoNaoEncontrado'
+          description: Comprovante inexistente ou que o usuário não pode ver.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              example:
+                error: comprovante-nao-encontrado
         '500':
           $ref: '#/components/responses/ErroInterno'
   /api/financeiro/nota/{id}:
@@ -1315,37 +1247,42 @@ paths:
       tags: [financeiro]
       operationId: baixarNota
       summary: Baixar nota
-      description: O arquivo da nota de um gasto. Qualquer participante vê as notas.
+      description: O arquivo da nota de um gasto. Qualquer usuário logado vê as notas.
       parameters:
         - $ref: '#/components/parameters/IdDoArquivo'
       responses:
         '200':
           $ref: '#/components/responses/Arquivo'
         '401':
-          $ref: '#/components/responses/NaoAutorizado'
+          $ref: '#/components/responses/NaoAutenticado'
         '403':
           $ref: '#/components/responses/AcessoDesativado'
         '404':
-          $ref: '#/components/responses/ArquivoNaoEncontrado'
+          description: Nota inexistente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              example:
+                error: nota-nao-encontrada
         '500':
           $ref: '#/components/responses/ErroInterno'
 components:
   securitySchemes:
-    login:
-      type: oauth2
-      description: Entrar com usuário e senha.
-      flows:
-        authorizationCode:
-          authorizationUrl: http://localhost:8080/realms/facoffee/protocol/openid-connect/auth
-          tokenUrl: http://localhost:8080/realms/facoffee/protocol/openid-connect/token
-          scopes:
-            openid: Identificação do usuário
     bearer:
       type: http
       scheme: bearer
       bearerFormat: JWT
       description: Access token obtido ao entrar no FACOFFEE.
   parameters:
+    IdDoUsuario:
+      name: id
+      in: path
+      required: true
+      description: Identificador do usuário.
+      schema:
+        type: string
+        format: uuid
     IdDoComprovanteEnviado:
       name: id
       in: path
@@ -1358,12 +1295,12 @@ components:
       name: id
       in: path
       required: true
-      description: Identificador do arquivo.
+      description: Identificador devolvido ao guardar o arquivo.
       schema:
         type: string
         format: uuid
   responses:
-    NaoAutorizado:
+    NaoAutenticado:
       description: Token ausente, inválido ou expirado.
       headers:
         WWW-Authenticate:
@@ -1375,7 +1312,7 @@ components:
           schema:
             $ref: '#/components/schemas/Erro'
           example:
-            error: unauthorized
+            error: nao-autenticado
     AcessoDesativado:
       description: O acesso do usuário ao FACOFFEE foi desativado.
       content:
@@ -1397,6 +1334,14 @@ components:
             acessoDesativado:
               value:
                 error: acesso-desativado
+    UsuarioNaoEncontrado:
+      description: Usuário que nunca acessou o FACOFFEE, ou identificador inválido.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          example:
+            error: usuario-nao-encontrado
     NaoParticipando:
       description: O usuário não está participando.
       content:
@@ -1407,6 +1352,12 @@ components:
             error: nao-participando
     ErroInterno:
       description: Erro interno.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+          example:
+            error: erro-interno
     PedidoInvalido:
       description: Pedido inválido ou acima de 4 KB.
       content:
@@ -1442,7 +1393,7 @@ components:
               id:
                 type: string
                 format: uuid
-                description: Identificador do arquivo.
+                description: Identificador do comprovante ou da nota guardados.
     ArquivoRecusado:
       description: Pedido sem arquivo ou com campos inválidos, arquivo vazio ou de tipo não aceito.
       content:
@@ -1482,14 +1433,6 @@ components:
           schema:
             type: string
             format: binary
-    ArquivoNaoEncontrado:
-      description: Arquivo inexistente ou que o usuário não pode ver.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Erro'
-          example:
-            error: not-found
   schemas:
     ArquivoEnviado:
       type: string
@@ -1502,6 +1445,12 @@ components:
       properties:
         error:
           type: string
+          description: Código do motivo, em português e kebab-case.
+    Mes:
+      type: string
+      pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+      description: Um mês, no formato `AAAA-MM`.
+      example: '2026-10'
     TipoDeCota:
       type: string
       enum: [so-cafe, completa]
@@ -1534,7 +1483,8 @@ components:
           minimum: 0
     Gasto:
       type: object
-      required: [id, participanteId, valorEmCentavos, origem, tipo, notaId, feitoEm, reembolsado]
+      required:
+        [id, participanteId, valorEmCentavos, origem, tipo, notaId, registradoEm, reembolsado]
       properties:
         id:
           type: string
@@ -1543,7 +1493,9 @@ components:
         participanteId:
           type: string
           format: uuid
-          description: Quem pagou e registrou o gasto.
+          description: |
+            Quem registrou o gasto; no gasto pago do próprio bolso, é quem pagou e recebe o
+            reembolso.
         valorEmCentavos:
           type: integer
           minimum: 1
@@ -1558,10 +1510,10 @@ components:
           type: string
           format: uuid
           description: Nota do gasto, baixada em `/api/financeiro/nota/{id}`.
-        feitoEm:
+        registradoEm:
           type: string
           format: date-time
-          description: Quando o gasto foi registrado.
+          description: Quando o gasto foi registrado; é a data do gasto.
         reembolsado:
           type: boolean
           description: Se o gasto pago do próprio bolso já foi reembolsado; sempre falso se pago pela caixinha.
@@ -1572,7 +1524,7 @@ components:
         origem: proprio-bolso
         tipo: cafe
         notaId: 9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d
-        feitoEm: '2026-11-20T15:00:00.000Z'
+        registradoEm: '2026-11-20T15:00:00.000Z'
         reembolsado: false
     PedidoDeComprovante:
       type: object
@@ -1587,10 +1539,33 @@ components:
         comprovanteId:
           type: string
           format: uuid
-          description: Arquivo do comprovante, guardado em `guardar-comprovante` para o usuário logado.
+          description: Comprovante guardado em `guardar-comprovante` para o participante logado.
     ComprovanteEnviado:
+      description: |
+        Um comprovante que o participante enviou ao gestor, com a situação: `a-confirmar` até o
+        gestor analisar; `confirmado`, quando vale como pagamento, com o valor confirmado;
+        `recusado`, quando não vale, com o motivo.
+      oneOf:
+        - $ref: '#/components/schemas/ComprovanteAConfirmar'
+        - $ref: '#/components/schemas/ComprovanteConfirmado'
+        - $ref: '#/components/schemas/ComprovanteRecusado'
+      discriminator:
+        propertyName: situacao
+        mapping:
+          a-confirmar: '#/components/schemas/ComprovanteAConfirmar'
+          confirmado: '#/components/schemas/ComprovanteConfirmado'
+          recusado: '#/components/schemas/ComprovanteRecusado'
+      example:
+        id: 5d4c3b2a-1f0e-4d9c-8b7a-6f5e4d3c2b1a
+        participanteId: 4f1c2a9e-8b7d-4c3a-9e2f-1a2b3c4d5e6f
+        comprovanteId: 9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d
+        valorEmCentavos: 18000
+        enviadoEm: '2026-11-03T13:00:00.000Z'
+        situacao: confirmado
+        valorConfirmadoEmCentavos: 15000
+    EnvioDeComprovante:
       type: object
-      required: [id, participanteId, comprovanteId, valorEmCentavos, enviadoEm, situacao]
+      required: [id, participanteId, comprovanteId, valorEmCentavos, enviadoEm]
       properties:
         id:
           type: string
@@ -1603,7 +1578,7 @@ components:
         comprovanteId:
           type: string
           format: uuid
-          description: Arquivo do comprovante, baixado em `/api/financeiro/comprovante/{id}`.
+          description: O comprovante, baixado em `/api/financeiro/comprovante/{id}`.
         valorEmCentavos:
           type: integer
           minimum: 1
@@ -1612,30 +1587,90 @@ components:
           type: string
           format: date-time
           description: Quando o comprovante foi enviado.
-        situacao:
+    ComprovanteAConfirmar:
+      allOf:
+        - $ref: '#/components/schemas/EnvioDeComprovante'
+        - type: object
+          required: [situacao]
+          properties:
+            situacao:
+              const: a-confirmar
+    ComprovanteConfirmado:
+      allOf:
+        - $ref: '#/components/schemas/EnvioDeComprovante'
+        - type: object
+          required: [situacao, valorConfirmadoEmCentavos]
+          properties:
+            situacao:
+              const: confirmado
+            valorConfirmadoEmCentavos:
+              type: integer
+              minimum: 1
+              description: O valor que vale como pagamento, em centavos de real.
+    ComprovanteRecusado:
+      allOf:
+        - $ref: '#/components/schemas/EnvioDeComprovante'
+        - type: object
+          required: [situacao, motivo]
+          properties:
+            situacao:
+              const: recusado
+            motivo:
+              type: string
+              description: Por que o gestor recusou.
+    PedidoDePagamento:
+      description: Um pagamento por PIX, com o comprovante, ou em dinheiro, sem ele.
+      oneOf:
+        - $ref: '#/components/schemas/PagamentoPorPix'
+        - $ref: '#/components/schemas/PagamentoEmDinheiro'
+      discriminator:
+        propertyName: forma
+        mapping:
+          pix: '#/components/schemas/PagamentoPorPix'
+          dinheiro: '#/components/schemas/PagamentoEmDinheiro'
+    Recebimento:
+      type: object
+      required: [participanteId, valorEmCentavos, forma]
+      properties:
+        participanteId:
           type: string
-          enum: [a-confirmar, confirmado, recusado]
+          format: uuid
           description: |
-            `a-confirmar` até o gestor analisar; `confirmado`, quando vale como pagamento;
-            `recusado`, quando não vale.
-        valorConfirmadoEmCentavos:
+            Participante cujas cotas o pagamento quita, mesmo que outra pessoa tenha entregado o
+            dinheiro.
+        valorEmCentavos:
           type: integer
           minimum: 1
-          description: Só no confirmado; o valor que vale como pagamento, em centavos de real.
-        motivo:
-          type: string
-          description: Só no recusado; por que o gestor recusou.
-      example:
-        id: 5d4c3b2a-1f0e-4d9c-8b7a-6f5e4d3c2b1a
-        participanteId: 4f1c2a9e-8b7d-4c3a-9e2f-1a2b3c4d5e6f
-        comprovanteId: 9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d
-        valorEmCentavos: 18000
-        enviadoEm: '2026-11-03T13:00:00.000Z'
-        situacao: confirmado
-        valorConfirmadoEmCentavos: 15000
+          maximum: 2147483647
+          description: Valor recebido em centavos de real.
+          example: 3000
+    PagamentoPorPix:
+      allOf:
+        - $ref: '#/components/schemas/Recebimento'
+        - type: object
+          required: [forma, comprovanteId]
+          properties:
+            forma:
+              const: pix
+            comprovanteId:
+              type: string
+              format: uuid
+              description: Comprovante guardado em `guardar-comprovante` para o mesmo participante.
+    PagamentoEmDinheiro:
+      allOf:
+        - $ref: '#/components/schemas/Recebimento'
+        - type: object
+          required: [forma]
+          properties:
+            forma:
+              const: dinheiro
+              description: O pagamento em mãos.
+            comprovanteId:
+              type: 'null'
+              description: Ausente ou nulo; o pagamento em dinheiro não tem comprovante.
     CreditoEPendente:
       type: object
-      required: [id, ativo, creditoEmCentavos, pendenteEmCentavos]
+      required: [id, participando, creditoEmCentavos, pendenciaEmCentavos]
       description: |
         Pagamentos recebidos menos o que é devido. O que foi pago a mais é crédito, abatido
         automaticamente das próximas cotas; o que falta é pendência, sem multa nem juros. Crédito
@@ -1646,22 +1681,22 @@ components:
           type: string
           format: uuid
           description: Identificador do participante.
-        ativo:
+        participando:
           type: boolean
           description: Se está participando agora.
         creditoEmCentavos:
           type: integer
           minimum: 0
           description: Crédito em centavos de real.
-        pendenteEmCentavos:
+        pendenciaEmCentavos:
           type: integer
           minimum: 0
-          description: Valor pendente em centavos de real.
+          description: Pendência em centavos de real.
       example:
         id: 4f1c2a9e-8b7d-4c3a-9e2f-1a2b3c4d5e6f
-        ativo: true
+        participando: true
         creditoEmCentavos: 6000
-        pendenteEmCentavos: 0
+        pendenciaEmCentavos: 0
     MinhaSituacao:
       allOf:
         - $ref: '#/components/schemas/CreditoEPendente'
@@ -1670,16 +1705,16 @@ components:
           properties:
             cotas:
               type: array
-              description: Cotas devidas, da mais recente à mais antiga.
+              description: |
+                Todas as cotas que ele deve ou já deveu, pagas ou não, da mais recente à mais
+                antiga.
               items:
                 type: object
                 required: [mes, tipoDeCota, valorEmCentavos]
                 properties:
                   mes:
-                    type: string
-                    pattern: '^\d{4}-\d{2}$'
-                    description: Mês da cota (`AAAA-MM`).
-                    example: '2026-11'
+                    $ref: '#/components/schemas/Mes'
+                    description: Mês da cota.
                   tipoDeCota:
                     $ref: '#/components/schemas/TipoDeCota'
                   valorEmCentavos:
@@ -1688,7 +1723,9 @@ components:
                     description: Valor da cota em centavos de real; não muda depois de devida.
             complementos:
               type: array
-              description: Partes de complementos devidas, da mais recente à mais antiga.
+              description: |
+                Todas as partes de complementos que ele deve ou já deveu, pagas ou não, da mais
+                recente à mais antiga.
               items:
                 type: object
                 required: [id, solicitadoEm, parteEmCentavos]
@@ -1707,9 +1744,9 @@ components:
                     description: Parte do usuário logado, em centavos de real.
       example:
         id: 4f1c2a9e-8b7d-4c3a-9e2f-1a2b3c4d5e6f
-        ativo: true
+        participando: true
         creditoEmCentavos: 0
-        pendenteEmCentavos: 3250
+        pendenciaEmCentavos: 3250
         cotas:
           - mes: '2026-11'
             tipoDeCota: completa
@@ -1718,6 +1755,24 @@ components:
           - id: 9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d
             solicitadoEm: '2026-11-20T15:00:00.000Z'
             parteEmCentavos: 250
+    ValorDaCota:
+      type: object
+      required: [tipoDeCota, ano, valorEmCentavos]
+      properties:
+        tipoDeCota:
+          $ref: '#/components/schemas/TipoDeCota'
+        ano:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          description: Ano em que o valor vale.
+          example: 2027
+        valorEmCentavos:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+          description: Valor mensal em centavos de real.
+          example: 2500
     Participacao:
       type: object
       required: [id, tipoDeCota, participando, troca]
@@ -1728,6 +1783,7 @@ components:
           description: Identificador do participante.
         tipoDeCota:
           $ref: '#/components/schemas/TipoDeCota'
+          description: O tipo de cota que vale no mês atual; para quem saiu, o último.
         participando:
           type: boolean
           description: Se está participando agora; quem saiu volta pedindo a entrada.
@@ -1741,10 +1797,8 @@ components:
                 tipoDeCota:
                   $ref: '#/components/schemas/TipoDeCota'
                 aPartirDe:
-                  type: string
-                  pattern: '^\d{4}-\d{2}$'
-                  description: Mês em que a troca passa a valer (`AAAA-MM`).
-                  example: '2026-12'
+                  $ref: '#/components/schemas/Mes'
+                  description: Mês em que a troca passa a valer.
       example:
         id: 4f1c2a9e-8b7d-4c3a-9e2f-1a2b3c4d5e6f
         tipoDeCota: so-cafe
@@ -1754,14 +1808,17 @@ components:
           aPartirDe: '2026-12'
     Perfil:
       type: string
-      enum: [gestor, participante]
-      description: Perfil de acesso ao FACOFFEE.
+      enum: [gestor]
+      description: |
+        Perfil de acesso ao FACOFFEE. Quem não tem perfil é um usuário como os outros; ter acesso
+        não faz de ninguém um participante, o que só pedir a entrada na copa faz.
     Usuario:
       type: object
       required: [id, nome, email, perfis]
       properties:
         id:
           type: string
+          format: uuid
           description: Identificador do usuário.
         nome:
           type: string
@@ -1777,13 +1834,14 @@ components:
         id: 4f1c2a9e-8b7d-4c3a-9e2f-1a2b3c4d5e6f
         nome: João Silva
         email: joao.silva@ufms.br
-        perfis: [participante]
+        perfis: []
     UsuarioRegistrado:
       type: object
       required: [id, nome, email, desativado]
       properties:
         id:
           type: string
+          format: uuid
           description: Identificador do usuário.
         nome:
           type: string

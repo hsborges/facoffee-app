@@ -5,6 +5,7 @@ import {
   type Clock,
   consultarParticipante,
   encerrarAoDesativarAcesso,
+  listarParticipantes,
   pedirEntrada,
   pedirSaida,
   type Repository,
@@ -20,6 +21,7 @@ const inMemory = () => {
   const participando = (id: string) => participantes.get(id)?.participando ?? false;
   const repository: Repository = {
     buscar: async (id) => participantes.get(id),
+    listar: async () => [...participantes.values()],
     salvarEntrada: async (participante, newEvents) => {
       if (participando(participante.id)) return false;
       participantes.set(participante.id, participante);
@@ -47,6 +49,7 @@ const inMemory = () => {
     trocarTipo: trocarTipo(repository, clock),
     pedirSaida: pedirSaida(repository, clock),
     consultar: consultarParticipante(repository, clock),
+    listar: listarParticipantes(repository, clock),
     encerrar: encerrarAoDesativarAcesso(repository, clock),
   };
 };
@@ -178,6 +181,41 @@ describe('consultarParticipante', () => {
   it('does not find someone who never participated', async () => {
     const { consultar } = inMemory();
     expect(await consultar('p-1')).toEqual({ ok: false, error: 'participante-nao-encontrado' });
+  });
+});
+
+describe('listarParticipantes', () => {
+  it('RN-PAR-17: gives the gestor each participante with the tipo de cota of now', async () => {
+    const { participantes, listar } = inMemory();
+    participantes.set('p-1', {
+      id: 'p-1',
+      tipoDeCota: 'so-cafe',
+      participando: true,
+      troca: { tipoDeCota: 'completa', aPartirDe: '2026-12' },
+    });
+    participantes.set('p-2', {
+      id: 'p-2',
+      tipoDeCota: 'completa',
+      participando: false,
+      troca: null,
+    });
+
+    expect(await listar({ perfis: ['gestor'] })).toEqual({
+      ok: true,
+      value: [
+        {
+          id: 'p-1',
+          tipoDeCota: 'so-cafe',
+          participando: true,
+          troca: { tipoDeCota: 'completa', aPartirDe: '2026-12' },
+        },
+        { id: 'p-2', tipoDeCota: 'completa', participando: false, troca: null },
+      ],
+    });
+  });
+
+  it('RN-PAR-17: refuses anyone who is not the gestor', async () => {
+    expect(await inMemory().listar({ perfis: [] })).toEqual({ ok: false, error: 'sem-permissao' });
   });
 });
 

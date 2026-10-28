@@ -17,7 +17,7 @@ const inMemory = (conhecidos = [p1]) => {
   const salvos: Gasto[] = [];
   const gastos: Gastos = {
     salvar: async (gasto) => {
-      if (!conhecidos.includes(gasto.participanteId)) return fail('participante-nao-encontrado');
+      if (!conhecidos.includes(gasto.participanteId)) return fail('nunca-participou');
       if (salvos.some((g) => g.notaId === gasto.notaId)) return fail('nota-ja-usada');
       salvos.push(gasto);
       return ok(undefined);
@@ -35,7 +35,7 @@ describe('registrarGasto', () => {
   it('RN-FIN-22, RN-FIN-26: saves the gasto as paid by the solicitante', async () => {
     const { salvos, registrar } = inMemory();
     expect(await registrar({ id: p1 }, doBolso)).toEqual({ ok: true, value: 'id-1' });
-    expect(salvos).toEqual([{ ...doBolso, id: 'id-1', participanteId: p1, feitoEm: now }]);
+    expect(salvos).toEqual([{ ...doBolso, id: 'id-1', participanteId: p1, registradoEm: now }]);
   });
 
   it('RN-FIN-23: refuses a nota that was not guardada, saving nothing', async () => {
@@ -62,7 +62,7 @@ describe('registrarGasto', () => {
     expect(await registrar({ id: p1 }, doBolso)).toEqual({ ok: false, error: 'nota-ja-usada' });
     expect(await inMemory([]).registrar({ id: p1 }, doBolso)).toEqual({
       ok: false,
-      error: 'participante-nao-encontrado',
+      error: 'nunca-participou',
     });
     expect(salvos).toHaveLength(1);
   });

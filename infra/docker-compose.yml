@@ -121,9 +121,6 @@ services:
     environment:
       BASE_URL: /docs
       SWAGGER_JSON: /spec/openapi.yaml
-      # Login no Authorize com o client do web (realm local).
-      OAUTH_CLIENT_ID: facoffee-web
-      OAUTH_USE_PKCE: "true"
     volumes:
       - ../gateway/openapi.yaml:/spec/openapi.yaml:ro
 

@@ -70,7 +70,7 @@ describe('solicitar', () => {
   it('RN-FIN-28: needs someone ativo and at least one centavo per parte', () => {
     expect(solicitar(gestor, 1001, [], contexto)).toEqual({
       ok: false,
-      error: 'sem-participantes-ativos',
+      error: 'ninguem-participando',
     });
     expect(solicitar(gestor, 1, ativos, contexto)).toEqual({
       ok: false,

@@ -14,7 +14,7 @@ const gasto = (id: string, origem: Gasto['origem']): Gasto => ({
   origem,
   tipo: 'cafe',
   notaId: `nota-${id}`,
-  feitoEm: now,
+  registradoEm: now,
 });
 
 const inMemory = () => {

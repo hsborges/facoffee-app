@@ -1,8 +1,11 @@
 import type { Event } from './event.js';
 import { fail, ok, type Result } from './result.js';
 
-/** Access profile in the FACOFFEE, from a Keycloak realm role. */
-export type Perfil = 'gestor' | 'participante';
+/**
+ * Access profile in the FACOFFEE, from a realm role of the Passaporte UFMS. Only the gestor has
+ * one: having access does not make anyone a participante, which is Participação's to say.
+ */
+export type Perfil = 'gestor';
 
 /** The logged-in user, as known from the token. */
 export type Usuario = {
@@ -12,7 +15,7 @@ export type Usuario = {
   readonly perfis: readonly Perfil[];
 };
 
-const PERFIS: readonly Perfil[] = ['gestor', 'participante'];
+const PERFIS: readonly Perfil[] = ['gestor'];
 
 /**
  * FACOFFEE profiles among the token roles.
@@ -35,8 +38,14 @@ export type UsuarioRegistrado = Pick<Usuario, 'id' | 'nome' | 'email'> & {
 /** Why a command was refused: the solicitante lacks the perfil for it. */
 export type SemPermissao = 'sem-permissao';
 
+/** Why a command on an access was refused: the usuário never accessed the FACOFFEE. */
+export type UsuarioNaoEncontrado = 'usuario-nao-encontrado';
+
 /** Why a desativação was refused. */
-export type DesativarErro = SemPermissao;
+export type DesativarErro = SemPermissao | UsuarioNaoEncontrado;
+
+/** Why a reativação was refused. */
+export type ReativarErro = SemPermissao | UsuarioNaoEncontrado;
 
 /** Accepts only the gestor: listing the usuários and reactivating an access are theirs alone. */
 export const somenteGestor = (solicitante: Pick<Usuario, 'perfis'>): Result<void, SemPermissao> =>

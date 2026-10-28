@@ -10,6 +10,7 @@ import {
   comandar,
   type Gasto,
   guardarAntes,
+  type Participante,
   type TipoDeCota,
   type UsuarioRegistrado,
   type ValorDaCota as ValorDaCotaLido,
@@ -108,7 +109,7 @@ export const registrarGasto = (
 /** The crédito or pendência of a participante, in one line. */
 export const creditoOuPendencia = (situacao: CreditoEPendente) =>
   ({
-    pendente: `Pendente: ${emReais(situacao.pendenteEmCentavos)}`,
+    pendente: `Pendente: ${emReais(situacao.pendenciaEmCentavos)}`,
     credito: `Crédito: ${emReais(situacao.creditoEmCentavos)}`,
     'em-dia': 'Em dia',
   })[situacaoDe(situacao)];
@@ -170,14 +171,14 @@ const passa = (filtro: Filtro, situacao?: CreditoEPendente) =>
   filtro === 'todos' ||
   (!!situacao &&
     (filtro === 'pendentes'
-      ? situacao.pendenteEmCentavos > 0
+      ? situacao.pendenciaEmCentavos > 0
       : filtro === 'com-credito'
         ? situacao.creditoEmCentavos > 0
-        : !situacao.ativo));
+        : !situacao.participando));
 
 /**
  * *Participantes* (gestor): the comprovantes a confirmar, to conferir; how many are pendentes and
- * ativos; and each usuário with their crédito or pendência, filtered and searched by name, with
+ * participando; and each usuário with their tipo de cota and crédito or pendência, filtered and searched by name, with
  * receber pagamento and desativar or reativar access. The gestor's own access is left out: once
  * desativado, nobody could reativá-lo.
  */
@@ -190,19 +191,33 @@ export const Participantes = ({ token, usuarioId }: { token: string; usuarioId: 
     token,
     '/api/financeiro/participante',
   );
+  const [participantes, recarregarParticipantes] = useLeitura<readonly Participante[]>(
+    token,
+    '/api/participacao/participante',
+  );
   const [comprovantes, recarregarComprovantes] = useLeitura<readonly ComprovanteEnviado[]>(
     token,
     '/api/financeiro/comprovante-enviado',
   );
   const recarregar = () =>
-    Promise.all([recarregarUsuarios(), recarregarSituacoes(), recarregarComprovantes()]);
+    Promise.all([
+      recarregarUsuarios(),
+      recarregarSituacoes(),
+      recarregarParticipantes(),
+      recarregarComprovantes(),
+    ]);
   const { enviando, fazer, avisos } = useComando(recarregar);
   const { confirmar, confirmacao } = useConfirmacao();
   const [filtro, setFiltro] = useState<Filtro>('todos');
   const [busca, setBusca] = useState('');
 
-  if (!usuarios || !situacoes || !comprovantes) return <Carregando />;
-  if (usuarios.situacao !== 'ok' || situacoes.situacao !== 'ok' || comprovantes.situacao !== 'ok')
+  if (!usuarios || !situacoes || !participantes || !comprovantes) return <Carregando />;
+  if (
+    usuarios.situacao !== 'ok' ||
+    situacoes.situacao !== 'ok' ||
+    participantes.situacao !== 'ok' ||
+    comprovantes.situacao !== 'ok'
+  )
     return (
       <>
         {avisos}
@@ -211,12 +226,15 @@ export const Participantes = ({ token, usuarioId }: { token: string; usuarioId: 
     );
 
   const situacaoDoId = new Map(situacoes.valor.map((situacao) => [situacao.id, situacao]));
+  const tipoDoId = new Map(
+    participantes.valor.filter((p) => p.participando).map((p) => [p.id, p.tipoDeCota]),
+  );
   const nomes = new Map(usuarios.valor.map((usuario) => [usuario.id, nomeDe(usuario)]));
   const aConfirmar = comprovantes.valor;
   const primeiroAConfirmar = new Map(
     [...aConfirmar].reverse().map((comprovante) => [comprovante.participanteId, comprovante.id]),
   );
-  const pendentes = situacoes.valor.filter((situacao) => situacao.pendenteEmCentavos > 0);
+  const pendentes = situacoes.valor.filter((situacao) => situacao.pendenciaEmCentavos > 0);
   const termo = busca.trim().toLowerCase();
   const visiveis = usuarios.valor.filter(
     (usuario) =>
@@ -284,14 +302,14 @@ export const Participantes = ({ token, usuarioId }: { token: string; usuarioId: 
             <dd>
               <strong>{pendentes.length}</strong>{' '}
               <span className="texto-alerta">
-                {emReais(pendentes.reduce((total, s) => total + s.pendenteEmCentavos, 0))}
+                {emReais(pendentes.reduce((total, s) => total + s.pendenciaEmCentavos, 0))}
               </span>
             </dd>
           </div>
           <div className="cartao">
-            <dt>Ativos</dt>
+            <dt>Participando</dt>
             <dd>
-              <strong>{situacoes.valor.filter((situacao) => situacao.ativo).length}</strong>
+              <strong>{situacoes.valor.filter((situacao) => situacao.participando).length}</strong>
             </dd>
           </div>
         </dl>
@@ -349,20 +367,31 @@ export const Participantes = ({ token, usuarioId }: { token: string; usuarioId: 
                   const situacao = situacaoDoId.get(usuario.id);
                   const qual = situacao && situacaoDe(situacao);
                   const comprovanteId = primeiroAConfirmar.get(usuario.id);
+                  const tipoDeCota = tipoDoId.get(usuario.id);
                   const acao = usuario.desativado ? 'Reativar acesso' : 'Desativar acesso';
                   return (
                     <tr
                       key={usuario.id}
                       data-testid="participante"
                       data-participacao={
-                        !situacao ? 'nunca-participou' : situacao.ativo ? 'participa' : 'saiu'
+                        !situacao
+                          ? 'nunca-participou'
+                          : situacao.participando
+                            ? 'participa'
+                            : 'saiu'
                       }
                       data-acesso={usuario.desativado ? 'desativado' : 'ativo'}
+                      data-tipo-de-cota={tipoDeCota}
                     >
                       <th scope="row">
                         <span className="pessoa">
                           <Avatar nome={nome} />
-                          {nome}
+                          <span>
+                            {nome}
+                            {tipoDeCota && (
+                              <small className="apoio"> · {NOME_DO_TIPO_DE_COTA[tipoDeCota]}</small>
+                            )}
+                          </span>
                         </span>
                       </th>
                       <td data-rotulo="Situação">
@@ -371,13 +400,13 @@ export const Participantes = ({ token, usuarioId }: { token: string; usuarioId: 
                         ) : (
                           <span className="selos">
                             <Selo situacao={qual} />
-                            {!situacao.ativo && <Selo situacao="saiu" />}
+                            {!situacao.participando && <Selo situacao="saiu" />}
                           </span>
                         )}
                       </td>
                       <td data-rotulo="Valor" className="numero">
                         {qual === 'pendente'
-                          ? emReais(situacao?.pendenteEmCentavos ?? 0)
+                          ? emReais(situacao?.pendenciaEmCentavos ?? 0)
                           : qual === 'credito'
                             ? emReais(situacao?.creditoEmCentavos ?? 0)
                             : '—'}
@@ -781,7 +810,7 @@ export const ReceberPagamento = ({ token }: { token: string }) => {
   const usuario = participantes.find((cada) => cada.id === participanteId);
   const campo =
     valor ??
-    (situacao && situacao.pendenteEmCentavos > 0 ? emReais(situacao.pendenteEmCentavos) : '');
+    (situacao && situacao.pendenciaEmCentavos > 0 ? emReais(situacao.pendenciaEmCentavos) : '');
   const centavos = emCentavos(campo);
   const depois = usuario && situacao && depoisDoPagamento(nomeDe(usuario), situacao, centavos);
 
@@ -947,7 +976,8 @@ export const Gastos = ({ token }: { token: string }) => {
   const pendentes = aReembolsar(gastos.valor);
   const aReembolsarIds = new Set(pendentes.map((gasto) => gasto.id));
   const doMes = gastos.valor.filter(
-    (gasto) => !aReembolsarIds.has(gasto.id) && mesEmCampoGrande(new Date(gasto.feitoEm)) === mes,
+    (gasto) =>
+      !aReembolsarIds.has(gasto.id) && mesEmCampoGrande(new Date(gasto.registradoEm)) === mes,
   );
   const verNota = async (gasto: Gasto) =>
     setFalhaAoAbrir(!(await abrirArquivo(token, `/api/financeiro/nota/${gasto.notaId}`)));
@@ -1010,7 +1040,7 @@ export const Gastos = ({ token }: { token: string }) => {
                       {emReais(gasto.valorEmCentavos)}
                     </strong>
                     <small>
-                      Do próprio bolso · {dataEmCampoGrande(gasto.feitoEm)}. Sai da caixinha só
+                      Do próprio bolso · {dataEmCampoGrande(gasto.registradoEm)}. Sai da caixinha só
                       quando você reembolsar.
                     </small>
                   </p>
@@ -1062,7 +1092,7 @@ export const Gastos = ({ token }: { token: string }) => {
               <tbody>
                 {doMes.map((gasto) => (
                   <tr key={gasto.id} {...dadosDe(gasto)}>
-                    <td data-rotulo="Data">{dataEmCampoGrande(gasto.feitoEm)}</td>
+                    <td data-rotulo="Data">{dataEmCampoGrande(gasto.registradoEm)}</td>
                     <td data-rotulo="Tipo de gasto">
                       <strong>{NOME_DO_TIPO_DE_GASTO[gasto.tipo]}</strong>
                     </td>
@@ -1282,11 +1312,11 @@ export const ValorDaCota = ({ token }: { token: string }) => {
   );
   const [valores, recarregarValores] = useLeitura<readonly ValorDaCotaLido[]>(
     token,
-    '/api/participacao/tipo-de-cota',
+    '/api/participacao/valor-da-cota',
   );
   const [seguintes, recarregarSeguintes] = useLeitura<readonly ValorDaCotaLido[]>(
     token,
-    `/api/participacao/tipo-de-cota?ano=${ano + 1}`,
+    `/api/participacao/valor-da-cota?ano=${ano + 1}`,
   );
   const recarregarDefinidos = () => Promise.all([recarregarValores(), recarregarSeguintes()]);
   const recarregar = () => Promise.all([recarregarCaixinha(), recarregarDefinidos()]);

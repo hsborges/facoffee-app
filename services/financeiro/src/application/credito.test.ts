@@ -20,8 +20,8 @@ describe('listarCreditoEPendentes', () => {
     expect(await listarCreditoEPendentes(buscarTotais)({ perfis: ['gestor'] })).toEqual({
       ok: true,
       value: [
-        { id: 'p-1', ativo: true, creditoEmCentavos: 6000, pendenteEmCentavos: 0 },
-        { id: 'p-2', ativo: false, creditoEmCentavos: 0, pendenteEmCentavos: 6000 },
+        { id: 'p-1', participando: true, creditoEmCentavos: 6000, pendenciaEmCentavos: 0 },
+        { id: 'p-2', participando: false, creditoEmCentavos: 0, pendenciaEmCentavos: 6000 },
       ],
     });
   });
@@ -53,10 +53,10 @@ describe('listarPendentes', () => {
     expect(await listarPendentes(buscar, cotas)()).toEqual([
       {
         id: 'p-3',
-        pendenteEmCentavos: 8000,
+        pendenciaEmCentavos: 8000,
         cota: { mes: '2026-11', tipoDeCota: 'completa', valorEmCentavos: 3000 },
       },
-      { id: 'p-4', pendenteEmCentavos: 500, cota: null },
+      { id: 'p-4', pendenciaEmCentavos: 500, cota: null },
     ]);
   });
 });
@@ -67,9 +67,9 @@ describe('consultarCreditoEPendente', () => {
       ok: true,
       value: {
         id: 'p-2',
-        ativo: false,
+        participando: false,
         creditoEmCentavos: 0,
-        pendenteEmCentavos: 6000,
+        pendenciaEmCentavos: 6000,
         ...devido,
       },
     });
