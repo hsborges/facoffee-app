@@ -6,12 +6,12 @@ const bia = '2b3c4d5e-6f70-4a81-9b2c-3d4e5f6a7b8c';
 
 const comCotaDoMes: Pendente = {
   id: ana,
-  pendenteEmCentavos: 2500,
+  pendenciaEmCentavos: 2500,
   cota: { mes: '2026-11', valorEmCentavos: 3000 },
 };
 const deAntes: Pendente = {
   id: bia,
-  pendenteEmCentavos: 3000,
+  pendenciaEmCentavos: 3000,
   cota: { mes: '2026-10', valorEmCentavos: 3000 },
 };
 
@@ -92,7 +92,7 @@ describe('lembretesDevidos', () => {
   });
 
   it('RN-NOT-08, RN-FIN-17: lembra também quem está pendente sem cota, por um complemento', () => {
-    const soComplemento = { id: ana, pendenteEmCentavos: 500, cota: null };
+    const soComplemento = { id: ana, pendenciaEmCentavos: 500, cota: null };
     expect(lembretesDevidos([soComplemento], em(1), [])).toEqual([]);
     expect(lembretesDevidos([soComplemento], em(10), [])).toMatchObject([
       { participanteId: ana, tipo: 'lembrete' },
@@ -104,17 +104,17 @@ describe('pendentesDe', () => {
   it('aceita a resposta de Financeiro', () => {
     const resposta = [
       { ...comCotaDoMes, cota: { ...comCotaDoMes.cota, tipoDeCota: 'completa' } },
-      { id: bia, pendenteEmCentavos: 500, cota: null },
+      { id: bia, pendenciaEmCentavos: 500, cota: null },
     ];
     expect(pendentesDe(resposta)).toEqual(resposta);
   });
 
   it.each([
     {},
-    [{ id: 'abc', pendenteEmCentavos: 1, cota: null }],
-    [{ id: ana, pendenteEmCentavos: 0, cota: null }],
-    [{ id: ana, pendenteEmCentavos: 1 }],
-    [{ id: ana, pendenteEmCentavos: 1, cota: { mes: 'nov', valorEmCentavos: 1 } }],
+    [{ id: 'abc', pendenciaEmCentavos: 1, cota: null }],
+    [{ id: ana, pendenciaEmCentavos: 0, cota: null }],
+    [{ id: ana, pendenciaEmCentavos: 1 }],
+    [{ id: ana, pendenciaEmCentavos: 1, cota: { mes: 'nov', valorEmCentavos: 1 } }],
   ])('recusa resposta fora do formato: %j', (resposta) => {
     expect(pendentesDe(resposta)).toBeUndefined();
   });

@@ -123,7 +123,7 @@ describe('service', () => {
       .get('/contato/gestor', (c) => c.json([gestor]))
       .get('/contato/:id', (c) => {
         const encontrado = [ana, bia, cia, dani].find((x) => x.id === c.req.param('id'));
-        return encontrado ? c.json(encontrado) : c.json({ error: 'not-found' }, 404);
+        return encontrado ? c.json(encontrado) : c.json({ error: 'nao-encontrado' }, 404);
       }).fetch,
     port: 0,
   });
@@ -132,7 +132,7 @@ describe('service', () => {
   const cota = { mes: '2026-11', valorEmCentavos: 3000 };
   const financeiro = serve({
     fetch: new Hono().get('/pendente', (c) =>
-      c.json([{ id: cia.id, pendenteEmCentavos: 3000, cota }]),
+      c.json([{ id: cia.id, pendenciaEmCentavos: 3000, cota }]),
     ).fetch,
     port: 0,
   });
