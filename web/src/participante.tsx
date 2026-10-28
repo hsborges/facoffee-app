@@ -329,23 +329,23 @@ export const Selo = ({ situacao, rotulo }: { situacao: SituacaoDoSelo; rotulo?: 
   );
 };
 
-type Saldo = Pick<CreditoEPendente, 'creditoEmCentavos' | 'pendenteEmCentavos'>;
+type Saldo = Pick<CreditoEPendente, 'creditoEmCentavos' | 'pendenciaEmCentavos'>;
 
 /** RN-FIN-35: the crédito or pendência before paying, as a rótulo and its valor. */
 export const saldoAntes = (saldo: Saldo) =>
   ({
-    pendente: { rotulo: 'Você deve', valor: emReais(saldo.pendenteEmCentavos) },
+    pendente: { rotulo: 'Você deve', valor: emReais(saldo.pendenciaEmCentavos) },
     credito: { rotulo: 'Seu crédito', valor: emReais(saldo.creditoEmCentavos) },
     'em-dia': { rotulo: 'Situação', valor: 'Em dia' },
   })[situacaoDe(saldo)];
 
 /** Whether a participante is pendente, has crédito or is em dia. */
 export const situacaoDe = (saldo: Saldo): 'pendente' | 'credito' | 'em-dia' =>
-  saldo.pendenteEmCentavos > 0 ? 'pendente' : saldo.creditoEmCentavos > 0 ? 'credito' : 'em-dia';
+  saldo.pendenciaEmCentavos > 0 ? 'pendente' : saldo.creditoEmCentavos > 0 ? 'credito' : 'em-dia';
 
 /** RN-FIN-35: how the situação of `quem` stands once `valorEmCentavos` is paid. */
 export const depoisDoPagamento = (quem: string, saldo: Saldo, valorEmCentavos: number) => {
-  const depois = saldo.creditoEmCentavos - saldo.pendenteEmCentavos + valorEmCentavos;
+  const depois = saldo.creditoEmCentavos - saldo.pendenciaEmCentavos + valorEmCentavos;
   if (depois > 0)
     return {
       situacao: 'credito',
@@ -723,7 +723,7 @@ const SituacaoEmDestaque = ({ situacao }: { situacao: Situacao }) => {
       </h2>
       <Selo situacao={qual} />
       <p className="valor-grande">
-        {emReais(qual === 'pendente' ? situacao.pendenteEmCentavos : situacao.creditoEmCentavos)}
+        {emReais(qual === 'pendente' ? situacao.pendenciaEmCentavos : situacao.creditoEmCentavos)}
       </p>
       <p className="apoio">
         {qual === 'pendente'
@@ -786,7 +786,7 @@ export const MinhaSituacao = ({ token }: { token: string }) => {
     token,
     '/api/financeiro/participante/eu',
   );
-  const [valores] = useLeitura<readonly ValorDaCota[]>(token, '/api/participacao/tipo-de-cota');
+  const [valores] = useLeitura<readonly ValorDaCota[]>(token, '/api/participacao/valor-da-cota');
   const recarregar = () => Promise.all([recarregarParticipacao(), recarregarSituacao()]);
   const comando = useComando(recarregar);
   const { enviando, avisos } = comando;
@@ -1018,7 +1018,7 @@ export const DesativarMeuAcesso = ({
           </div>
         </div>
         <div className="pilha">
-          {saldo?.ativo && (
+          {saldo?.participando && (
             <Link className="chamada espuma" to="/" data-testid="ir-sair-da-copa">
               <Icone nome="info" />
               <span>
@@ -1030,7 +1030,7 @@ export const DesativarMeuAcesso = ({
           )}
           {saldo && qual === 'pendente' && (
             <p className="previa-da-situacao" data-situacao="pendente">
-              Você deve {emReais(saldo.pendenteEmCentavos)}. O que está devido fica guardado; se
+              Você deve {emReais(saldo.pendenciaEmCentavos)}. O que está devido fica guardado; se
               puder, acerte com o gestor antes.
             </p>
           )}
@@ -1060,7 +1060,7 @@ export const EnviarComprovante = ({
 }) => {
   const [situacao, recarregar] = useLeitura<Situacao>(token, '/api/financeiro/participante/eu');
   const [participacao] = useLeitura<Participacao>(token, '/api/participacao/participante/eu');
-  const [valores] = useLeitura<readonly ValorDaCota[]>(token, '/api/participacao/tipo-de-cota');
+  const [valores] = useLeitura<readonly ValorDaCota[]>(token, '/api/participacao/valor-da-cota');
   const { enviando, fazer, avisos } = useComando(() => {});
   const [valor, setValor] = useState<string>();
   const navigate = useNavigate();
@@ -1071,7 +1071,7 @@ export const EnviarComprovante = ({
   if (situacao.situacao !== 'ok') return <FalhaAoCarregar tentarDeNovo={recarregar} />;
 
   const saldo = situacao.valor;
-  const campo = valor ?? (saldo.pendenteEmCentavos > 0 ? emReais(saldo.pendenteEmCentavos) : '');
+  const campo = valor ?? (saldo.pendenciaEmCentavos > 0 ? emReais(saldo.pendenciaEmCentavos) : '');
   const centavos = emCentavos(campo);
   const tipo = participacao.situacao === 'ok' ? participacao.valor.tipoDeCota : undefined;
   const cota = tipo && valores.situacao === 'ok' ? valorDe(valores.valor, tipo) : undefined;
@@ -1097,9 +1097,9 @@ export const EnviarComprovante = ({
   return (
     <form onSubmit={enviar} data-testid="envio-de-comprovante">
       {avisos}
-      {saldo.pendenteEmCentavos > 0 && (
+      {saldo.pendenciaEmCentavos > 0 && (
         <p className="apoio">
-          Você deve <strong>{emReais(saldo.pendenteEmCentavos)}</strong>.
+          Você deve <strong>{emReais(saldo.pendenciaEmCentavos)}</strong>.
         </p>
       )}
       <div className="colunas">
@@ -1181,7 +1181,7 @@ export const Caixinha = ({ token }: { token: string }) => {
   const [caixinha, recarregar] = useLeitura<CaixinhaLida>(token, '/api/financeiro/caixinha');
   const [valores, recarregarValores] = useLeitura<readonly ValorDaCota[]>(
     token,
-    '/api/participacao/tipo-de-cota',
+    '/api/participacao/valor-da-cota',
   );
   const [mes, setMes] = useState(() => mesEmCampoGrande(new Date()));
   const [doMes, recarregarMes] = useLeitura<CaixinhaDoMesLida>(

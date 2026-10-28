@@ -134,10 +134,15 @@ describe('confirmarComprovante', () => {
 });
 
 describe('creditoOuPendencia', () => {
-  const situacao = { id: participanteId, ativo: true, creditoEmCentavos: 0, pendenteEmCentavos: 0 };
+  const situacao = {
+    id: participanteId,
+    participando: true,
+    creditoEmCentavos: 0,
+    pendenciaEmCentavos: 0,
+  };
 
   it('RN-FIN-20: shows the pendência, the crédito or that the participante is em dia', () => {
-    expect(creditoOuPendencia({ ...situacao, pendenteEmCentavos: 3250 })).toBe(
+    expect(creditoOuPendencia({ ...situacao, pendenciaEmCentavos: 3250 })).toBe(
       'Pendente: R$\u00a032,50',
     );
     expect(creditoOuPendencia({ ...situacao, creditoEmCentavos: 6000 })).toBe(
@@ -243,7 +248,7 @@ describe('saldoDepoisDosReembolsos', () => {
     participanteId,
     tipo: 'cafe',
     notaId: 'n',
-    feitoEm: '2026-10-25T12:00:00Z',
+    registradoEm: '2026-10-25T12:00:00Z',
   } as const;
 
   it('RN-FIN-37: takes from the saldo only the gastos do próprio bolso not reembolsados', () => {

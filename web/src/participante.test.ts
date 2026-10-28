@@ -142,15 +142,15 @@ describe('atalhosDoValorPago', () => {
 
 describe('saldoAntes', () => {
   it('RN-FIN-35: tells the crédito, the pendência, or that the participante is em dia', () => {
-    expect(saldoAntes({ creditoEmCentavos: 500, pendenteEmCentavos: 0 })).toEqual({
+    expect(saldoAntes({ creditoEmCentavos: 500, pendenciaEmCentavos: 0 })).toEqual({
       rotulo: 'Seu crédito',
       valor: 'R$\u00a05,00',
     });
-    expect(saldoAntes({ creditoEmCentavos: 0, pendenteEmCentavos: 3000 })).toEqual({
+    expect(saldoAntes({ creditoEmCentavos: 0, pendenciaEmCentavos: 3000 })).toEqual({
       rotulo: 'Você deve',
       valor: 'R$\u00a030,00',
     });
-    expect(saldoAntes({ creditoEmCentavos: 0, pendenteEmCentavos: 0 })).toEqual({
+    expect(saldoAntes({ creditoEmCentavos: 0, pendenciaEmCentavos: 0 })).toEqual({
       rotulo: 'Situação',
       valor: 'Em dia',
     });
@@ -158,7 +158,7 @@ describe('saldoAntes', () => {
 });
 
 describe('depoisDoPagamento', () => {
-  const pendente = { creditoEmCentavos: 0, pendenteEmCentavos: 3000 };
+  const pendente = { creditoEmCentavos: 0, pendenciaEmCentavos: 3000 };
 
   it('RN-FIN-35: tells how the situação stands after paying', () => {
     expect(depoisDoPagamento('Bia', pendente, 3000)).toEqual({
@@ -177,7 +177,7 @@ describe('depoisDoPagamento', () => {
 
   it('RN-FIN-35: a crédito adds to what is paid', () => {
     expect(
-      depoisDoPagamento('Ana', { creditoEmCentavos: 500, pendenteEmCentavos: 0 }, 1000),
+      depoisDoPagamento('Ana', { creditoEmCentavos: 500, pendenciaEmCentavos: 0 }, 1000),
     ).toEqual({ situacao: 'credito', texto: 'Ana fica com R$\u00a015,00 de crédito.' });
   });
 });

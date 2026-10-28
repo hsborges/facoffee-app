@@ -5,7 +5,7 @@ const usuario = {
   id: '11111111-1111-4111-8111-111111111111',
   nome: 'João',
   email: 'joao@ufms.br',
-  perfis: ['participante'],
+  perfis: [],
 };
 
 const responde = (resposta: () => Promise<Response>) => {

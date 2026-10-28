@@ -1,5 +1,5 @@
 /** Access profile in the FACOFFEE (ADR 0008). */
-export type Perfil = 'gestor' | 'participante';
+export type Perfil = 'gestor';
 
 /** The logged-in usuário, as answered by `GET /api/usuario/eu`. */
 export type Usuario = {
@@ -48,6 +48,12 @@ export type Participacao = {
   readonly troca: { readonly tipoDeCota: TipoDeCota; readonly aPartirDe: string } | null;
 };
 
+/**
+ * Someone who ever participated, with the tipo de cota of now, as listed by
+ * `GET /api/participacao/participante` (gestor only).
+ */
+export type Participante = Participacao & { readonly id: string };
+
 /** A usuário who has accessed the FACOFFEE, as listed by `GET /api/usuario` (gestor only). */
 export type UsuarioRegistrado = {
   readonly id: string;
@@ -59,9 +65,9 @@ export type UsuarioRegistrado = {
 /** A participante's crédito or pendência, as listed by `GET /api/financeiro/participante`. */
 export type CreditoEPendente = {
   readonly id: string;
-  readonly ativo: boolean;
+  readonly participando: boolean;
   readonly creditoEmCentavos: number;
-  readonly pendenteEmCentavos: number;
+  readonly pendenciaEmCentavos: number;
 };
 
 /** Tipo de gasto. */
@@ -75,7 +81,7 @@ export type Gasto = {
   readonly origem: 'caixinha' | 'proprio-bolso';
   readonly tipo: TipoDeGasto;
   readonly notaId: string;
-  readonly feitoEm: string;
+  readonly registradoEm: string;
   readonly reembolsado: boolean;
 };
 
@@ -103,7 +109,7 @@ export type Caixinha = {
   readonly gastosDoAnoAnteriorPorTipoEmCentavos: Readonly<Record<TipoDeGasto, number>>;
 };
 
-/** The valor of a tipo de cota in a year, as listed by `GET /api/participacao/tipo-de-cota`. */
+/** The valor of a tipo de cota in a year, as listed by `GET /api/participacao/valor-da-cota`. */
 export type ValorDaCota = {
   readonly tipoDeCota: TipoDeCota;
   readonly ano: number;
@@ -232,10 +238,11 @@ const ERROS: ReadonlyMap<string, string> = new Map([
     'participante-nao-encontrado',
     'Participante não encontrado: só quem já pediu entrada tem pagamentos e gastos.',
   ],
+  ['nunca-participou', 'Só quem já pediu entrada na copa envia comprovantes e registra gastos.'],
   ['gasto-nao-encontrado', 'Gasto não encontrado.'],
   ['gasto-ja-reembolsado', 'Esse gasto já foi reembolsado.'],
-  ['sem-participantes-ativos', 'Não há participante ativo para dividir o complemento.'],
-  ['parte-menor-que-um-centavo', 'O valor não dá um centavo para cada participante ativo.'],
+  ['ninguem-participando', 'Não há participante para dividir o complemento.'],
+  ['parte-menor-que-um-centavo', 'O valor não dá um centavo para cada participante.'],
   ['ano-passado', 'Esse ano já passou.'],
   ['valor-ja-definido', 'O valor desse tipo de cota já foi definido para esse ano.'],
 ]);
