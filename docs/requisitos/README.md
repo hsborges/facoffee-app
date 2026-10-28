@@ -12,7 +12,7 @@ Fonte única dos requisitos e das regras de negócio do FACOFFEE, especificados 
 
 | ID | Funcionalidade | Contexto | Regras |
 |---|---|---|---|
-| [RF-PAR-01](participacao/entrar-na-copa.md) | Entrar na copa | Participação | RN-PAR-01, RN-PAR-02, RN-PAR-03, RN-PAR-04 |
+| [RF-PAR-01](participacao/entrar-na-copa.md) | Entrar na copa | Participação | RN-PAR-01, RN-PAR-02, RN-PAR-03, RN-PAR-04, RN-PAR-17 |
 | [RF-PAR-02](participacao/trocar-tipo-de-cota.md) | Trocar tipo de cota | Participação | RN-PAR-05, RN-PAR-06 |
 | [RF-PAR-03](participacao/sair-da-copa.md) | Sair da copa | Participação | RN-PAR-07, RN-PAR-08 |
 | [RF-PAR-04](participacao/dever-a-cota-do-mes.md) | Dever a cota do mês | Participação | RN-PAR-09, RN-PAR-10, RN-PAR-11, RN-PAR-12 |

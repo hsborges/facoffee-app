@@ -77,3 +77,23 @@ Regra: RN-PAR-04 O gestor é um papel de participante
     Então Andrew participa como os demais
     E deve a cota todo mês como os demais
 ```
+
+### RN-PAR-17 Só o gestor vê quem participa e com qual tipo de cota
+
+- Termo: [Gestor](../../dominio/GLOSSARIO.md#gestor), [Tipo de cota](../../dominio/GLOSSARIO.md#tipo-de-cota) · Origem: leitura *Participantes* ([ADR 0035](../../adr/0035-normalizacao-da-api-publica.md))
+
+Cada participante vê só a própria participação; a de todos é do gestor, como o crédito e a pendência (RN-FIN-19).
+
+```gherkin
+# language: pt
+Regra: RN-PAR-17 Só o gestor vê quem participa e com qual tipo de cota
+
+  Cenário: o gestor acompanha
+    Dado que Ana participa com o tipo de cota completa
+    Quando o gestor consulta os participantes
+    Então vê Ana participando com o tipo de cota completa
+
+  Cenário: um participante tenta ver todos
+    Quando Ana, participante, consulta os participantes
+    Então o pedido é recusado
+```
