@@ -47,7 +47,7 @@ describe('solicitarComplemento', () => {
 
   it('saves nothing when refused', async () => {
     const { salvos, solicitar } = inMemory([]);
-    expect(await solicitar(gestor, 1000)).toEqual({ ok: false, error: 'sem-participantes-ativos' });
+    expect(await solicitar(gestor, 1000)).toEqual({ ok: false, error: 'ninguem-participando' });
     expect(await solicitar({ perfis: ['participante'] }, 1000)).toEqual({
       ok: false,
       error: 'sem-permissao',

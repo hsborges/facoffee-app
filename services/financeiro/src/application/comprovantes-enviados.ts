@@ -33,7 +33,7 @@ export type ComprovantesEnviados = {
   readonly salvar: (
     comprovante: ComprovanteEnviado,
     events: readonly Event[],
-  ) => Promise<Result<void, 'participante-nao-encontrado' | 'comprovante-ja-usado'>>;
+  ) => Promise<Result<void, 'nunca-participou' | 'comprovante-ja-usado'>>;
   /** Saves the edição; nothing for an arquivo of another comprovante. */
   readonly editar: (
     comprovante: ComprovanteEnviado,
@@ -62,7 +62,7 @@ type NaoEncontrado = 'comprovante-enviado-nao-encontrado';
 /** Why the participante could not send a comprovante. */
 export type EnviarComprovanteErro =
   | 'comprovante-nao-encontrado'
-  | 'participante-nao-encontrado'
+  | 'nunca-participou'
   | 'comprovante-ja-usado';
 
 /**

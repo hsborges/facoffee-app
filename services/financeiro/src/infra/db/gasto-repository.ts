@@ -17,12 +17,12 @@ export const buscarGastos =
         origem: gastos.origem,
         tipo: gastos.tipo,
         notaId: gastos.notaId,
-        feitoEm: gastos.feitoEm,
+        registradoEm: gastos.registradoEm,
         reembolsado: isNotNull(reembolsos.id).mapWith(Boolean),
       })
       .from(gastos)
       .leftJoin(reembolsos, eq(reembolsos.gastoId, gastos.id))
-      .orderBy(desc(gastos.feitoEm), desc(gastos.id));
+      .orderBy(desc(gastos.registradoEm), desc(gastos.id));
 
 /** {@link Gastos} on PostgreSQL. */
 export const gastoRepository = (db: Executor): Gastos => ({
@@ -33,7 +33,7 @@ export const gastoRepository = (db: Executor): Gastos => ({
         .select({ id: participantes.id })
         .from(participantes)
         .where(eq(participantes.id, gasto.participanteId));
-      if (!conhecido) return fail('participante-nao-encontrado' as const);
+      if (!conhecido) return fail('nunca-participou' as const);
       const saved = await tx
         .insert(gastos)
         .values(gasto)

@@ -51,7 +51,7 @@ export type ApiDependencies = {
   readonly receberPagamento: (
     solicitante: Pick<Solicitante, 'perfis'>,
     pedido: PedidoDePagamento,
-  ) => Promise<Result<string, ReceberPagamentoErro>>;
+  ) => Promise<Result<unknown, ReceberPagamentoErro>>;
   readonly enviarComprovante: (
     solicitante: Pick<Solicitante, 'id'>,
     pedido: PedidoDeComprovante,
@@ -69,7 +69,7 @@ export type ApiDependencies = {
     solicitante: Pick<Solicitante, 'perfis'>,
     id: string,
     pedido: PedidoDeConfirmacao,
-  ) => Promise<Result<string, ConfirmarComprovanteErro>>;
+  ) => Promise<Result<unknown, ConfirmarComprovanteErro>>;
   readonly recusarComprovante: (
     solicitante: Pick<Solicitante, 'perfis'>,
     id: string,
@@ -88,11 +88,11 @@ export type ApiDependencies = {
   readonly reembolsarGasto: (
     solicitante: Pick<Solicitante, 'perfis'>,
     gastoId: string,
-  ) => Promise<Result<string, ReembolsarGastoErro>>;
+  ) => Promise<Result<unknown, ReembolsarGastoErro>>;
   readonly solicitarComplemento: (
     solicitante: Pick<Solicitante, 'perfis'>,
     valorTotalEmCentavos: number,
-  ) => Promise<Result<string, SolicitarErro>>;
+  ) => Promise<Result<unknown, SolicitarErro>>;
   readonly consultarCaixinha: () => Promise<Caixinha>;
   readonly consultarCaixinhaDoMes: (mes: Mes) => Promise<CaixinhaDoMes>;
   readonly listarGastos: (
@@ -128,6 +128,7 @@ const STATUS_DO_ERRO = {
   'comprovante-so-no-pix': 400,
   'comprovante-nao-encontrado': 404,
   'participante-nao-encontrado': 404,
+  'nunca-participou': 409,
   'comprovante-ja-usado': 409,
   'comprovante-enviado-nao-encontrado': 404,
   'comprovante-ja-analisado': 409,
@@ -138,7 +139,7 @@ const STATUS_DO_ERRO = {
   'gasto-nao-encontrado': 404,
   'gasto-pago-pela-caixinha': 409,
   'gasto-ja-reembolsado': 409,
-  'sem-participantes-ativos': 409,
+  'ninguem-participando': 409,
   'parte-menor-que-um-centavo': 409,
 } as const;
 
@@ -224,22 +225,27 @@ const criado = (c: Context, result: Result<string, keyof typeof STATUS_DO_ERRO>)
     ? c.json({ id: result.value }, 201)
     : c.json({ error: result.error }, STATUS_DO_ERRO[result.error]);
 
-const feito = (c: Context, result: Result<void, keyof typeof STATUS_DO_ERRO>) =>
+// A comando answers its id only when another route takes it; the others answer 204 (ADR 0035).
+const feito = (c: Context, result: Result<unknown, keyof typeof STATUS_DO_ERRO>) =>
   result.ok ? c.body(null, 204) : c.json({ error: result.error }, STATUS_DO_ERRO[result.error]);
 
-const baixado = (c: Context, result: Result<Arquivo, NaoEncontrado>) =>
+const baixado = (
+  c: Context,
+  result: Result<Arquivo, NaoEncontrado>,
+  error: 'comprovante-nao-encontrado' | 'nota-nao-encontrada',
+) =>
   result.ok
     ? c.body(result.value.conteudo as Uint8Array<ArrayBuffer>, 200, {
         'content-type': result.value.tipo,
         'x-content-type-options': 'nosniff',
       })
-    : c.json({ error: 'not-found' }, 404);
+    : c.json({ error }, 404);
 
 /**
  * HTTP API of the Financeiro context. The gestor, or the participante for themself, guarda
- * comprovantes with `POST /guardar-comprovante` and any participante guarda notas with
+ * comprovantes with `POST /guardar-comprovante` and anyone logged in guarda notas with
  * `POST /guardar-nota` (multipart, up to 5 MB, PDF, JPEG or PNG); `GET /comprovante/:id` serves only
- * the participante and the gestor, and `GET /nota/:id` any participante. The gestor receives
+ * the participante and the gestor, and `GET /nota/:id` anyone logged in. The gestor receives
  * pagamentos with `POST /receber-pagamento` (JSON; a pagamento por PIX references its comprovante).
  * The participante sends a comprovante with `POST /enviar-comprovante` (JSON, the valor and the
  * comprovante guardado) and, while a confirmar, edits or cancels it with
@@ -251,8 +257,8 @@ const baixado = (c: Context, result: Result<Arquivo, NaoEncontrado>) =>
  * nota they guardaram).
  * The gestor reembolsa a gasto pago do próprio bolso with `POST /gasto/:id/reembolsar` and
  * solicita a complemento with `POST /solicitar-complemento` (JSON, the valor total).
- * Leituras *Saldo da caixinha* and *Gastos do ano anterior*: `GET /caixinha`, for any participante.
- * Leitura *Caixinha do mês*: `GET /caixinha/:mes` (`AAAA-MM`), for any participante.
+ * Leituras *Saldo da caixinha* and *Gastos do ano anterior*: `GET /caixinha`, for anyone logged in.
+ * Leitura *Caixinha do mês*: `GET /caixinha/:mes` (`AAAA-MM`), for anyone logged in.
  * Leitura *Gastos*: `GET /gasto`, every gasto with whether it was reembolsado, only for the gestor.
  * Leitura *Crédito e pendentes*: `GET /participante` lists every participante, only for the
  * gestor; `GET /participante/eu` gives the logged-in participante their own, with their cotas and
@@ -302,7 +308,7 @@ export const createApp = ({
     })
     .onError((error, c) => {
       logger.error('unhandled error', { error });
-      return c.json({ error: 'internal-error' }, 500);
+      return c.json({ error: 'erro-interno' }, 500);
     })
     .get('/health', async (c) => {
       const dependencies = await health();
@@ -311,7 +317,7 @@ export const createApp = ({
     })
     .post('/guardar-comprovante', limite, async (c) => {
       const quem = solicitante(c);
-      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      if (!quem) return c.json({ error: 'nao-autenticado' }, 401);
       const { conteudo, participanteId } = await formulario(c);
       const valido = conteudo && typeof participanteId === 'string' && UUID.test(participanteId);
       if (!valido) return c.json({ error: 'pedido-invalido' }, 400);
@@ -319,41 +325,41 @@ export const createApp = ({
     })
     .post('/guardar-nota', limite, async (c) => {
       const quem = solicitante(c);
-      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      if (!quem) return c.json({ error: 'nao-autenticado' }, 401);
       const { conteudo } = await formulario(c);
       if (!conteudo) return c.json({ error: 'pedido-invalido' }, 400);
       return criado(c, await guardarNota(quem, conteudo));
     })
     .get('/comprovante/:id', async (c) => {
       const quem = solicitante(c);
-      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      if (!quem) return c.json({ error: 'nao-autenticado' }, 401);
       const id = c.req.param('id');
-      if (!UUID.test(id)) return c.json({ error: 'not-found' }, 404);
-      return baixado(c, await baixarComprovante(quem, id));
+      if (!UUID.test(id)) return c.json({ error: 'comprovante-nao-encontrado' }, 404);
+      return baixado(c, await baixarComprovante(quem, id), 'comprovante-nao-encontrado');
     })
     .get('/nota/:id', async (c) => {
-      if (!solicitante(c)) return c.json({ error: 'unauthorized' }, 401);
+      if (!solicitante(c)) return c.json({ error: 'nao-autenticado' }, 401);
       const id = c.req.param('id');
-      if (!UUID.test(id)) return c.json({ error: 'not-found' }, 404);
-      return baixado(c, await baixarNota(id));
+      if (!UUID.test(id)) return c.json({ error: 'nota-nao-encontrada' }, 404);
+      return baixado(c, await baixarNota(id), 'nota-nao-encontrada');
     })
     .post('/receber-pagamento', limiteDoPedido, async (c) => {
       const quem = solicitante(c);
-      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      if (!quem) return c.json({ error: 'nao-autenticado' }, 401);
       const pedido = await pedidoDePagamento(c);
       if (!pedido) return c.json({ error: 'pedido-invalido' }, 400);
-      return criado(c, await receberPagamento(quem, pedido));
+      return feito(c, await receberPagamento(quem, pedido));
     })
     .post('/enviar-comprovante', limiteDoPedido, async (c) => {
       const quem = solicitante(c);
-      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      if (!quem) return c.json({ error: 'nao-autenticado' }, 401);
       const pedido = await pedidoDeComprovante(c);
       if (!pedido) return c.json({ error: 'pedido-invalido' }, 400);
       return criado(c, await enviarComprovante(quem, pedido));
     })
     .get('/comprovante-enviado', async (c) => {
       const quem = solicitante(c);
-      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      if (!quem) return c.json({ error: 'nao-autenticado' }, 401);
       const result = await listarComprovantesAConfirmar(quem);
       return result.ok
         ? c.json(result.value)
@@ -361,12 +367,12 @@ export const createApp = ({
     })
     .get('/comprovante-enviado/eu', async (c) => {
       const quem = solicitante(c);
-      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      if (!quem) return c.json({ error: 'nao-autenticado' }, 401);
       return c.json(await listarMeusComprovantes(quem));
     })
     .post('/comprovante-enviado/:id/editar', limiteDoPedido, async (c) => {
       const quem = solicitante(c);
-      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      if (!quem) return c.json({ error: 'nao-autenticado' }, 401);
       const id = c.req.param('id');
       if (!UUID.test(id)) return c.json({ error: 'comprovante-enviado-nao-encontrado' }, 404);
       const pedido = await pedidoDeComprovante(c);
@@ -375,20 +381,20 @@ export const createApp = ({
     })
     .post('/comprovante-enviado/:id/cancelar', async (c) => {
       const quem = solicitante(c);
-      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      if (!quem) return c.json({ error: 'nao-autenticado' }, 401);
       const id = c.req.param('id');
       if (!UUID.test(id)) return c.json({ error: 'comprovante-enviado-nao-encontrado' }, 404);
       return feito(c, await cancelarComprovante(quem, id.toLowerCase()));
     })
     .post('/comprovante-enviado/:id/confirmar', limiteDoPedido, async (c) => {
       const quem = solicitante(c);
-      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      if (!quem) return c.json({ error: 'nao-autenticado' }, 401);
       const id = c.req.param('id');
       if (!UUID.test(id)) return c.json({ error: 'comprovante-enviado-nao-encontrado' }, 404);
       const pedido = await pedidoDeComprovante(c);
       if (!pedido) return c.json({ error: 'pedido-invalido' }, 400);
       const { valorEmCentavos: valorConfirmadoEmCentavos, comprovanteId } = pedido;
-      return criado(
+      return feito(
         c,
         await confirmarComprovante(quem, id.toLowerCase(), {
           valorConfirmadoEmCentavos,
@@ -398,7 +404,7 @@ export const createApp = ({
     })
     .post('/comprovante-enviado/:id/recusar', limiteDoPedido, async (c) => {
       const quem = solicitante(c);
-      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      if (!quem) return c.json({ error: 'nao-autenticado' }, 401);
       const id = c.req.param('id');
       if (!UUID.test(id)) return c.json({ error: 'comprovante-enviado-nao-encontrado' }, 404);
       const motivo = (await corpoJson(c))?.motivo;
@@ -409,39 +415,39 @@ export const createApp = ({
     })
     .post('/registrar-gasto', limiteDoPedido, async (c) => {
       const quem = solicitante(c);
-      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      if (!quem) return c.json({ error: 'nao-autenticado' }, 401);
       const pedido = await pedidoDeGasto(c);
       if (!pedido) return c.json({ error: 'pedido-invalido' }, 400);
       return criado(c, await registrarGasto(quem, pedido));
     })
     .post('/gasto/:id/reembolsar', async (c) => {
       const quem = solicitante(c);
-      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      if (!quem) return c.json({ error: 'nao-autenticado' }, 401);
       const id = c.req.param('id');
       if (!UUID.test(id)) return c.json({ error: 'gasto-nao-encontrado' }, 404);
-      return criado(c, await reembolsarGasto(quem, id.toLowerCase()));
+      return feito(c, await reembolsarGasto(quem, id.toLowerCase()));
     })
     .post('/solicitar-complemento', limiteDoPedido, async (c) => {
       const quem = solicitante(c);
-      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      if (!quem) return c.json({ error: 'nao-autenticado' }, 401);
       const corpo = (await c.req.json().catch(() => undefined)) as { valorEmCentavos?: unknown };
       const valor = corpo?.valorEmCentavos;
       if (!inteiroPositivo(valor)) return c.json({ error: 'pedido-invalido' }, 400);
-      return criado(c, await solicitarComplemento(quem, valor));
+      return feito(c, await solicitarComplemento(quem, valor));
     })
     .get('/caixinha', async (c) => {
-      if (!solicitante(c)) return c.json({ error: 'unauthorized' }, 401);
+      if (!solicitante(c)) return c.json({ error: 'nao-autenticado' }, 401);
       return c.json(await consultarCaixinha());
     })
     .get('/caixinha/:mes', async (c) => {
-      if (!solicitante(c)) return c.json({ error: 'unauthorized' }, 401);
+      if (!solicitante(c)) return c.json({ error: 'nao-autenticado' }, 401);
       const mes = c.req.param('mes');
-      if (!MES.test(mes)) return c.json({ error: 'not-found' }, 404);
+      if (!MES.test(mes)) return c.json({ error: 'pedido-invalido' }, 400);
       return c.json(await consultarCaixinhaDoMes(mes));
     })
     .get('/gasto', async (c) => {
       const quem = solicitante(c);
-      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      if (!quem) return c.json({ error: 'nao-autenticado' }, 401);
       const result = await listarGastos(quem);
       return result.ok
         ? c.json(result.value)
@@ -449,7 +455,7 @@ export const createApp = ({
     })
     .get('/participante', async (c) => {
       const quem = solicitante(c);
-      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      if (!quem) return c.json({ error: 'nao-autenticado' }, 401);
       const result = await listarCreditoEPendentes(quem);
       return result.ok
         ? c.json(result.value)
@@ -457,7 +463,7 @@ export const createApp = ({
     })
     .get('/participante/eu', async (c) => {
       const quem = solicitante(c);
-      if (!quem) return c.json({ error: 'unauthorized' }, 401);
+      if (!quem) return c.json({ error: 'nao-autenticado' }, 401);
       const result = await consultarCreditoEPendente(quem);
       return result.ok
         ? c.json(result.value)
@@ -465,6 +471,6 @@ export const createApp = ({
     })
     .get('/pendente', async (c) =>
       c.req.header('x-user-id')
-        ? c.json({ error: 'not-found' }, 404)
+        ? c.json({ error: 'nao-encontrado' }, 404)
         : c.json(await listarPendentes()),
     );
