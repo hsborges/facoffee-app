@@ -7,8 +7,10 @@ import {
   mascaraDeReais,
   mesEmCampoGrande,
   mesPorExtenso,
+  nomeDe,
   nomeDoMes,
   outroMes,
+  primeiroNome,
 } from './formato';
 
 describe('iniciais', () => {
@@ -16,6 +18,21 @@ describe('iniciais', () => {
     expect(iniciais('ana maria de souza')).toBe('AS');
     expect(iniciais('  Bruno  ')).toBe('B');
     expect(iniciais('')).toBe('');
+  });
+});
+
+describe('nomeDe', () => {
+  it('is the nome of the usuário, or the e-mail when the nome is empty', () => {
+    expect(nomeDe({ nome: 'Ana Souza', email: 'ana@ufms.br' })).toBe('Ana Souza');
+    expect(nomeDe({ nome: '', email: 'ana@ufms.br' })).toBe('ana@ufms.br');
+  });
+});
+
+describe('primeiroNome', () => {
+  it('takes the first name, ignoring spaces around it', () => {
+    expect(primeiroNome('Ana Maria Souza')).toBe('Ana');
+    expect(primeiroNome('  Bruno ')).toBe('Bruno');
+    expect(primeiroNome('ana@ufms.br')).toBe('ana@ufms.br');
   });
 });
 

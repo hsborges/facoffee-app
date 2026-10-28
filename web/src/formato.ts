@@ -63,6 +63,16 @@ export const iniciais = (nome: string) => {
     .toUpperCase();
 };
 
+/** The name a usuário goes by: the nome, or the e-mail while the nome is empty. */
+export const nomeDe = (usuario: { readonly nome: string; readonly email: string }) =>
+  usuario.nome.trim() || usuario.email;
+
+/** The first name, for a greeting: `Ana Maria Souza` is `Ana`. */
+export const primeiroNome = (nome: string) => nome.trim().split(/\s+/)[0] ?? '';
+
+/** Every tipo de cota, in the order the pages show them. */
+export const TIPOS_DE_COTA = ['so-cafe', 'completa'] as const satisfies readonly TipoDeCota[];
+
 /** Name of each tipo de cota. */
 export const NOME_DO_TIPO_DE_COTA: Readonly<Record<TipoDeCota, string>> = {
   'so-cafe': 'Só café',

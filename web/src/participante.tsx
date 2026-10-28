@@ -37,23 +37,28 @@ import {
   NOME_DO_TIPO_DE_GASTO,
   nomeDoMes,
   outroMes,
+  TIPOS_DE_COTA,
 } from './formato';
 import { Icone, type NomeDoIcone } from './icones';
 
-/** Reads a recurso when mounted; gives the leitura (undefined while loading) and how to reload it. */
+/**
+ * Reads a recurso when mounted and whenever `caminho` changes; gives the leitura (undefined while
+ * loading) and how to reload it. Reloading keeps the leitura on screen until the new one arrives;
+ * another `caminho` does not, since the leitura is of the one before.
+ */
 export const useLeitura = <T,>(token: string, caminho: string) => {
-  const [leitura, setLeitura] = useState<Leitura<T>>();
+  const [lida, setLida] = useState<{ readonly caminho: string; readonly leitura: Leitura<T> }>();
   const ultima = useRef(0);
   // Only the latest request sets the leitura: an older answer arriving late would show stale data.
   const carregar = useCallback(async () => {
     const minha = ++ultima.current;
-    const lida = await ler<T>(token, caminho);
-    if (minha === ultima.current) setLeitura(lida);
+    const leitura = await ler<T>(token, caminho);
+    if (minha === ultima.current) setLida({ caminho, leitura });
   }, [token, caminho]);
   useEffect(() => {
     carregar();
   }, [carregar]);
-  return [leitura, carregar] as const;
+  return [lida?.caminho === caminho ? lida.leitura : undefined, carregar] as const;
 };
 
 /** Announces that the page is loading. */
@@ -74,26 +79,34 @@ export const FalhaAoCarregar = ({ tentarDeNovo }: { tentarDeNovo: () => void }) 
 );
 
 /**
- * Runs a comando, announces how it went and then reloads the page's leituras. A subpágina that
- * goes back to its page when done passes the aviso in the navigation `state` (`{ feito }`), and
- * the page announces it.
+ * Runs a comando, announces how it went and then reloads the page's leituras; `enviando` lasts
+ * until they are reloaded, so the page does not offer a comando on what it already did. A
+ * subpágina that goes back to its page when done passes the aviso in the navigation `state`
+ * (`{ feito }`), and the page announces it once.
  */
-export const useComando = (recarregar: () => void) => {
-  const { state } = useLocation();
+export const useComando = (recarregar: () => unknown) => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [enviando, setEnviando] = useState(false);
   const [aviso, setAviso] = useState<{
     readonly feito?: string | undefined;
     readonly falha?: string;
   }>(() => ({
-    feito: (state as { feito?: string } | null)?.feito,
+    feito: (location.state as { feito?: string } | null)?.feito,
   }));
+  // The aviso lives in the history entry: cleared, so a reload or a return does not repeat it.
+  useEffect(() => {
+    if (!(location.state as { feito?: string } | null)?.feito) return;
+    const { pathname, search, hash } = location;
+    navigate({ pathname, search, hash }, { replace: true, state: null });
+  }, [location, navigate]);
   const fazer = async (comando: () => Promise<Comando>, feito: string, falha: string) => {
     setEnviando(true);
     setAviso({});
     const resultado = await comando();
-    setEnviando(false);
     setAviso(resultado.feito ? { feito } : { falha: mensagemDaFalha(resultado.erro, falha) });
-    recarregar();
+    await recarregar();
+    setEnviando(false);
     return resultado.feito;
   };
   const avisos = (
@@ -311,6 +324,14 @@ export const Selo = ({ situacao, rotulo }: { situacao: SituacaoDoSelo; rotulo?: 
 };
 
 type Saldo = Pick<CreditoEPendente, 'creditoEmCentavos' | 'pendenteEmCentavos'>;
+
+/** RN-FIN-35: the crédito or pendência before paying, as a rótulo and its valor. */
+export const saldoAntes = (saldo: Saldo) =>
+  saldo.creditoEmCentavos > 0
+    ? { rotulo: 'Seu crédito', valor: emReais(saldo.creditoEmCentavos) }
+    : saldo.pendenteEmCentavos > 0
+      ? { rotulo: 'Você deve', valor: emReais(saldo.pendenteEmCentavos) }
+      : { rotulo: 'Situação', valor: 'Em dia' };
 
 /** Whether a participante is pendente, has crédito or is em dia. */
 export const situacaoDe = (saldo: Saldo): 'pendente' | 'credito' | 'em-dia' =>
@@ -604,8 +625,6 @@ const Comprovantes = ({ token }: { token: string }) => {
   );
 };
 
-const TIPOS_DE_COTA = ['so-cafe', 'completa'] as const;
-
 const outroTipo = (tipo: TipoDeCota): TipoDeCota => (tipo === 'so-cafe' ? 'completa' : 'so-cafe');
 
 const valorDe = (valores: readonly ValorDaCota[], tipo: TipoDeCota) =>
@@ -762,25 +781,12 @@ export const MinhaSituacao = ({ token }: { token: string }) => {
     '/api/financeiro/participante/eu',
   );
   const [valores] = useLeitura<readonly ValorDaCota[]>(token, '/api/participacao/tipo-de-cota');
-  const [enviando, setEnviando] = useState(false);
-  const [falha, setFalha] = useState<string>();
-  const [feito, setFeito] = useState<string>();
+  const recarregar = () => Promise.all([recarregarParticipacao(), recarregarSituacao()]);
+  const comando = useComando(recarregar);
+  const { enviando, avisos } = comando;
   const { confirmar, confirmacao } = useConfirmacao();
-
-  const recarregar = () => {
-    recarregarParticipacao();
-    recarregarSituacao();
-  };
-  const fazer = async (caminho: string, resultado: readonly [string, string], corpo?: unknown) => {
-    setEnviando(true);
-    setFalha(undefined);
-    setFeito(undefined);
-    const comandado = await comandar(token, caminho, corpo);
-    setEnviando(false);
-    if (comandado.feito) setFeito(resultado[0]);
-    else setFalha(resultado[1]);
-    recarregar();
-  };
+  const fazer = (caminho: string, [feito, falha]: readonly [string, string], corpo?: unknown) =>
+    comando.fazer(() => comandar(token, caminho, corpo), feito, falha);
 
   if (!participacao || !situacao || !valores) return <Carregando />;
   if (participacao.situacao === 'erro' || situacao.situacao === 'erro')
@@ -801,14 +807,7 @@ export const MinhaSituacao = ({ token }: { token: string }) => {
 
   return (
     <>
-      {falha && (
-        <p role="alert" className="aviso-falha" data-testid="aviso-falha">
-          {falha}
-        </p>
-      )}
-      <p role="status" className="aviso-feito" data-testid="aviso-feito">
-        {feito}
-      </p>
+      {avisos}
       {confirmacao}
       {!atual?.participando && (
         <EntrarNaCopa
@@ -930,8 +929,7 @@ export const DesativarMeuAcesso = ({
 }) => {
   const [situacao] = useLeitura<Situacao>(token, '/api/financeiro/participante/eu');
   const { confirmar, confirmacao } = useConfirmacao();
-  const [enviando, setEnviando] = useState(false);
-  const [falha, setFalha] = useState(false);
+  const { enviando, fazer, avisos } = useComando(() => {});
   if (!situacao) return <Carregando />;
 
   // Whoever never asked for entrada has no situação: nothing to keep, nor a copa to leave.
@@ -946,22 +944,19 @@ export const DesativarMeuAcesso = ({
       destrutiva: true,
     });
     if (!sim) return;
-    setEnviando(true);
-    setFalha(false);
-    if ((await comandar(token, `/api/usuario/${usuarioId}/desativar`)).feito) return desativado();
-    setEnviando(false);
-    setFalha(true);
+    const feito = await fazer(
+      () => comandar(token, `/api/usuario/${usuarioId}/desativar`),
+      'Acesso desativado.',
+      'Não foi possível desativar seu acesso.',
+    );
+    if (feito) desativado();
   };
 
   return (
     <>
       <p className="apoio">Para quem não vai mais usar o FACOFFEE.</p>
       {confirmacao}
-      {falha && (
-        <p role="alert" className="aviso-falha" data-testid="aviso-falha">
-          Não foi possível desativar seu acesso.
-        </p>
-      )}
+      {avisos}
       <div className="colunas">
         <div className="pilha">
           <section className="cartao" aria-labelledby="o-que-acontece">
@@ -1055,6 +1050,7 @@ export const EnviarComprovante = ({
   const tipo = participacao.situacao === 'ok' ? participacao.valor.tipoDeCota : undefined;
   const cota = tipo && valores.situacao === 'ok' ? valorDe(valores.valor, tipo) : undefined;
   const atalhos = cota ? atalhosDoValorPago(cota, mesEmCampoGrande(new Date())) : [];
+  const antes = saldoAntes(saldo);
   const depois = depoisDoPagamento('Você', saldo, centavos);
 
   const enviar = aoEnviar(async (dados) => {
@@ -1115,8 +1111,8 @@ export const EnviarComprovante = ({
           <div className="cartao resumo">
             <dl>
               <div>
-                <dt>{saldo.creditoEmCentavos > 0 ? 'Seu crédito' : 'Você deve'}</dt>
-                <dd>{emReais(saldo.creditoEmCentavos || saldo.pendenteEmCentavos)}</dd>
+                <dt>{antes.rotulo}</dt>
+                <dd>{antes.valor}</dd>
               </div>
               <div>
                 <dt>Vai enviar</dt>

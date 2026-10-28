@@ -23,7 +23,9 @@ import {
   mesPorExtenso,
   NOME_DO_TIPO_DE_COTA,
   NOME_DO_TIPO_DE_GASTO,
+  nomeDe,
   nomeDoMes,
+  TIPOS_DE_COTA,
 } from './formato';
 import { Icone } from './icones';
 import {
@@ -121,6 +123,15 @@ export const listaDeConferencia = (valorEmCentavos: number) => [
   'A data é deste mês',
 ];
 
+/**
+ * RN-FIN-36: the steps still checked once the valor to confirmar becomes `valorEmCentavos`: the
+ * step of another valor is unchecked, and checking it is asked again even if the valor comes back.
+ */
+export const conferidosComOValor = (conferidos: ReadonlySet<string>, valorEmCentavos: number) => {
+  const lista = new Set(listaDeConferencia(valorEmCentavos));
+  return new Set([...conferidos].filter((item) => lista.has(item)));
+};
+
 /** RN-FIN-36: the motivos that fill the motivo da recusa. */
 export const MOTIVOS_COMUNS = [
   'Comprovante de outro mês',
@@ -136,8 +147,6 @@ export const aReembolsar = (gastos: readonly Gasto[]) =>
 /** RN-FIN-37: the saldo da caixinha once every gasto a reembolsar is reembolsado. */
 export const saldoDepoisDosReembolsos = (saldoEmCentavos: number, gastos: readonly Gasto[]) =>
   aReembolsar(gastos).reduce((saldo, gasto) => saldo - gasto.valorEmCentavos, saldoEmCentavos);
-
-const nomeDe = (usuario: UsuarioRegistrado) => usuario.nome || usuario.email;
 
 const listar = (nomes: readonly string[]) =>
   new Intl.ListFormat('pt-BR', { type: 'conjunction' }).format([...new Set(nomes)]);
@@ -185,11 +194,8 @@ export const Participantes = ({ token, usuarioId }: { token: string; usuarioId: 
     token,
     '/api/financeiro/comprovante-enviado',
   );
-  const recarregar = () => {
-    recarregarUsuarios();
-    recarregarSituacoes();
-    recarregarComprovantes();
-  };
+  const recarregar = () =>
+    Promise.all([recarregarUsuarios(), recarregarSituacoes(), recarregarComprovantes()]);
   const { enviando, fazer, avisos } = useComando(recarregar);
   const { confirmar, confirmacao } = useConfirmacao();
   const [filtro, setFiltro] = useState<Filtro>('todos');
@@ -483,7 +489,12 @@ const Conferencia = ({
   const [motivo, setMotivo] = useState('');
   // The steps checked, by their text: a corrected valor changes its step, which is unchecked.
   const [conferidos, setConferidos] = useState<ReadonlySet<string>>(new Set());
-  const lista = listaDeConferencia(valor ? emCentavos(valor) : 0);
+  const centavosDe = (campo: string) => (campo ? emCentavos(campo) : 0);
+  const lista = listaDeConferencia(centavosDe(valor));
+  const corrigir = (novo: string) => {
+    setValor(novo);
+    setConferidos((antes) => conferidosComOValor(antes, centavosDe(novo)));
+  };
   const conferido = lista.every((item) => conferidos.has(item));
   const marcar = (item: string, marcado: boolean) =>
     setConferidos((antes) => {
@@ -552,7 +563,7 @@ const Conferencia = ({
           <CampoValor
             rotulo="Valor a confirmar"
             valor={valor}
-            aoMudar={setValor}
+            aoMudar={corrigir}
             ajuda="Corrija se o comprovante mostrar outro valor."
           />
           <button
@@ -563,7 +574,7 @@ const Conferencia = ({
             aria-describedby={conferido ? undefined : 'falta-conferir'}
           >
             <Icone nome="check" />
-            Confirmar {emReais(valor ? emCentavos(valor) : 0)}
+            Confirmar {emReais(centavosDe(valor))}
           </button>
           {!conferido && (
             <p id="falta-conferir" className="nota">
@@ -637,11 +648,8 @@ export const ConferirComprovante = ({ token }: { token: string }) => {
     token,
     '/api/financeiro/participante',
   );
-  const recarregar = () => {
-    recarregarComprovantes();
-    recarregarUsuarios();
-    recarregarSituacoes();
-  };
+  const recarregar = () =>
+    Promise.all([recarregarComprovantes(), recarregarUsuarios(), recarregarSituacoes()]);
   const { enviando, fazer, avisos } = useComando(recarregar);
   const [busca] = useSearchParams();
   const [falhaAoAbrir, setFalhaAoAbrir] = useState(false);
@@ -740,10 +748,7 @@ export const ReceberPagamento = ({ token }: { token: string }) => {
     token,
     '/api/financeiro/participante',
   );
-  const recarregar = () => {
-    recarregarUsuarios();
-    recarregarSituacoes();
-  };
+  const recarregar = () => Promise.all([recarregarUsuarios(), recarregarSituacoes()]);
   const { enviando, fazer, avisos } = useComando(recarregar);
   const [busca] = useSearchParams();
   const [escolhido, setEscolhido] = useState<string>();
@@ -911,11 +916,8 @@ export const Gastos = ({ token }: { token: string }) => {
     token,
     '/api/financeiro/caixinha',
   );
-  const recarregar = () => {
-    recarregarGastos();
-    recarregarUsuarios();
-    recarregarCaixinha();
-  };
+  const recarregar = () =>
+    Promise.all([recarregarGastos(), recarregarUsuarios(), recarregarCaixinha()]);
   const { enviando, fazer, avisos } = useComando(recarregar);
   const { confirmar, confirmacao } = useConfirmacao();
   const [mes, setMes] = useState(() => mesEmCampoGrande(new Date()));
@@ -933,8 +935,9 @@ export const Gastos = ({ token }: { token: string }) => {
   const nomes = new Map(usuarios.valor.map((usuario) => [usuario.id, nomeDe(usuario)]));
   const quemPagou = (gasto: Gasto) => nomes.get(gasto.participanteId) ?? 'Desconhecido';
   const pendentes = aReembolsar(gastos.valor);
+  const aReembolsarIds = new Set(pendentes.map((gasto) => gasto.id));
   const doMes = gastos.valor.filter(
-    (gasto) => !pendentes.includes(gasto) && mesEmCampoGrande(new Date(gasto.feitoEm)) === mes,
+    (gasto) => !aReembolsarIds.has(gasto.id) && mesEmCampoGrande(new Date(gasto.feitoEm)) === mes,
   );
   const verNota = async (gasto: Gasto) =>
     setFalhaAoAbrir(!(await abrirArquivo(token, `/api/financeiro/nota/${gasto.notaId}`)));
@@ -1219,14 +1222,50 @@ export const SolicitarComplemento = ({ token }: { token: string }) => {
   );
 };
 
-const TIPOS_DE_COTA = ['so-cafe', 'completa'] as const;
+/**
+ * RN-PAR-14: the year the gestor defines and its tipos de cota still without valor: this year while
+ * one is missing, then the next; once both years are defined, nothing.
+ */
+export const definicaoDoValorDaCota = (
+  ano: number,
+  doAno: readonly ValorDaCotaLido[],
+  doSeguinte: readonly ValorDaCotaLido[],
+) => {
+  const faltando = (valores: readonly ValorDaCotaLido[]) =>
+    TIPOS_DE_COTA.filter((tipo) => !valores.some((valor) => valor.tipoDeCota === tipo));
+  if (faltando(doAno).length > 0) return { ano, tipos: faltando(doAno) };
+  if (faltando(doSeguinte).length > 0) return { ano: ano + 1, tipos: faltando(doSeguinte) };
+  return undefined;
+};
 
 /**
- * *Valor da cota* (gestor): the valores of this year, the gastos do ano anterior they come from,
- * and definir the valor of each tipo de cota for this year, while one is missing, or else for the
- * next.
+ * Definir valor da cota of each tipo de cota for `ano`, one by one, stopping at the first refused;
+ * `definidos` tells which were defined, as these no longer change that year.
+ */
+export const definirValoresDaCota = async (
+  token: string,
+  ano: number,
+  definicoes: readonly { readonly tipoDeCota: TipoDeCota; readonly valorEmCentavos: number }[],
+): Promise<Comando & { readonly definidos: readonly TipoDeCota[] }> => {
+  const definidos: TipoDeCota[] = [];
+  for (const definicao of definicoes) {
+    const definido = await comandar(token, '/api/participacao/definir-valor-da-cota', {
+      ...definicao,
+      ano,
+    });
+    if (!definido.feito) return { ...definido, definidos };
+    definidos.push(definicao.tipoDeCota);
+  }
+  return { feito: true, definidos };
+};
+
+/**
+ * *Valor da cota* (gestor): the valores of this year and of the next, once defined; the gastos do
+ * ano anterior they come from; and definir the valor of each tipo de cota still missing, for this
+ * year while one is, or else for the next (`definicaoDoValorDaCota`).
  */
 export const ValorDaCota = ({ token }: { token: string }) => {
+  const ano = anoAtual();
   const [caixinha, recarregarCaixinha] = useLeitura<CaixinhaLida>(
     token,
     '/api/financeiro/caixinha',
@@ -1235,91 +1274,103 @@ export const ValorDaCota = ({ token }: { token: string }) => {
     token,
     '/api/participacao/tipo-de-cota',
   );
-  const recarregar = () => {
-    recarregarCaixinha();
-    recarregarValores();
-  };
-  const { enviando, fazer, avisos } = useComando(recarregarValores);
+  const [seguintes, recarregarSeguintes] = useLeitura<readonly ValorDaCotaLido[]>(
+    token,
+    `/api/participacao/tipo-de-cota?ano=${ano + 1}`,
+  );
+  const recarregarDefinidos = () => Promise.all([recarregarValores(), recarregarSeguintes()]);
+  const recarregar = () => Promise.all([recarregarCaixinha(), recarregarDefinidos()]);
+  const { enviando, fazer, avisos } = useComando(recarregarDefinidos);
   const { confirmar, confirmacao } = useConfirmacao();
-  if (!caixinha || !valores) return <Carregando />;
-  if (caixinha.situacao !== 'ok' || valores.situacao !== 'ok')
+  if (!caixinha || !valores || !seguintes) return <Carregando />;
+  if (caixinha.situacao !== 'ok' || valores.situacao !== 'ok' || seguintes.situacao !== 'ok')
     return <FalhaAoCarregar tentarDeNovo={recarregar} />;
 
-  const ano = anoAtual();
   const doAno = new Map(valores.valor.map((valor) => [valor.tipoDeCota, valor.valorEmCentavos]));
-  const faltando = TIPOS_DE_COTA.filter((tipo) => !doAno.has(tipo));
-  const alvo = faltando.length > 0 ? ano : ano + 1;
-  const tipos = faltando.length > 0 ? faltando : TIPOS_DE_COTA;
+  const definicao = definicaoDoValorDaCota(ano, valores.valor, seguintes.valor);
 
-  const definir = aoEnviar(async (dados) => {
-    const definicoes = tipos.map((tipoDeCota) => ({
-      tipoDeCota,
-      valorEmCentavos: emCentavos(String(dados.get(`valor-${tipoDeCota}`))),
-    }));
-    const resumo = definicoes
-      .map((d) => `${NOME_DO_TIPO_DE_COTA[d.tipoDeCota]}, ${emReais(d.valorEmCentavos)}`)
-      .join('; ');
-    const sim = await confirmar({
-      titulo: `Definir os valores de ${alvo}?`,
-      texto: `${resumo}, por mês. Depois de definido, o valor não muda durante o ano.`,
-      acao: `Definir valores de ${alvo}`,
+  const definir = (alvo: number, tipos: readonly TipoDeCota[]) =>
+    aoEnviar(async (dados) => {
+      const definicoes = tipos.map((tipoDeCota) => ({
+        tipoDeCota,
+        valorEmCentavos: emCentavos(String(dados.get(`valor-${tipoDeCota}`))),
+      }));
+      const resumo = definicoes
+        .map((d) => `${NOME_DO_TIPO_DE_COTA[d.tipoDeCota]}, ${emReais(d.valorEmCentavos)}`)
+        .join('; ');
+      const sim = await confirmar({
+        titulo: `Definir os valores de ${alvo}?`,
+        texto: `${resumo}, por mês. Depois de definido, o valor não muda durante o ano.`,
+        acao: `Definir valores de ${alvo}`,
+      });
+      if (!sim) return;
+      // Each tipo is defined on its own: the ones defined before a refusal stay, and the page,
+      // reloaded, asks only for those still missing.
+      await fazer(
+        () => definirValoresDaCota(token, alvo, definicoes),
+        `Valores de ${alvo} definidos.`,
+        'Não foi possível definir o valor da cota.',
+      );
     });
-    if (!sim) return;
-    await fazer(
-      async () => {
-        for (const definicao of definicoes) {
-          const definido = await comandar(token, '/api/participacao/definir-valor-da-cota', {
-            ...definicao,
-            ano: alvo,
-          });
-          if (!definido.feito) return definido;
-        }
-        return { feito: true };
-      },
-      `Valores de ${alvo} definidos.`,
-      'Não foi possível definir o valor da cota.',
-    );
-  });
+  const seguinte = ano + 1;
 
   return (
     <div className="colunas">
-      <section className="cartao pilha" aria-labelledby="definir">
-        <h2 id="definir">Definir {alvo}</h2>
-        <p className="apoio">
-          {alvo === ano
-            ? `O valor da cota de ${ano} ainda não foi definido${faltando.length === 1 ? ` para ${NOME_DO_TIPO_DE_COTA[faltando[0] as TipoDeCota].toLowerCase()}` : ''}.`
-            : `Se não definir até 1º de janeiro, ${alvo} repete os valores de ${ano}.`}
-        </p>
-        {avisos}
-        {confirmacao}
-        <form
-          onSubmit={definir}
-          data-testid="definicao-do-valor-da-cota"
-          data-ano={alvo}
-          className="pilha"
-        >
-          <div className="lado-a-lado">
-            {tipos.map((tipo) => {
-              const atual = doAno.get(tipo);
-              return (
-                <CampoValor
-                  key={tipo}
-                  rotulo={`${NOME_DO_TIPO_DE_COTA[tipo]}, por mês`}
-                  nome={`valor-${tipo}`}
-                  ajuda={atual === undefined ? undefined : `Em ${ano}: ${emReais(atual)}`}
-                />
-              );
-            })}
-          </div>
-          <p className="texto-alerta linha-com-icone">
-            <Icone nome="alerta" />
-            Depois de definido, o valor não muda durante o ano.
+      {definicao ? (
+        <section className="cartao pilha" aria-labelledby="definir">
+          <h2 id="definir">Definir {definicao.ano}</h2>
+          <p className="apoio">
+            {definicao.ano === ano
+              ? `O valor da cota de ${ano} ainda não foi definido${definicao.tipos.length === 1 ? ` para ${NOME_DO_TIPO_DE_COTA[definicao.tipos[0] as TipoDeCota].toLowerCase()}` : ''}.`
+              : definicao.tipos.length === 1
+                ? `Se não definir até 1º de janeiro, a cota ${NOME_DO_TIPO_DE_COTA[definicao.tipos[0] as TipoDeCota].toLowerCase()} de ${seguinte} repete o valor de ${ano}.`
+                : `Se não definir até 1º de janeiro, ${seguinte} repete os valores de ${ano}.`}
           </p>
-          <button type="submit" data-testid="definir-valor-da-cota" disabled={enviando}>
-            Definir valores de {alvo}
-          </button>
-        </form>
-      </section>
+          {avisos}
+          {confirmacao}
+          <form
+            onSubmit={definir(definicao.ano, definicao.tipos)}
+            data-testid="definicao-do-valor-da-cota"
+            data-ano={definicao.ano}
+            className="pilha"
+          >
+            <div className="lado-a-lado">
+              {definicao.tipos.map((tipo) => {
+                const atual = definicao.ano === ano ? undefined : doAno.get(tipo);
+                return (
+                  <CampoValor
+                    key={tipo}
+                    rotulo={`${NOME_DO_TIPO_DE_COTA[tipo]}, por mês`}
+                    nome={`valor-${tipo}`}
+                    ajuda={atual === undefined ? undefined : `Em ${ano}: ${emReais(atual)}`}
+                  />
+                );
+              })}
+            </div>
+            <p className="texto-alerta linha-com-icone">
+              <Icone nome="alerta" />
+              Depois de definido, o valor não muda durante o ano.
+            </p>
+            <button type="submit" data-testid="definir-valor-da-cota" disabled={enviando}>
+              Definir valores de {definicao.ano}
+            </button>
+          </form>
+        </section>
+      ) : (
+        <section
+          className="cartao pilha"
+          aria-labelledby="definidos"
+          data-testid="valores-definidos"
+          data-ano={seguinte}
+        >
+          <h2 id="definidos">{seguinte} definido</h2>
+          {avisos}
+          <p className="apoio">
+            Os valores de {ano} e de {seguinte} já foram definidos e não mudam durante o ano. Os de{' '}
+            {seguinte + 1} podem ser definidos a partir de janeiro.
+          </p>
+        </section>
+      )}
       <div className="pilha">
         <section className="cartao" aria-labelledby="deste-ano">
           <h2 id="deste-ano" className="titulo-com-valor">
@@ -1331,6 +1382,17 @@ export const ValorDaCota = ({ token }: { token: string }) => {
           </h2>
           <ValoresDaCota valores={valores.valor} />
         </section>
+        {seguintes.valor.length > 0 && (
+          <section className="cartao" aria-labelledby="ano-seguinte">
+            <h2 id="ano-seguinte" className="titulo-com-valor">
+              {seguinte}
+              <small className="linha-com-icone">
+                <Icone nome="cadeado" />A partir de janeiro
+              </small>
+            </h2>
+            <ValoresDaCota valores={seguintes.valor} />
+          </section>
+        )}
         <section className="cartao">
           <GastosDoAnoAnterior caixinha={caixinha.valor} />
         </section>

@@ -2,7 +2,7 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { hasAuthParams, useAuth } from 'react-oidc-context';
 import { Link, matchPath, Route, Routes, useLocation, useNavigate } from 'react-router';
 import { obterUsuarioLogado, type UsuarioLogado } from './api';
-import { iniciais } from './formato';
+import { iniciais, nomeDe, primeiroNome } from './formato';
 import {
   ConferirComprovante,
   Gastos,
@@ -88,7 +88,7 @@ const EscolhaDaVisao = ({
       </button>
     </header>
     <main>
-      <h1>Olá, {nome.split(' ')[0]}. Como quer entrar?</h1>
+      <h1>Olá, {primeiroNome(nome)}. Como quer entrar?</h1>
       <p className="apoio">Você é participante e gestor. Escolha a tarefa de agora.</p>
       <div className="visoes">
         <button
@@ -222,7 +222,7 @@ export const App = () => {
   if (!visao)
     return (
       <EscolhaDaVisao
-        nome={usuario.nome}
+        nome={nomeDe(usuario)}
         sair={sair}
         escolher={(nova) => {
           guardar(nova);
@@ -296,16 +296,16 @@ export const App = () => {
           popoverTarget="conta"
         >
           <span className={gestor ? 'avatar escuro' : 'avatar'} aria-hidden="true">
-            {iniciais(usuario.nome)}
+            {iniciais(nomeDe(usuario))}
           </span>
           <span className="quem">
-            <strong>{usuario.nome}</strong>
+            <strong>{nomeDe(usuario)}</strong>
             <small>{gestor ? 'Gestor' : 'Participante'}</small>
           </span>
         </button>
         <div id="conta" className="conta" popover="auto" data-testid="conta">
           <p>
-            <strong>{usuario.nome}</strong>
+            <strong>{nomeDe(usuario)}</strong>
             <small>{perfil}</small>
           </p>
           {gestor && (

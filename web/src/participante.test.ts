@@ -6,6 +6,7 @@ import {
   detalheDoComprovante,
   editarComprovante,
   enviarComprovante,
+  saldoAntes,
 } from './participante';
 
 const participanteId = '11111111-1111-4111-8111-111111111111';
@@ -136,6 +137,23 @@ describe('atalhosDoValorPago', () => {
       '1 mês',
       'Até dezembro',
     ]);
+  });
+});
+
+describe('saldoAntes', () => {
+  it('RN-FIN-35: tells the crédito, the pendência, or that the participante is em dia', () => {
+    expect(saldoAntes({ creditoEmCentavos: 500, pendenteEmCentavos: 0 })).toEqual({
+      rotulo: 'Seu crédito',
+      valor: 'R$\u00a05,00',
+    });
+    expect(saldoAntes({ creditoEmCentavos: 0, pendenteEmCentavos: 3000 })).toEqual({
+      rotulo: 'Você deve',
+      valor: 'R$\u00a030,00',
+    });
+    expect(saldoAntes({ creditoEmCentavos: 0, pendenteEmCentavos: 0 })).toEqual({
+      rotulo: 'Situação',
+      valor: 'Em dia',
+    });
   });
 });
 

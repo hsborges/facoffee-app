@@ -314,8 +314,10 @@ export const garantirValorDaCota = (gestor: Page) =>
     await gestor.goto('/valor-da-cota');
     const definicao = gestor.getByTestId('definicao-do-valor-da-cota');
     const ano = String(new Date().getFullYear());
+    // Once this year's and the next's are defined, the page has nothing left to define.
+    await expect(definicao.or(gestor.getByTestId('valores-definidos'))).toBeVisible();
     // While a tipo de cota of this year is missing, the page defines this year's.
-    if ((await definicao.getAttribute('data-ano')) === ano) {
+    if ((await definicao.count()) > 0 && (await definicao.getAttribute('data-ano')) === ano) {
       for (const [tipo, valor] of Object.entries(VALOR_DA_COTA)) {
         const campo = definicao.getByTestId(`valor-${tipo}`);
         if (await campo.isVisible()) await campo.fill(valor);
