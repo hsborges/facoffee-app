@@ -94,7 +94,7 @@ Cenário: RNF-05 disparo repetido
 
 - Origem: [Design System, Confirmação](../design/DESIGN_SYSTEM.md#confirmação)
 
-São críticas: entrar na copa (RN-PAR-01), sair da copa (RN-PAR-07), desativar o acesso, o próprio ou o de outra pessoa (RN-USU-01), cancelar o envio de um comprovante (RN-FIN-11), reembolsar (RN-FIN-24), solicitar complemento (RN-FIN-27) e definir o valor da cota (RN-PAR-13). A confirmação diz quem e o quê e o que acontece depois; o foco começa em *Voltar*, para Enter não confirmar por acidente.
+São críticas: entrar na copa (RN-PAR-01), trocar o tipo de cota (RN-PAR-05), sair da copa (RN-PAR-07), desativar o acesso, o próprio ou o de outra pessoa (RN-USU-01), cancelar o envio de um comprovante (RN-FIN-11), reembolsar (RN-FIN-24), solicitar complemento (RN-FIN-27) e definir o valor da cota (RN-PAR-13). A confirmação diz quem e o quê e o que acontece depois; o foco começa em *Voltar*, para Enter não confirmar por acidente.
 
 ```gherkin
 # language: pt

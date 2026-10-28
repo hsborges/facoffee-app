@@ -804,6 +804,31 @@ export const MinhaSituacao = ({ token }: { token: string }) => {
     })) && fazer('/api/participacao/sair', ['Saída pedida.', 'Não foi possível pedir a saída.']);
   const tipoDaCota = atual?.troca?.tipoDeCota ?? atual?.tipoDeCota ?? 'completa';
   const valorDaMinha = atual && valorDe(doAno, atual.tipoDeCota);
+  // Asking for the tipo atual cancels the troca that waits (RN-PAR-05).
+  const trocarTipoDeCota = async () => {
+    if (!atual) return;
+    const tipoDeCota = outroTipo(tipoDaCota);
+    const nome = (tipo: TipoDeCota) => NOME_DO_TIPO_DE_COTA[tipo].toLowerCase();
+    const sim = await confirmar(
+      atual.troca
+        ? {
+            titulo: `Manter a cota ${nome(tipoDeCota)}?`,
+            texto: `A troca para ${nome(atual.troca.tipoDeCota)}, que valeria a partir de ${nomeDoMes(atual.troca.aPartirDe)}, é cancelada.`,
+            acao: 'Cancelar a troca',
+          }
+        : {
+            titulo: `Trocar para a cota ${nome(tipoDeCota)}?`,
+            texto: `A cota deste mês continua ${nome(atual.tipoDeCota)}; a partir de ${nomeDoMes(outroMes(mesEmCampoGrande(new Date()), 1))}, ela passa a ser ${nome(tipoDeCota)}.`,
+            acao: 'Trocar o tipo de cota',
+          },
+    );
+    if (sim)
+      fazer(
+        '/api/participacao/trocar-tipo-de-cota',
+        ['Tipo de cota trocado.', 'Não foi possível trocar o tipo de cota.'],
+        { tipoDeCota },
+      );
+  };
 
   return (
     <>
@@ -873,13 +898,7 @@ export const MinhaSituacao = ({ token }: { token: string }) => {
                 className="secundario largo"
                 data-testid="trocar-tipo-de-cota"
                 disabled={enviando}
-                onClick={() =>
-                  fazer(
-                    '/api/participacao/trocar-tipo-de-cota',
-                    ['Tipo de cota trocado.', 'Não foi possível trocar o tipo de cota.'],
-                    { tipoDeCota: outroTipo(tipoDaCota) },
-                  )
-                }
+                onClick={trocarTipoDeCota}
               >
                 <Icone nome="trocar" />
                 Trocar para {NOME_DO_TIPO_DE_COTA[outroTipo(tipoDaCota)].toLowerCase()}
