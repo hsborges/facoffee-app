@@ -108,4 +108,11 @@ describe('consultarValoresDaCota', () => {
     );
     expect(await consultar()).toEqual([valor]);
   });
+
+  it('RN-PAR-16: gives the valores of another year when asked, so the gestor sees the next one', async () => {
+    const { salvos, consultar } = inMemory();
+    const seguinte = { ...valor, ano: 2028 };
+    salvos.push(valor, seguinte);
+    expect(await consultar(2028)).toEqual([seguinte]);
+  });
 });

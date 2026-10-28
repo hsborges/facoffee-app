@@ -22,6 +22,8 @@ Ter acesso não faz de alguém um participante: participar é pedir a entrada (R
 
 - Termo: [Gestor](../../dominio/GLOSSARIO.md#gestor) · Origem: [ADR 0011](../../adr/0011-acesso-desativado.md)
 
+Na web, a própria pessoa desativa o acesso em *Desativar meu acesso*, aberta pelo menu da conta: a página diz o que acontece (RN-PAR-08, RN-USU-02, RN-USU-04), lembra que sair da copa basta para deixar de pagar a cota e pede confirmação (RNF-12). O gestor só tem a opção na visão do participante, para não desativar o próprio acesso por engano enquanto cuida da copa.
+
 ```gherkin
 # language: pt
 Regra: RN-USU-01 O acesso é desativado pelo gestor ou a pedido da própria pessoa; só o gestor desativa outra

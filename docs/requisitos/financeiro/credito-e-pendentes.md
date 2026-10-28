@@ -146,3 +146,29 @@ Regra: RN-FIN-21 O crédito não é devolvido em dinheiro
     Então nenhum dinheiro é devolvido
     E o crédito fica guardado para o retorno
 ```
+
+### RN-FIN-35 Antes de pagar, a pessoa vê como a situação fica depois
+
+- Termo: [Crédito](../../dominio/GLOSSARIO.md#crédito), [Pendente](../../dominio/GLOSSARIO.md#pendente) · Origem: [protótipo](../../design/PROTOTYPE.md)
+
+Vale no envio do comprovante (RF-FIN-02), para o participante, e no recebimento do pagamento (RF-FIN-01), para o gestor. É só uma prévia: o crédito ou a pendência continua calculado pelo Financeiro.
+
+```gherkin
+# language: pt
+Regra: RN-FIN-35 Antes de pagar, a pessoa vê como a situação fica depois
+
+  Cenário: pagamento exato
+    Dado que Bia está pendente em R$ 50,00
+    Quando o gestor vai receber R$ 50,00 de Bia
+    Então a tela avisa que Bia fica em dia, sem crédito
+
+  Cenário: pagamento a mais
+    Dado que Ana está pendente em R$ 30,00
+    Quando Ana vai enviar um comprovante de R$ 90,00
+    Então a tela avisa que Ana fica com R$ 60,00 de crédito
+
+  Cenário: pagamento a menos
+    Dado que Ana está pendente em R$ 30,00
+    Quando Ana vai enviar um comprovante de R$ 10,00
+    Então a tela avisa que Ana continua pendente em R$ 20,00
+```

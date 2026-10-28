@@ -25,7 +25,7 @@ export type ApiDependencies = {
   readonly consultarParticipante: (
     id: string,
   ) => Promise<Result<Participante, 'participante-nao-encontrado'>>;
-  readonly consultarValoresDaCota: () => Promise<readonly ValorDaCota[]>;
+  readonly consultarValoresDaCota: (ano?: number) => Promise<readonly ValorDaCota[]>;
   readonly iniciarAno: () => Promise<{ readonly valoresRepetidos: number }>;
   readonly iniciarMes: () => Promise<{
     readonly cotasDevidas: number;
@@ -63,7 +63,7 @@ const STATUS_DO_ERRO = {
  * HTTP API of the Participação context, for the logged-in person: `POST /entrar`,
  * `POST /trocar-tipo-de-cota`, `POST /sair`, the leitura `GET /participante/eu` and, for the
  * gestor, `POST /definir-valor-da-cota`. Leitura *Valores da cota*: `GET /tipo-de-cota`, the valor
- * of each tipo de cota in the current year, for anyone logged in.
+ * of each tipo de cota in the current year, or in the one of `?ano`, for anyone logged in.
  * Identity comes from the gateway in `X-User-Id` and `X-User-Roles` (ADR 0007); without it, 401.
  * `POST /iniciar-ano` and `POST /iniciar-mes` are the agendador's triggers, on the internal
  * network only: the gateway does not route them (ADR 0017).
@@ -132,7 +132,11 @@ export const createApp = ({
     })
     .get('/tipo-de-cota', async (c) => {
       if (!idLogado(c)) return c.json({ error: 'unauthorized' }, 401);
-      return c.json(await consultarValoresDaCota());
+      const pedido = c.req.query('ano');
+      if (pedido === undefined) return c.json(await consultarValoresDaCota());
+      const ano = /^\d+$/.test(pedido) ? Number(pedido) : undefined;
+      if (!inteiroPositivo(ano)) return c.json({ error: 'pedido-invalido' }, 400);
+      return c.json(await consultarValoresDaCota(ano));
     })
     .post('/definir-valor-da-cota', async (c) => {
       if (!idLogado(c)) return c.json({ error: 'unauthorized' }, 401);

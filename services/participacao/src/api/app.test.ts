@@ -144,6 +144,25 @@ describe('GET /tipo-de-cota', () => {
     ]);
     expect((await app().request('/tipo-de-cota')).status).toBe(401);
   });
+
+  it('RN-PAR-16: 200 with the valores of the year asked in ?ano, and 400 for an invalid one', async () => {
+    const anos: (number | undefined)[] = [];
+    const comAno = (query: string) =>
+      app({
+        consultarValoresDaCota: async (ano) => {
+          anos.push(ano);
+          return [];
+        },
+      }).request(`/tipo-de-cota${query}`, { headers: { 'x-user-id': novo } });
+    expect((await comAno('?ano=2027')).status).toBe(200);
+    expect((await comAno('')).status).toBe(200);
+    expect(anos).toEqual([2027, undefined]);
+    for (const invalido of ['?ano=0', '?ano=dois', '?ano=2027.5', '?ano=']) {
+      const response = await comAno(invalido);
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ error: 'pedido-invalido' });
+    }
+  });
 });
 
 describe('POST /definir-valor-da-cota', () => {

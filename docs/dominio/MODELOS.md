@@ -5,8 +5,8 @@
 | **Escopo** | Divisão de custos da copa da FACOM |
 | **Sistema** | FACOFFEE |
 | **Disciplina** | Técnicas Avançadas de Desenvolvimento de Software (2026/2) |
-| **Versão** | 2.13 |
-| **Data** | 2026-10-26 |
+| **Versão** | 2.14 |
+| **Data** | 2026-10-27 |
 | **Status** | Aprovado |
 | **Base** | [Glossário da Linguagem Ubíqua](GLOSSARIO.md) (versão 2.10) e arquitetura do FACOFFEE ([arquitetura/visao-geral.png](../arquitetura/visao-geral.png)) |
 
@@ -226,7 +226,7 @@ O contexto Participação também recebe um evento do contexto Usuário:
 | **Saldo da caixinha** | Financeiro | Pagamentos recebidos menos gastos pagos pela caixinha e reembolsos feitos. | O gestor, para decidir se precisa pedir complemento; os participantes, para acompanhar. |
 | **Caixinha do mês** | Financeiro | Saldo da caixinha no início do mês, pagamentos recebidos no mês, o que saiu no mês por tipo de gasto (gastos pagos pela caixinha e reembolsos feitos) e o saldo no fim do mês, que é o do início mais o que entrou menos o que saiu. | Todos os participantes, para acompanhar quanto entrou, quanto saiu com cada coisa e quanto sobrou. Mostra só totais, sem a situação de ninguém. |
 | **Gastos do ano anterior** | Financeiro | Soma dos gastos feitos no ano anterior, no total e por tipo de gasto. | O gestor, para definir o valor da cota; todos os participantes, para entender de onde vem o valor de cada tipo de cota. Mostra só totais, sem a situação de ninguém. |
-| **Valores da cota** | Participação | O valor de cada tipo de cota no ano atual. | Todos os participantes, para saber quanto custa cada tipo de cota e compará-lo com os gastos do ano anterior. |
+| **Valores da cota** | Participação | O valor de cada tipo de cota no ano atual, ou num ano pedido. | Todos os participantes, para saber quanto custa cada tipo de cota e compará-lo com os gastos do ano anterior; o gestor, para ver o que já definiu para o ano seguinte. |
 | **Comprovantes enviados** | Financeiro | Os comprovantes enviados pelos participantes, com a situação de cada um: a confirmar, confirmado (com o valor confirmado) ou recusado (com o motivo). | O gestor, só os a confirmar, para analisar; o participante, só os próprios, para acompanhar. |
 | **Participantes ativos** | Financeiro | Quem entrou e ainda não saiu, segundo os eventos de Participação. | O complemento, para ser dividido em partes iguais. |
 
@@ -318,3 +318,4 @@ Nenhum no momento.
 | 2.11 | 2026-10-26 | O participante envia o próprio comprovante, que o gestor confirma, recebendo o pagamento, ou recusa. Novos comandos *Enviar, editar ou cancelar comprovante*, *Confirmar comprovante* e *Recusar comprovante*, agregado *Comprovante enviado* e leitura *Comprovantes enviados*; *Pagamento recebido* também vem da confirmação, sem mudar o contrato ([ADR 0030](../adr/0030-pagamento-iniciado-pelo-participante.md), #87). Base atualizada para o glossário 2.8. |
 | 2.12 | 2026-10-26 | Novos eventos *Comprovante enviado* e *Comprovante recusado*, de Financeiro para Notificação, com as políticas de avisar o gestor de cada comprovante enviado e o participante da recusa; Notificação consulta os gestores em Usuário ([ADR 0031](../adr/0031-avisos-do-comprovante-enviado.md), #88). Base atualizada para o glossário 2.9. |
 | 2.13 | 2026-10-26 | A coluna *Regras que garante* dos agregados passa a apontar para as regras de negócio em [docs/requisitos/](../requisitos/README.md), por ID, sem repetir o texto ([ADR 0032](../adr/0032-requisitos-rastreaveis-em-bdd.md), #96). Base atualizada para o glossário 2.10. |
+| 2.14 | 2026-10-27 | A leitura *Valores da cota* também responde por um ano pedido, para o gestor ver o que já definiu para o ano seguinte (RN-PAR-16). |

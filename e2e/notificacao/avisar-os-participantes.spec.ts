@@ -1,6 +1,7 @@
 import type { Browser } from '@playwright/test';
 import {
   assuntosDosEmails,
+  conferirComprovantes,
   confirmarComprovante,
   ESPERA,
   entrarNoFacoffee,
@@ -40,7 +41,7 @@ test.describe('RF-NOT-01 Avisar os participantes', () => {
 
     // Also the comprovante confirmado, with the valor confirmado.
     await enviarComprovante(participante, '30,00');
-    await gestor.reload();
+    await conferirComprovantes(gestor);
     await confirmarComprovante(gestor, pessoa.nome, '30,00', '20,00');
     await chega(pessoa.email, 'Pagamento recebido', '20,00 por PIX');
   });
@@ -67,7 +68,7 @@ test.describe('RF-NOT-01 Avisar os participantes', () => {
   }) => {
     const { pessoa, participante, gestor } = await participanteEGestor(browser);
     await enviarComprovante(participante, '10,00');
-    await gestor.reload();
+    await conferirComprovantes(gestor);
     await recusarComprovante(gestor, pessoa.nome, '10,00', 'Não achei o PIX');
     await chega(pessoa.email, 'Comprovante recusado', '10,00', 'Não achei o PIX');
   });

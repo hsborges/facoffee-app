@@ -61,11 +61,13 @@ export const iniciarAno =
     return { valoresRepetidos: salvos.filter(Boolean).length };
   };
 
-/** Leitura *Valores da cota*: the valor of each tipo de cota defined for the current year. */
+/**
+ * Leitura *Valores da cota*: the valor of each tipo de cota defined for `ano`, by default the
+ * current year.
+ */
 export const consultarValoresDaCota =
   (valores: ValoresDaCota, clock: Pick<Clock, 'now'>) =>
-  async (): Promise<readonly ValorDaCota[]> => {
-    const ano = anoDe(clock.now());
+  async (ano = anoDe(clock.now())): Promise<readonly ValorDaCota[]> => {
     const doAno = await Promise.all(
       TIPOS_DE_COTA.map((tipoDeCota) => valores.buscar(tipoDeCota, ano)),
     );

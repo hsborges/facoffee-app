@@ -277,9 +277,19 @@ paths:
       operationId: listarValoresDaCota
       summary: Valores da cota
       description: |
-        O valor mensal de cada tipo de cota no ano atual (horário de Campo Grande). Qualquer usuário
-        logado consulta; mostra só os valores, sem a situação de ninguém. Um tipo de cota sem valor
-        definido para o ano não aparece.
+        O valor mensal de cada tipo de cota no ano atual (horário de Campo Grande), ou no ano
+        pedido. Qualquer usuário logado consulta; mostra só os valores, sem a situação de ninguém.
+        Um tipo de cota sem valor definido para o ano não aparece.
+      parameters:
+        - name: ano
+          in: query
+          required: false
+          description: Ano dos valores; sem ele, o ano atual.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 2147483647
+          example: 2027
       responses:
         '200':
           description: Valor de cada tipo de cota no ano.
@@ -307,6 +317,14 @@ paths:
                 - tipoDeCota: completa
                   ano: 2027
                   valorEmCentavos: 3500
+        '400':
+          description: Ano inválido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Erro'
+              example:
+                error: pedido-invalido
         '401':
           $ref: '#/components/responses/NaoAutorizado'
         '403':

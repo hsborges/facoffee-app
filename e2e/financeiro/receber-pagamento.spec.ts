@@ -3,6 +3,7 @@ import {
   entrarNoFacoffee,
   expect,
   feito,
+  irParaReceberPagamento,
   lerApi,
   naTelaDoGestor,
   novoUsuario,
@@ -38,11 +39,11 @@ test.describe('RF-FIN-01 Receber pagamento', () => {
     const gestor = await entrarNoFacoffee(browser, 'gestor', 'gestor');
     await pedirEntrada(participante, pessoa.usuario);
     await naTelaDoGestor(gestor, pessoa.nome);
-    const recebimento = gestor.getByTestId('recebimento');
 
     await test.step(`Gestor recebe R$ 10,00 por PIX de ${pessoa.nome}, com o comprovante`, async () => {
+      const recebimento = await irParaReceberPagamento(gestor);
       await recebimento.getByTestId('escolha-do-participante').selectOption({ label: pessoa.nome });
-      await recebimento.getByTestId('valor').fill('10');
+      await recebimento.getByTestId('valor').fill('10,00');
       await expect(recebimento.getByTestId('forma-pix')).toBeChecked();
       await recebimento.getByTestId('arquivo').setInputFiles(png('pix.png'));
       await semRolagemHorizontal(gestor);
@@ -51,6 +52,7 @@ test.describe('RF-FIN-01 Receber pagamento', () => {
     });
 
     await test.step('Em dinheiro, sem comprovante', async () => {
+      const recebimento = await irParaReceberPagamento(gestor);
       await recebimento.getByTestId('forma-dinheiro').check();
       await expect(recebimento.getByTestId('arquivo')).toHaveCount(0);
     });

@@ -5,14 +5,39 @@ const reais = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL
 /** Centavos as reais: `R$ 30,00`. */
 export const emReais = (centavos: number) => reais.format(centavos / 100);
 
-/** Reais as typed in a number input (`45.9`) as centavos: `4590`. */
-export const emCentavos = (reais: string) => Math.round(Number(reais) * 100);
+/** A valor field read as centavos: its digits, the last two the centavos (`R$ 45,90` is `4590`). */
+export const emCentavos = (campo: string) => Number(campo.replace(/\D/g, ''));
+
+// The most a valor takes: the API keeps centavos in a 32-bit integer.
+const MAXIMO_EM_CENTAVOS = 2_147_483_647;
+
+/**
+ * Input mask of a valor in reais: the digits fill it from the centavos, as in bank apps (`4`,
+ * `45`, `459`, `4590` show `R$ 45,90`), and erasing takes them back. Without a valor it is empty,
+ * so a required field asks for one; past the most the API takes, it stays at the most.
+ */
+export const mascaraDeReais = (campo: string) => {
+  const centavos = Math.min(emCentavos(campo), MAXIMO_EM_CENTAVOS);
+  return centavos > 0 ? emReais(centavos) : '';
+};
 
 // The day 1 at UTC, formatted at UTC: the month does not move with the browser time zone.
 const meses = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 
 /** A month `AAAA-MM` by name: `novembro de 2026`. */
 export const mesPorExtenso = (mes: string) => meses.format(new Date(`${mes}-01T00:00:00Z`));
+
+const nomesDosMeses = new Intl.DateTimeFormat('pt-BR', { month: 'long', timeZone: 'UTC' });
+
+/** Only the name of a month `AAAA-MM`: `novembro`. */
+export const nomeDoMes = (mes: string) => nomesDosMeses.format(new Date(`${mes}-01T00:00:00Z`));
+
+/** The month `AAAA-MM` that many months after (or, if negative, before) `mes`. */
+export const outroMes = (mes: string, meses: number) => {
+  const dia = new Date(`${mes}-01T00:00:00Z`);
+  dia.setUTCMonth(dia.getUTCMonth() + meses);
+  return dia.toISOString().slice(0, 7);
+};
 
 const mesesEmCampoGrande = new Intl.DateTimeFormat('en-CA', {
   timeZone: 'America/Campo_Grande',
@@ -37,6 +62,16 @@ export const iniciais = (nome: string) => {
     .join('')
     .toUpperCase();
 };
+
+/** The name a usuário goes by: the nome, or the e-mail while the nome is empty. */
+export const nomeDe = (usuario: { readonly nome: string; readonly email: string }) =>
+  usuario.nome.trim() || usuario.email;
+
+/** The first name, for a greeting: `Ana Maria Souza` is `Ana`. */
+export const primeiroNome = (nome: string) => nome.trim().split(/\s+/)[0] ?? '';
+
+/** Every tipo de cota, in the order the pages show them. */
+export const TIPOS_DE_COTA = ['so-cafe', 'completa'] as const satisfies readonly TipoDeCota[];
 
 /** Name of each tipo de cota. */
 export const NOME_DO_TIPO_DE_COTA: Readonly<Record<TipoDeCota, string>> = {

@@ -1,20 +1,55 @@
 import { type ReactNode, useEffect, useState } from 'react';
 import { hasAuthParams, useAuth } from 'react-oidc-context';
-import { Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router';
-import logo from '../../infra/keycloak/themes/facoffee/login/resources/img/facoffee-logo.svg';
+import { Link, matchPath, Route, Routes, useLocation, useNavigate } from 'react-router';
 import { obterUsuarioLogado, type UsuarioLogado } from './api';
-import { iniciais } from './formato';
-import { Gastos, Participantes, SolicitarComplemento, ValorDaCota } from './gestor';
+import { iniciais, nomeDe, primeiroNome } from './formato';
+import {
+  ConferirComprovante,
+  Gastos,
+  Participantes,
+  ReceberPagamento,
+  RegistrarGasto,
+  SolicitarComplemento,
+  ValorDaCota,
+} from './gestor';
+import { Icone, Marca } from './icones';
 import { PaginaInicial } from './inicial';
-import { navegacao, type Visao, visaoAtual, visaoGuardada } from './navegacao';
-import { Caixinha, MinhaSituacao } from './participante';
+import {
+  navegacao,
+  type Pagina as PaginaDaVisao,
+  paginas,
+  type Visao,
+  visaoAtual,
+  visaoGuardada,
+} from './navegacao';
+import { Caixinha, DesativarMeuAcesso, EnviarComprovante, MinhaSituacao } from './participante';
 
-const Pagina = ({ id, titulo, children }: { id: string; titulo: string; children: ReactNode }) => {
+// Names the page in its data-testid by the last part of its path: `/` is Minha situação.
+const idDaPagina = (caminho: string) =>
+  caminho === '/' ? 'minha-situacao' : (caminho.split('/').at(-1) ?? '');
+
+const Pagina = ({
+  id,
+  titulo,
+  voltar,
+  children,
+}: {
+  id: string;
+  titulo: string;
+  voltar?: PaginaDaVisao | undefined;
+  children: ReactNode;
+}) => {
   useEffect(() => {
     document.title = `${titulo} · FACOFFEE`;
   }, [titulo]);
   return (
     <>
+      {voltar && (
+        <Link className="voltar" to={voltar.caminho}>
+          <Icone nome="voltar" />
+          {voltar.titulo}
+        </Link>
+      )}
       <h1 data-testid={`pagina-${id}`}>{titulo}</h1>
       {children}
     </>
@@ -24,7 +59,7 @@ const Pagina = ({ id, titulo, children }: { id: string; titulo: string; children
 const Aviso = ({ children }: { children: ReactNode }) => (
   <main className="aviso">
     <h1>
-      <img src={logo} alt="FACOFFEE" width={240} />
+      <Marca />
     </h1>
     {children}
   </main>
@@ -34,13 +69,71 @@ const VISAO = 'facoffee.visao';
 
 const inicio = (visao: Visao) => navegacao(visao)[0]?.caminho ?? '/';
 
-// Names the page in its data-testid: `/` is Minha situação.
-const idDaPagina = (caminho: string) => (caminho === '/' ? 'minha-situacao' : caminho.slice(1));
+// After the login, the gestor chooses the visão (ADR 0029).
+const EscolhaDaVisao = ({
+  nome,
+  escolher,
+  sair,
+}: {
+  nome: string;
+  escolher: (visao: Visao) => void;
+  sair: () => void;
+}) => (
+  <div className="escolha">
+    <header className="escolha-topo">
+      <Marca />
+      <button type="button" className="fantasma" onClick={sair}>
+        <Icone nome="sair" />
+        Sair
+      </button>
+    </header>
+    <main>
+      <h1>Olá, {primeiroNome(nome)}. Como quer entrar?</h1>
+      <p className="apoio">Você é participante e gestor. Escolha a tarefa de agora.</p>
+      <div className="visoes">
+        <button
+          type="button"
+          className="visao escura"
+          data-testid="visao-gestor"
+          onClick={() => escolher('gestor')}
+        >
+          <span className="icone-fundo">
+            <Icone nome="pessoas" />
+          </span>
+          <strong>Como gestor</strong>
+          <span>Participantes, gastos e valor da cota</span>
+          <span className="visao-acao">
+            Cuidar da copa <Icone nome="direita" />
+          </span>
+        </button>
+        <button
+          type="button"
+          className="visao"
+          data-testid="visao-participante"
+          onClick={() => escolher('participante')}
+        >
+          <span className="icone-fundo">
+            <Icone nome="usuario" />
+          </span>
+          <strong>Como participante</strong>
+          <span>Minha situação e caixinha</span>
+          <span className="visao-acao">
+            Ver a minha situação <Icone nome="direita" />
+          </span>
+        </button>
+      </div>
+      <p className="nota">
+        <Icone nome="trocar" /> Troque de visão a qualquer momento pelo menu da conta.
+      </p>
+    </main>
+  </div>
+);
 
 /**
  * Shows the start page to whoever is not logged in (ADR 0025); after the login through the
  * Keycloak (OIDC, ADR 0019), reads the logged-in usuário from the gateway and shows the layout
- * in the visão of their perfis; the gestor chooses it after the login (ADR 0029).
+ * in the visão of their perfis, with the menu at the foot of the phone and at the side of the
+ * computer (ADR 0034); the gestor chooses the visão after the login (ADR 0029).
  */
 export const App = () => {
   const auth = useAuth();
@@ -99,7 +192,11 @@ export const App = () => {
         <p role="alert" data-testid="acesso-desativado">
           Seu acesso ao FACOFFEE foi desativado.
         </p>
-        <button type="button" onClick={sair}>
+        <p className="apoio">
+          Para voltar, fale com o gestor: ele reativa o acesso, e você pede a entrada na copa de
+          novo.
+        </p>
+        <button type="button" data-testid="sair" onClick={sair}>
           Sair
         </button>
       </Aviso>
@@ -112,85 +209,106 @@ export const App = () => {
           <button type="button" onClick={() => location.reload()}>
             Tentar de novo
           </button>
-          <button type="button" className="fantasma" onClick={sair}>
+          <button type="button" className="contorno" onClick={sair}>
             Sair
           </button>
         </div>
       </Aviso>
     );
 
-  const visao = visaoAtual(eu.usuario.perfis, escolhida, pathname);
-  if (!visao) {
-    const escolher = (nova: Visao) => {
-      guardar(nova);
-      if (visaoAtual(eu.usuario.perfis, nova, pathname) !== nova) navigate(inicio(nova));
-    };
+  const { usuario } = eu;
+  const gestor = usuario.perfis.includes('gestor');
+  const visao = visaoAtual(usuario.perfis, escolhida, pathname);
+  if (!visao)
     return (
-      <Aviso>
-        <p>Como você quer usar o FACOFFEE agora? Dá para trocar a qualquer momento no menu.</p>
-        <div className="acoes">
-          <button type="button" data-testid="visao-gestor" onClick={() => escolher('gestor')}>
-            Visão do gestor
-          </button>
-          <button
-            type="button"
-            data-testid="visao-participante"
-            onClick={() => escolher('participante')}
-          >
-            Visão do participante
-          </button>
-          <button type="button" className="fantasma" onClick={sair}>
-            Sair
-          </button>
-        </div>
-      </Aviso>
+      <EscolhaDaVisao
+        nome={nomeDe(usuario)}
+        sair={sair}
+        escolher={(nova) => {
+          guardar(nova);
+          if (visaoAtual(usuario.perfis, nova, pathname) !== nova) navigate(inicio(nova));
+        }}
+      />
     );
-  }
 
   const itens = navegacao(visao);
+  const daVisao = paginas(visao);
+  const atual = daVisao.find((pagina) => matchPath(pagina.caminho, pathname));
   const outra = visao === 'gestor' ? 'participante' : 'gestor';
-  const paginas: Readonly<Record<string, ReactNode>> = {
-    '/': <MinhaSituacao token={token} usuarioId={eu.usuario.id} sair={sair} />,
-    '/caixinha': <Caixinha token={token} />,
-    '/participantes': <Participantes token={token} usuarioId={eu.usuario.id} />,
-    '/gastos': (
-      <>
-        <Gastos token={token} />
-        <SolicitarComplemento token={token} />
-      </>
+  const conteudo: Readonly<Record<string, ReactNode>> = {
+    '/': <MinhaSituacao token={token} />,
+    '/enviar-comprovante': <EnviarComprovante token={token} participanteId={usuario.id} />,
+    '/desativar-meu-acesso': (
+      <DesativarMeuAcesso
+        token={token}
+        usuarioId={usuario.id}
+        desativado={() => setEu({ situacao: 'desativado' })}
+      />
     ),
+    '/caixinha': <Caixinha token={token} />,
+    '/caixinha/registrar-gasto': (
+      <RegistrarGasto token={token} voltar="/caixinha" origem="proprio-bolso" />
+    ),
+    '/participantes': <Participantes token={token} usuarioId={usuario.id} />,
+    '/participantes/conferir-comprovante': <ConferirComprovante token={token} />,
+    '/participantes/receber-pagamento': <ReceberPagamento token={token} />,
+    '/gastos': <Gastos token={token} />,
+    '/gastos/registrar-gasto': <RegistrarGasto token={token} voltar="/gastos" origem="caixinha" />,
+    '/gastos/solicitar-complemento': <SolicitarComplemento token={token} />,
     '/valor-da-cota': <ValorDaCota token={token} />,
   };
+  const perfil = gestor ? `Gestor · na visão do ${visao}` : 'Participante';
   return (
-    <>
+    <div className="layout">
       <a className="pular" href="#conteudo">
         Pular para o conteúdo
       </a>
       <header className="topo">
-        <img src={logo} alt="FACOFFEE" />
+        <Link
+          className="inicio"
+          to={inicio(visao)}
+          aria-label="FACOFFEE, início"
+          data-testid="ir-ao-inicio"
+        >
+          <Marca />
+        </Link>
+        {visao === 'gestor' && <span className="selo-gestor">Gestor</span>}
         <nav aria-label="Principal">
           <ul>
-            {itens.map(({ caminho, titulo }) => (
+            {itens.map(({ caminho, titulo, icone }) => (
               <li key={caminho}>
-                <NavLink to={caminho} end data-testid={`menu-${idDaPagina(caminho)}`}>
+                <Link
+                  to={caminho}
+                  data-testid={`menu-${idDaPagina(caminho)}`}
+                  aria-current={atual?.menu === caminho ? 'page' : undefined}
+                >
+                  <Icone nome={icone} />
                   {titulo}
-                </NavLink>
+                </Link>
               </li>
             ))}
           </ul>
         </nav>
         <button
           type="button"
-          className="secundario avatar"
+          className="abrir-conta"
           data-testid="abrir-conta"
           popoverTarget="conta"
-          aria-label={`${iniciais(eu.usuario.nome)}, conta de ${eu.usuario.nome}`}
         >
-          {iniciais(eu.usuario.nome)}
+          <span className={gestor ? 'avatar escuro' : 'avatar'} aria-hidden="true">
+            {iniciais(nomeDe(usuario))}
+          </span>
+          <span className="quem">
+            <strong>{nomeDe(usuario)}</strong>
+            <small>{gestor ? 'Gestor' : 'Participante'}</small>
+          </span>
         </button>
         <div id="conta" className="conta" popover="auto" data-testid="conta">
-          <p>{eu.usuario.nome}</p>
-          {eu.usuario.perfis.includes('gestor') && (
+          <p>
+            <strong>{nomeDe(usuario)}</strong>
+            <small>{perfil}</small>
+          </p>
+          {gestor && (
             <Link
               to={inicio(outra)}
               data-testid="trocar-visao"
@@ -199,23 +317,43 @@ export const App = () => {
                 document.getElementById('conta')?.hidePopover();
               }}
             >
-              Trocar para <strong>{outra === 'gestor' ? 'Gestor' : 'Participante'}</strong>
+              <Icone nome="trocar" />
+              Ir para a visão do {outra}
             </Link>
           )}
           <button type="button" className="fantasma" data-testid="sair" onClick={sair}>
+            <Icone nome="sair" />
             Sair
           </button>
+          {/* Only in the visão do participante: a gestor desativa the own access there, on purpose. */}
+          {visao === 'participante' && (
+            <Link
+              to="/desativar-meu-acesso"
+              className="discreto"
+              data-testid="ir-desativar-meu-acesso"
+              onClick={() => document.getElementById('conta')?.hidePopover()}
+            >
+              <Icone nome="desativar" />
+              Desativar meu acesso
+            </Link>
+          )}
         </div>
       </header>
       <main id="conteudo" tabIndex={-1} data-testid="conteudo">
         <Routes>
-          {itens.map(({ caminho, titulo }) => (
+          {daVisao.map((pagina) => (
             <Route
-              key={caminho}
-              path={caminho}
+              key={pagina.caminho}
+              path={pagina.caminho}
               element={
-                <Pagina id={idDaPagina(caminho)} titulo={titulo}>
-                  {paginas[caminho]}
+                <Pagina
+                  id={idDaPagina(pagina.caminho)}
+                  titulo={pagina.titulo}
+                  voltar={daVisao.find(
+                    (de) => de.caminho === pagina.menu && de.caminho !== pagina.caminho,
+                  )}
+                >
+                  {conteudo[pagina.caminho]}
                 </Pagina>
               }
             />
@@ -230,6 +368,6 @@ export const App = () => {
           />
         </Routes>
       </main>
-    </>
+    </div>
   );
 };

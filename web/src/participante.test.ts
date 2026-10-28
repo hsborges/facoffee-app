@@ -1,6 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Analise } from './api';
-import { editarComprovante, enviarComprovante, situacaoDoComprovante } from './participante';
+import {
+  atalhosDoValorPago,
+  depoisDoPagamento,
+  detalheDoComprovante,
+  editarComprovante,
+  enviarComprovante,
+  saldoAntes,
+} from './participante';
 
 const participanteId = '11111111-1111-4111-8111-111111111111';
 const arquivo = new File(['%PDF'], 'pix.pdf');
@@ -98,16 +105,79 @@ describe('editarComprovante', () => {
   });
 });
 
-describe('situacaoDoComprovante', () => {
+describe('detalheDoComprovante', () => {
   const comprovante = { id: 'c', participanteId, comprovanteId: 'a', valorEmCentavos: 3000 };
 
-  it('RN-FIN-10: shows a confirmar, the valor confirmado or the motivo da recusa', () => {
+  it('RN-FIN-10: tells a confirmar, the valor confirmado or the motivo da recusa', () => {
     const com = (analise: Analise) =>
-      situacaoDoComprovante({ ...comprovante, enviadoEm: '', ...analise });
-    expect(com({ situacao: 'a-confirmar' })).toBe('A confirmar');
+      detalheDoComprovante({ ...comprovante, enviadoEm: '', ...analise });
+    expect(com({ situacao: 'a-confirmar' })).toBe('Vale como pagamento quando o gestor confirmar.');
     expect(com({ situacao: 'confirmado', valorConfirmadoEmCentavos: 2000 })).toBe(
-      'Confirmado: R$\u00a020,00',
+      'Valor confirmado: R$\u00a020,00',
     );
-    expect(com({ situacao: 'recusado', motivo: 'Ilegível' })).toBe('Recusado: Ilegível');
+    expect(com({ situacao: 'recusado', motivo: 'Ilegível' })).toBe('Motivo: Ilegível');
+  });
+});
+
+describe('atalhosDoValorPago', () => {
+  it('RN-FIN-34: one month, until December and a semester of cota, from the current month', () => {
+    expect(atalhosDoValorPago(3000, '2026-10')).toEqual([
+      { rotulo: '1 mês', valorEmCentavos: 3000 },
+      { rotulo: 'Até dezembro', valorEmCentavos: 9000 },
+      { rotulo: 'Semestre', valorEmCentavos: 18000 },
+    ]);
+  });
+
+  it('RN-FIN-34: a shortcut of the same valor as another is not repeated', () => {
+    expect(atalhosDoValorPago(2500, '2026-12').map(({ rotulo }) => rotulo)).toEqual([
+      '1 mês',
+      'Semestre',
+    ]);
+    expect(atalhosDoValorPago(2500, '2026-07').map(({ rotulo }) => rotulo)).toEqual([
+      '1 mês',
+      'Até dezembro',
+    ]);
+  });
+});
+
+describe('saldoAntes', () => {
+  it('RN-FIN-35: tells the crédito, the pendência, or that the participante is em dia', () => {
+    expect(saldoAntes({ creditoEmCentavos: 500, pendenteEmCentavos: 0 })).toEqual({
+      rotulo: 'Seu crédito',
+      valor: 'R$\u00a05,00',
+    });
+    expect(saldoAntes({ creditoEmCentavos: 0, pendenteEmCentavos: 3000 })).toEqual({
+      rotulo: 'Você deve',
+      valor: 'R$\u00a030,00',
+    });
+    expect(saldoAntes({ creditoEmCentavos: 0, pendenteEmCentavos: 0 })).toEqual({
+      rotulo: 'Situação',
+      valor: 'Em dia',
+    });
+  });
+});
+
+describe('depoisDoPagamento', () => {
+  const pendente = { creditoEmCentavos: 0, pendenteEmCentavos: 3000 };
+
+  it('RN-FIN-35: tells how the situação stands after paying', () => {
+    expect(depoisDoPagamento('Bia', pendente, 3000)).toEqual({
+      situacao: 'em-dia',
+      texto: 'Bia fica em dia, sem crédito.',
+    });
+    expect(depoisDoPagamento('Ana', pendente, 9000)).toEqual({
+      situacao: 'credito',
+      texto: 'Ana fica com R$\u00a060,00 de crédito.',
+    });
+    expect(depoisDoPagamento('Você', pendente, 1000)).toEqual({
+      situacao: 'pendente',
+      texto: 'Você continua pendente em R$\u00a020,00.',
+    });
+  });
+
+  it('RN-FIN-35: a crédito adds to what is paid', () => {
+    expect(
+      depoisDoPagamento('Ana', { creditoEmCentavos: 500, pendenteEmCentavos: 0 }, 1000),
+    ).toEqual({ situacao: 'credito', texto: 'Ana fica com R$\u00a015,00 de crédito.' });
   });
 });

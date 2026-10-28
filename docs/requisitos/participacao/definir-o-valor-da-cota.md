@@ -94,4 +94,10 @@ Regra: RN-PAR-16 Todos veem o valor de cada tipo de cota do ano
     Dado que os valores de 2026 são R$ 25,00 para só café e R$ 30,00 para completa
     Quando Ana, participante, consulta os valores da cota
     Então Ana vê os dois valores de 2026
+
+  Cenário: o gestor consulta o que já definiu para o ano seguinte
+    Dado que estamos em 2026
+    E que o gestor definiu R$ 35,00 para a cota completa de 2027
+    Quando o gestor consulta os valores da cota de 2027
+    Então o gestor vê R$ 35,00 para a cota completa de 2027
 ```

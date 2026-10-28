@@ -1,11 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import {
+  confirmacaoAberta,
   entrarNoFacoffee,
   expect,
   naTelaDoGestor,
   novoUsuario,
   pagina,
   pedirEntrada,
+  pedirSaida,
   registrarGasto,
   semRolagemHorizontal,
   test,
@@ -28,9 +30,16 @@ test.describe('Não funcionais', () => {
 
     for (const [caminho, id] of [
       ['/', 'minha-situacao'],
+      ['/enviar-comprovante', 'enviar-comprovante'],
+      ['/desativar-meu-acesso', 'desativar-meu-acesso'],
       ['/caixinha', 'caixinha'],
+      ['/caixinha/registrar-gasto', 'registrar-gasto'],
       ['/participantes', 'participantes'],
+      ['/participantes/conferir-comprovante', 'conferir-comprovante'],
+      ['/participantes/receber-pagamento', 'receber-pagamento'],
       ['/gastos', 'gastos'],
+      ['/gastos/registrar-gasto', 'registrar-gasto'],
+      ['/gastos/solicitar-complemento', 'solicitar-complemento'],
       ['/valor-da-cota', 'valor-da-cota'],
     ] as const)
       await test.step(`${caminho} não rola na horizontal`, async () => {
@@ -39,5 +48,29 @@ test.describe('Não funcionais', () => {
         await expect(gestor.getByTestId('carregando')).toHaveCount(0);
         await semRolagemHorizontal(gestor);
       });
+  });
+
+  test('RNF-12: ação crítica pede confirmação', { tag: '@celular' }, async ({ browser }) => {
+    const pessoa = await novoUsuario();
+    const participante = await entrarNoFacoffee(browser, pessoa.usuario);
+    await pedirEntrada(participante, pessoa.usuario);
+
+    await test.step('Voltar ou Esc fecham a confirmação sem pedir a saída', async () => {
+      const confirmacao = confirmacaoAberta(participante);
+      await participante.getByTestId('pedir-saida').click();
+      // The focus starts on Voltar: Enter does not confirm by accident.
+      await expect(confirmacao.getByTestId('voltar')).toBeFocused();
+      await confirmacao.getByTestId('voltar').click();
+      await expect(confirmacao).toHaveCount(0);
+      await participante.getByTestId('pedir-saida').click();
+      await expect(confirmacao).toBeVisible();
+      await participante.keyboard.press('Escape');
+      await expect(confirmacao).toHaveCount(0);
+      await participante.reload();
+      await expect(participante.getByTestId('participando')).toBeVisible();
+    });
+
+    // Confirmed, the action is done.
+    await pedirSaida(participante, pessoa.usuario);
   });
 });

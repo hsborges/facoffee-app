@@ -1,9 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  conferidosComOValor,
   confirmarComprovante,
   creditoOuPendencia,
+  definicaoDoValorDaCota,
+  definirValoresDaCota,
+  listaDeConferencia,
   receberPagamento,
   registrarGasto,
+  saldoDepoisDosReembolsos,
 } from './gestor';
 
 const participanteId = '11111111-1111-4111-8111-111111111111';
@@ -139,5 +144,115 @@ describe('creditoOuPendencia', () => {
       'Crédito: R$\u00a060,00',
     );
     expect(creditoOuPendencia(situacao)).toBe('Em dia');
+  });
+});
+
+describe('listaDeConferencia', () => {
+  it('RN-FIN-36: short steps to check in the comprovante, the valor being the one to confirmar', () => {
+    expect(listaDeConferencia(3000)).toEqual([
+      'É um comprovante de PIX, legível',
+      'O valor é R$\u00a030,00',
+      'A data é deste mês',
+    ]);
+    expect(listaDeConferencia(2550)[1]).toBe('O valor é R$\u00a025,50');
+  });
+});
+
+describe('conferidosComOValor', () => {
+  it('RN-FIN-36: correcting the valor unchecks its step, even when the valor goes back to the one before', () => {
+    const todos = new Set(listaDeConferencia(3000));
+    const corrigido = conferidosComOValor(todos, 2500);
+    expect([...corrigido]).toEqual(['É um comprovante de PIX, legível', 'A data é deste mês']);
+    expect([...conferidosComOValor(corrigido, 3000)]).toEqual([...corrigido]);
+    expect(conferidosComOValor(todos, 3000)).toEqual(todos);
+  });
+});
+
+describe('definicaoDoValorDaCota', () => {
+  const so = (tipoDeCota: 'so-cafe' | 'completa', ano: number) => ({
+    tipoDeCota,
+    ano,
+    valorEmCentavos: 2500,
+  });
+
+  it('RN-PAR-14: defines this year while a tipo de cota is missing in it', () => {
+    expect(definicaoDoValorDaCota(2026, [so('completa', 2026)], [])).toEqual({
+      ano: 2026,
+      tipos: ['so-cafe'],
+    });
+  });
+
+  it('RN-PAR-14: then the next year, only the tipos de cota still missing in it', () => {
+    const doAno = [so('so-cafe', 2026), so('completa', 2026)];
+    expect(definicaoDoValorDaCota(2026, doAno, [])).toEqual({
+      ano: 2027,
+      tipos: ['so-cafe', 'completa'],
+    });
+    expect(definicaoDoValorDaCota(2026, doAno, [so('so-cafe', 2027)])).toEqual({
+      ano: 2027,
+      tipos: ['completa'],
+    });
+  });
+
+  it('RN-PAR-14: nothing to define once both years are defined', () => {
+    const doAno = [so('so-cafe', 2026), so('completa', 2026)];
+    expect(
+      definicaoDoValorDaCota(2026, doAno, [so('so-cafe', 2027), so('completa', 2027)]),
+    ).toBeUndefined();
+  });
+});
+
+describe('definirValoresDaCota', () => {
+  const definicoes = [
+    { tipoDeCota: 'so-cafe', valorEmCentavos: 2500 },
+    { tipoDeCota: 'completa', valorEmCentavos: 3500 },
+  ] as const;
+
+  it('defines each tipo de cota for the year', async () => {
+    const chamadas = responde(
+      new Response(null, { status: 204 }),
+      new Response(null, { status: 204 }),
+    );
+    expect(await definirValoresDaCota('token', 2027, definicoes)).toEqual({
+      feito: true,
+      definidos: ['so-cafe', 'completa'],
+    });
+    expect(chamadas().map((chamada) => JSON.parse(chamada.corpo as string))).toEqual([
+      { tipoDeCota: 'so-cafe', valorEmCentavos: 2500, ano: 2027 },
+      { tipoDeCota: 'completa', valorEmCentavos: 3500, ano: 2027 },
+    ]);
+  });
+
+  it('stops at the first refusal and tells which tipos de cota were already defined', async () => {
+    const chamadas = responde(
+      new Response(null, { status: 204 }),
+      Response.json({ error: 'valor-ja-definido' }, { status: 409 }),
+    );
+    expect(await definirValoresDaCota('token', 2027, definicoes)).toEqual({
+      feito: false,
+      erro: 'valor-ja-definido',
+      definidos: ['so-cafe'],
+    });
+    expect(chamadas()).toHaveLength(2);
+  });
+});
+
+describe('saldoDepoisDosReembolsos', () => {
+  const gasto = {
+    id: 'g',
+    participanteId,
+    tipo: 'cafe',
+    notaId: 'n',
+    feitoEm: '2026-10-25T12:00:00Z',
+  } as const;
+
+  it('RN-FIN-37: takes from the saldo only the gastos do próprio bolso not reembolsados', () => {
+    expect(
+      saldoDepoisDosReembolsos(64650, [
+        { ...gasto, valorEmCentavos: 4590, origem: 'proprio-bolso', reembolsado: false },
+        { ...gasto, valorEmCentavos: 1000, origem: 'proprio-bolso', reembolsado: true },
+        { ...gasto, valorEmCentavos: 2000, origem: 'caixinha', reembolsado: false },
+      ]),
+    ).toBe(60060);
   });
 });

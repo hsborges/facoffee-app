@@ -32,8 +32,9 @@ Registros de decisões de arquitetura. Um arquivo por decisão: `NNNN-titulo.md`
 | [0026](0026-dockerfile-por-servico.md) | Dockerfile por serviço | Aceito |
 | [0027](0027-lembrete-aos-pendentes.md) | Lembrete aos pendentes | Aceito |
 | [0028](0028-mobile-first.md) | Mobile first | Aceito |
-| [0029](0029-visoes-do-gestor-e-do-participante.md) | Visões do gestor e do participante | Aceito |
+| [0029](0029-visoes-do-gestor-e-do-participante.md) | Visões do gestor e do participante | Aceito; posição dos menus substituída por 0034 |
 | [0030](0030-pagamento-iniciado-pelo-participante.md) | Pagamento iniciado pelo participante | Aceito; envio e recusa sem evento substituídos por 0031 |
 | [0031](0031-avisos-do-comprovante-enviado.md) | Avisos do comprovante enviado | Aceito |
 | [0032](0032-requisitos-rastreaveis-em-bdd.md) | Requisitos rastreáveis em BDD | Aceito |
 | [0033](0033-e2e-como-teste-de-aceitacao-da-funcionalidade.md) | E2E como teste de aceitação da funcionalidade | Aceito |
+| [0034](0034-menu-inferior-no-celular-e-lateral-no-computador.md) | Menu inferior no celular e lateral no computador | Aceito |

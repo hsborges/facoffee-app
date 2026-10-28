@@ -2,6 +2,9 @@ import type { Browser } from '@playwright/test';
 import {
   aConfirmar,
   chamarApi,
+  conferir,
+  conferirComprovantes,
+  confirmarAcao,
   confirmarComprovante,
   entrarNoFacoffee,
   enviadoDe,
@@ -59,7 +62,7 @@ test.describe('RF-FIN-02 Enviar comprovante', () => {
     await enviarComprovante(participante, '25,00');
     const antes = await saldoDe(participante);
 
-    await gestor.reload();
+    await conferirComprovantes(gestor);
     await semRolagemHorizontal(gestor);
     await confirmarComprovante(gestor, pessoa.nome, '25,00', '20,00');
     await feito(gestor);
@@ -80,7 +83,7 @@ test.describe('RF-FIN-02 Enviar comprovante', () => {
     await enviarComprovante(participante, '10,00');
     const antes = await saldoDe(participante);
 
-    await gestor.reload();
+    await conferirComprovantes(gestor);
     await recusarComprovante(gestor, pessoa.nome, '10,00', 'Não achei o PIX');
 
     await test.step(`${pessoa.usuario} vê o motivo, e nenhum pagamento é recebido`, async () => {
@@ -103,7 +106,7 @@ test.describe('RF-FIN-02 Enviar comprovante', () => {
       const comprovante = enviadoDe(participante, '30,00');
       await comprovante.getByTestId('editar-comprovante').click();
       const edicao = comprovante.getByTestId('edicao-de-comprovante');
-      await edicao.getByTestId('valor').fill('25');
+      await edicao.getByTestId('valor').fill('25,00');
       await edicao.getByTestId('salvar').click();
       await expect(enviadoDe(participante, '25,00')).toHaveAttribute(
         'data-situacao',
@@ -115,6 +118,7 @@ test.describe('RF-FIN-02 Enviar comprovante', () => {
 
     await test.step(`${pessoa.usuario} cancela o envio do de R$ 10,00`, async () => {
       await enviadoDe(participante, '10,00').getByTestId('cancelar-envio').click();
+      await confirmarAcao(participante);
       await expect(enviadoDe(participante, '10,00')).toHaveCount(0);
     });
 
@@ -130,7 +134,7 @@ test.describe('RF-FIN-02 Enviar comprovante', () => {
       expect(cancelado.status).toBe(404);
     });
 
-    await gestor.reload();
+    await conferirComprovantes(gestor);
     await confirmarComprovante(gestor, pessoa.nome, '25,00');
     await feito(gestor);
 
@@ -155,10 +159,11 @@ test.describe('RF-FIN-02 Enviar comprovante', () => {
     await enviarComprovante(participante, '40,00');
 
     await test.step('Gestor abre o comprovante', async () => {
-      await gestor.reload();
+      await conferirComprovantes(gestor);
+      const conferencia = await conferir(gestor, pessoa.nome, '40,00');
       const [aba] = await Promise.all([
         gestor.waitForEvent('popup'),
-        aConfirmar(gestor, pessoa.nome, '40,00').getByTestId('ver-comprovante').click(),
+        conferencia.getByTestId('ver-comprovante').click(),
       ]);
       await expect.poll(() => aba.url()).toMatch(/^blob:/);
       await aba.close();
@@ -177,6 +182,12 @@ test.describe('RF-FIN-02 Enviar comprovante', () => {
     await test.step('A confirmação é recusada, e o comprovante continua a confirmar', async () => {
       await expect(gestor.getByTestId('aviso-falha')).toBeVisible();
       await expect(aConfirmar(gestor, pessoa.nome, '40,00')).toBeVisible();
+      // The arquivo changed: the lista is checked again, against it.
+      const conferencia = gestor.getByTestId('conferencia');
+      await expect(
+        conferencia.locator('[data-testid="item-a-conferir"][data-conferido="sim"]'),
+      ).toHaveCount(0);
+      await expect(conferencia.getByTestId('confirmar')).toBeDisabled();
       await participante.reload();
       await expect(enviadoDe(participante, '40,00')).toHaveAttribute(
         'data-situacao',
@@ -192,26 +203,75 @@ test.describe('RF-FIN-02 Enviar comprovante', () => {
     const bia = await participanteEGestor(browser);
     await enviarComprovante(ana.participante, '11,00');
     await enviarComprovante(bia.participante, '12,00');
+    await enviarComprovante(bia.participante, '13,00');
     const { gestor } = ana;
 
-    await gestor.reload();
+    await conferirComprovantes(gestor);
     await expect(aConfirmar(gestor, ana.pessoa.nome, '11,00')).toBeVisible();
     await confirmarComprovante(gestor, bia.pessoa.nome, '12,00');
     await feito(gestor);
 
-    await test.step('O gestor vê só o comprovante a confirmar', async () => {
+    await test.step('O gestor vê só os comprovantes a confirmar, e confere o seguinte', async () => {
+      await expect(aConfirmar(gestor, bia.pessoa.nome, '13,00')).toHaveAttribute(
+        'data-atual',
+        'sim',
+      );
       await expect(aConfirmar(gestor, ana.pessoa.nome, '11,00')).toBeVisible();
       await expect(aConfirmar(gestor, bia.pessoa.nome, '12,00')).toHaveCount(0);
     });
-    await test.step('Cada participante vê só o seu, com a situação', async () => {
-      for (const { participante, valor, situacao } of [
-        { participante: ana.participante, valor: '11,00', situacao: 'a-confirmar' },
-        { participante: bia.participante, valor: '12,00', situacao: 'confirmado' },
+    await test.step('Cada participante vê só os seus, com a situação', async () => {
+      for (const { participante, quantos, valor, situacao } of [
+        { participante: ana.participante, quantos: 1, valor: '11,00', situacao: 'a-confirmar' },
+        { participante: bia.participante, quantos: 2, valor: '12,00', situacao: 'confirmado' },
       ]) {
         await participante.reload();
-        await expect(enviados(participante)).toHaveCount(1);
+        await expect(enviados(participante)).toHaveCount(quantos);
         await expect(enviadoDe(participante, valor)).toHaveAttribute('data-situacao', situacao);
       }
+    });
+  });
+
+  test('RN-FIN-36: o gestor só confirma o comprovante depois de conferir a lista, e recusa com um motivo comum', {
+    tag: '@celular',
+  }, async ({ browser }) => {
+    const { pessoa, participante, gestor } = await participanteEGestor(browser);
+    await enviarComprovante(participante, '13,00');
+
+    await conferirComprovantes(gestor);
+    await test.step('O gestor só confirma depois de marcar todos os passos da lista', async () => {
+      const conferencia = await conferir(gestor, pessoa.nome, '13,00');
+      const itens = conferencia.getByTestId('item-a-conferir');
+      const confirmar = conferencia.getByTestId('confirmar');
+      await expect(itens).toHaveCount(3);
+      await semRolagemHorizontal(gestor);
+      for (const item of await itens.all()) {
+        await expect(confirmar).toBeDisabled();
+        await item.check();
+      }
+      await expect(confirmar).toBeEnabled();
+    });
+    await test.step('Corrigir o valor desmarca o passo do valor', async () => {
+      const conferencia = gestor.getByTestId('conferencia');
+      const desmarcados = conferencia.locator(
+        '[data-testid="item-a-conferir"][data-conferido="nao"]',
+      );
+      await conferencia.getByTestId('valor').fill('12,00');
+      await expect(conferencia.getByTestId('confirmar')).toBeDisabled();
+      await expect(desmarcados).toHaveCount(1);
+      // Back to the valor informado, the step stays unchecked: it was never checked for it again.
+      await conferencia.getByTestId('valor').fill('13,00');
+      await expect(conferencia.getByTestId('confirmar')).toBeDisabled();
+      await expect(desmarcados).toHaveCount(1);
+    });
+    await recusarComprovante(gestor, pessoa.nome, '13,00', 'Comprovante de outro mês', {
+      comum: true,
+    });
+
+    await test.step(`${pessoa.usuario} vê o motivo comum`, async () => {
+      await participante.reload();
+      const recusado = enviadoDe(participante, '13,00');
+      await expect(recusado).toHaveAttribute('data-situacao', 'recusado');
+      await expect(recusado.getByTestId('situacao')).toContainText('Comprovante de outro mês');
     });
   });
 });

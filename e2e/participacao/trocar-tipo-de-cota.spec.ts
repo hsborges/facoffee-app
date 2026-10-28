@@ -1,6 +1,7 @@
 import {
   chamarApi,
   comDados,
+  confirmarAcao,
   cotas,
   entrarNoFacoffee,
   expect,
@@ -33,10 +34,11 @@ test.describe('RF-PAR-02 Trocar tipo de cota', () => {
     const trocaParaCompleta = comDados(participante, 'troca-de-tipo-de-cota', {
       'tipo-de-cota': 'completa',
     });
+    // The button trocar-tipo-de-cota offers the other tipo de cota, and asks for confirmação (RNF-12).
     const trocar = (tipo: TipoDeCota) =>
       test.step(`${pessoa.usuario} troca para ${tipo}`, async () => {
-        await participante.getByTestId(`tipo-de-cota-${tipo}`).check();
         await participante.getByTestId('trocar-tipo-de-cota').click();
+        await confirmarAcao(participante);
       });
 
     await trocar('completa');

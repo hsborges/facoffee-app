@@ -175,3 +175,57 @@ Regra: RN-FIN-14 O gestor vê os comprovantes a confirmar; o participante, só o
     E Ana vê só o seu, com a situação
     E Bia vê só o seu, com o valor confirmado
 ```
+
+### RN-FIN-34 No envio, o valor pago começa no pendente, com atalhos de um mês, até dezembro e um semestre de cota
+
+- Termo: [Cota](../../dominio/GLOSSARIO.md#cota), [Pendente](../../dominio/GLOSSARIO.md#pendente) · Origem: [protótipo](../../design/PROTOTYPE.md)
+
+Os atalhos usam o valor da cota do tipo de cota do participante no ano atual (RN-PAR-16) e contam a partir do mês atual. Atalho de mesmo valor que outro não se repete, como *Até dezembro* em dezembro. Sem valor da cota definido, não há atalhos.
+
+```gherkin
+# language: pt
+Regra: RN-FIN-34 No envio, o valor pago começa no pendente, com atalhos de um mês, até dezembro e um semestre de cota
+
+  Cenário: atalhos em outubro
+    Dado que Ana participa com a cota completa, de R$ 30,00 por mês
+    E que o mês atual é outubro
+    Quando Ana vai enviar um comprovante
+    Então os atalhos são R$ 30,00 por um mês, R$ 90,00 até dezembro e R$ 180,00 por um semestre
+
+  Cenário: valor pago sugerido
+    Dado que Ana está pendente em R$ 50,00
+    Quando Ana vai enviar um comprovante
+    Então o valor pago começa em R$ 50,00
+```
+
+### RN-FIN-36 O gestor só confirma o comprovante depois de conferir a lista, e recusa com um motivo comum ou o seu
+
+- Termo: [Comprovante](../../dominio/GLOSSARIO.md#comprovante), [Gestor](../../dominio/GLOSSARIO.md#gestor) · Origem: [protótipo](../../design/PROTOTYPE.md)
+
+A lista *Confira no comprovante* tem passos curtos, cada um o contrário de um motivo comum: é um comprovante de PIX legível, o valor é o que o gestor vai confirmar e a data é deste mês. *Confirmar* só fica disponível com todos marcados; corrigir o valor desmarca o passo do valor, que passa a dizer o novo, mesmo quando o valor volta ao de antes. *Recusar* não depende da lista. Os motivos comuns preenchem o motivo da recusa (RN-FIN-10), que o gestor ainda pode mudar.
+
+```gherkin
+# language: pt
+Regra: RN-FIN-36 O gestor só confirma o comprovante depois de conferir a lista, e recusa com um motivo comum ou o seu
+
+  Cenário: confirmar depois de conferir a lista
+    Dado que Ana enviou um comprovante de R$ 30,00
+    Quando o gestor confere o comprovante de Ana
+    Então o gestor só confirma depois de marcar que é um comprovante de PIX legível, de R$ 30,00 e deste mês
+
+  Cenário: valor corrigido
+    Dado que o gestor marcou todos os passos do comprovante de R$ 30,00 de Ana
+    Quando o gestor corrige o valor a confirmar para R$ 25,00
+    Então o gestor marca de novo o passo do valor, agora de R$ 25,00, para confirmar
+
+  Cenário: valor corrigido e depois desfeito
+    Dado que o gestor marcou todos os passos do comprovante de R$ 30,00 de Ana
+    E corrigiu o valor a confirmar para R$ 25,00
+    Quando o gestor volta o valor a confirmar para R$ 30,00
+    Então o gestor marca de novo o passo do valor, de R$ 30,00, para confirmar
+
+  Cenário: recusa com motivo comum
+    Dado que Ana enviou um comprovante de R$ 30,00
+    Quando o gestor recusa o comprovante com o motivo comum "Comprovante de outro mês"
+    Então Ana vê o comprovante recusado com o motivo "Comprovante de outro mês"
+```

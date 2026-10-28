@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { destinoDoLogin, navegacao, type Visao, visaoAtual, visaoGuardada } from './navegacao';
+import {
+  destinoDoLogin,
+  navegacao,
+  paginas,
+  type Visao,
+  visaoAtual,
+  visaoGuardada,
+} from './navegacao';
 
 describe('destinoDoLogin', () => {
   it('returns to the page asked before the login', () => {
@@ -34,6 +41,27 @@ describe('navegacao', () => {
   });
 });
 
+describe('paginas', () => {
+  it('each subpágina comes after the page it leaves from, which the menu marks', () => {
+    expect(paginas('participante').map(({ caminho, menu }) => [caminho, menu])).toEqual([
+      ['/', '/'],
+      ['/enviar-comprovante', '/'],
+      ['/desativar-meu-acesso', '/'],
+      ['/caixinha', '/caixinha'],
+      ['/caixinha/registrar-gasto', '/caixinha'],
+    ]);
+    expect(paginas('gestor').map(({ caminho }) => caminho)).toEqual([
+      '/participantes',
+      '/participantes/conferir-comprovante',
+      '/participantes/receber-pagamento',
+      '/gastos',
+      '/gastos/registrar-gasto',
+      '/gastos/solicitar-complemento',
+      '/valor-da-cota',
+    ]);
+  });
+});
+
 describe('visaoAtual', () => {
   const GESTOR = ['gestor', 'participante'] as const;
 
@@ -57,6 +85,13 @@ describe('visaoAtual', () => {
     expect(visaoAtual(GESTOR, 'participante', '/gastos/')).toBe('gestor');
     expect(visaoAtual(GESTOR, 'participante', '/Valor-da-Cota')).toBe('gestor');
     expect(visaoAtual(GESTOR, 'gestor', '/caixinha/')).toBe('participante');
+  });
+
+  it('a subpágina belongs to the visão of its page', () => {
+    expect(visaoAtual(GESTOR, 'participante', '/participantes/receber-pagamento')).toBe('gestor');
+    expect(visaoAtual(GESTOR, 'gestor', '/enviar-comprovante')).toBe('participante');
+    expect(visaoAtual(GESTOR, 'participante', '/gastos/registrar-gasto')).toBe('gestor');
+    expect(visaoAtual(GESTOR, 'gestor', '/caixinha/registrar-gasto')).toBe('participante');
   });
 
   it('a page of no visão keeps the one chosen', () => {

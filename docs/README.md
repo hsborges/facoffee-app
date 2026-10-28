@@ -11,3 +11,4 @@ Ordem de leitura sugerida: do porquê (produto) ao como (domínio, arquitetura, 
 | `arquitetura/` | [Visão geral](arquitetura/visao-geral.png) | Diagrama dos serviços |
 | `adr/` | [ADRs](adr/README.md) | Decisões de arquitetura |
 | `design/` | [Design System](design/DESIGN_SYSTEM.md) | Identidade visual, cores, tipografia e componentes; logo em [`facoffee-logo.svg`](design/facoffee-logo.svg) |
+| `design/` | [Protótipo](design/PROTOTYPE.md) | Protótipo navegável das telas, no celular e no desktop |
