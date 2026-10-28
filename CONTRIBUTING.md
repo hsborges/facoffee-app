@@ -4,7 +4,7 @@ Como desenvolver no FACOFFEE. O que o produto faz está no [README](README.md); 
 
 ## Arquitetura
 
-Um serviço por contexto delimitado, cada um com o próprio banco ([ADR 0001](docs/adr/0001-arquitetura-servicos.md), [diagrama](docs/arquitetura/visao-geral.png)). Os contextos se falam só por eventos de domínio no RabbitMQ, publicados por outbox e consumidos de forma idempotente. O API Gateway é o único ponto aberto: valida o token OIDC, roteia `/api/<contexto>/...` para os serviços e serve o web e a documentação da API.
+Um serviço por contexto delimitado, cada um com o próprio banco ([ADR 0001](docs/adr/0001-arquitetura-servicos.md), [diagrama](docs/arquitetura/visao-geral-v2.png)). Os contextos se falam só por eventos de domínio no RabbitMQ, publicados por outbox e consumidos de forma idempotente. O API Gateway é o único ponto aberto: valida o token OIDC, roteia `/api/<contexto>/...` para os serviços e serve o web e a documentação da API.
 
 | Pasta | Conteúdo |
 |---|---|
