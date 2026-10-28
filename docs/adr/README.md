@@ -38,3 +38,4 @@ Registros de decisões de arquitetura. Um arquivo por decisão: `NNNN-titulo.md`
 | [0032](0032-requisitos-rastreaveis-em-bdd.md) | Requisitos rastreáveis em BDD | Aceito |
 | [0033](0033-e2e-como-teste-de-aceitacao-da-funcionalidade.md) | E2E como teste de aceitação da funcionalidade | Aceito |
 | [0034](0034-menu-inferior-no-celular-e-lateral-no-computador.md) | Menu inferior no celular e lateral no computador | Aceito |
+| [0035](0035-normalizacao-da-api-publica.md) | Normalização da API pública | Aceito |
