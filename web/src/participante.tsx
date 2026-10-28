@@ -142,6 +142,12 @@ export const useConfirmacao = () => {
   const resposta = useRef<(sim: boolean) => void>(undefined);
   const [pedido, setPedido] = useState<Pedido>();
   const titulo = useId();
+  // Every confirmar gets an answer: a pedido replaced or left open when the page goes is a no.
+  const responder = (sim: boolean) => {
+    resposta.current?.(sim);
+    resposta.current = undefined;
+  };
+  useEffect(() => () => resposta.current?.(false), []);
   useEffect(() => {
     const aberto = dialogo.current;
     if (!pedido || !aberto || aberto.open) return;
@@ -149,6 +155,7 @@ export const useConfirmacao = () => {
     aberto.showModal();
   }, [pedido]);
   const confirmar = (novo: Pedido) => {
+    responder(false);
     setPedido(novo);
     return new Promise<boolean>((resolver) => {
       resposta.current = resolver;
@@ -161,8 +168,7 @@ export const useConfirmacao = () => {
       data-testid="confirmacao"
       aria-labelledby={titulo}
       onClose={() => {
-        resposta.current?.(dialogo.current?.returnValue === 'sim');
-        resposta.current = undefined;
+        responder(dialogo.current?.returnValue === 'sim');
         setPedido(undefined);
       }}
     >
@@ -327,11 +333,11 @@ type Saldo = Pick<CreditoEPendente, 'creditoEmCentavos' | 'pendenteEmCentavos'>;
 
 /** RN-FIN-35: the crédito or pendência before paying, as a rótulo and its valor. */
 export const saldoAntes = (saldo: Saldo) =>
-  saldo.creditoEmCentavos > 0
-    ? { rotulo: 'Seu crédito', valor: emReais(saldo.creditoEmCentavos) }
-    : saldo.pendenteEmCentavos > 0
-      ? { rotulo: 'Você deve', valor: emReais(saldo.pendenteEmCentavos) }
-      : { rotulo: 'Situação', valor: 'Em dia' };
+  ({
+    pendente: { rotulo: 'Você deve', valor: emReais(saldo.pendenteEmCentavos) },
+    credito: { rotulo: 'Seu crédito', valor: emReais(saldo.creditoEmCentavos) },
+    'em-dia': { rotulo: 'Situação', valor: 'Em dia' },
+  })[situacaoDe(saldo)];
 
 /** Whether a participante is pendente, has crédito or is em dia. */
 export const situacaoDe = (saldo: Saldo): 'pendente' | 'credito' | 'em-dia' =>
@@ -946,10 +952,11 @@ export const DesativarMeuAcesso = ({
   usuarioId: string;
   desativado: () => void;
 }) => {
-  const [situacao] = useLeitura<Situacao>(token, '/api/financeiro/participante/eu');
+  const [situacao, recarregar] = useLeitura<Situacao>(token, '/api/financeiro/participante/eu');
   const { confirmar, confirmacao } = useConfirmacao();
   const { enviando, fazer, avisos } = useComando(() => {});
   if (!situacao) return <Carregando />;
+  if (situacao.situacao === 'erro') return <FalhaAoCarregar tentarDeNovo={recarregar} />;
 
   // Whoever never asked for entrada has no situação: nothing to keep, nor a copa to leave.
   const saldo = situacao.situacao === 'ok' ? situacao.valor : undefined;
@@ -1065,7 +1072,7 @@ export const EnviarComprovante = ({
 
   const saldo = situacao.valor;
   const campo = valor ?? (saldo.pendenteEmCentavos > 0 ? emReais(saldo.pendenteEmCentavos) : '');
-  const centavos = campo ? emCentavos(campo) : 0;
+  const centavos = emCentavos(campo);
   const tipo = participacao.situacao === 'ok' ? participacao.valor.tipoDeCota : undefined;
   const cota = tipo && valores.situacao === 'ok' ? valorDe(valores.valor, tipo) : undefined;
   const atalhos = cota ? atalhosDoValorPago(cota, mesEmCampoGrande(new Date())) : [];

@@ -107,11 +107,11 @@ export const registrarGasto = (
 
 /** The crédito or pendência of a participante, in one line. */
 export const creditoOuPendencia = (situacao: CreditoEPendente) =>
-  situacao.pendenteEmCentavos > 0
-    ? `Pendente: ${emReais(situacao.pendenteEmCentavos)}`
-    : situacao.creditoEmCentavos > 0
-      ? `Crédito: ${emReais(situacao.creditoEmCentavos)}`
-      : 'Em dia';
+  ({
+    pendente: `Pendente: ${emReais(situacao.pendenteEmCentavos)}`,
+    credito: `Crédito: ${emReais(situacao.creditoEmCentavos)}`,
+    'em-dia': 'Em dia',
+  })[situacaoDe(situacao)];
 
 /**
  * RN-FIN-36: the steps the gestor checks in the comprovante before confirmar it, each the opposite
@@ -489,11 +489,10 @@ const Conferencia = ({
   const [motivo, setMotivo] = useState('');
   // The steps checked, by their text: a corrected valor changes its step, which is unchecked.
   const [conferidos, setConferidos] = useState<ReadonlySet<string>>(new Set());
-  const centavosDe = (campo: string) => (campo ? emCentavos(campo) : 0);
-  const lista = listaDeConferencia(centavosDe(valor));
+  const lista = listaDeConferencia(emCentavos(valor));
   const corrigir = (novo: string) => {
     setValor(novo);
-    setConferidos((antes) => conferidosComOValor(antes, centavosDe(novo)));
+    setConferidos((antes) => conferidosComOValor(antes, emCentavos(novo)));
   };
   const conferido = lista.every((item) => conferidos.has(item));
   const marcar = (item: string, marcado: boolean) =>
@@ -549,6 +548,7 @@ const Conferencia = ({
               <input
                 type="checkbox"
                 data-testid="item-a-conferir"
+                data-conferido={conferidos.has(item) ? 'sim' : 'nao'}
                 checked={conferidos.has(item)}
                 onChange={(evento) => marcar(item, evento.target.checked)}
               />
@@ -574,7 +574,7 @@ const Conferencia = ({
             aria-describedby={conferido ? undefined : 'falta-conferir'}
           >
             <Icone nome="check" />
-            Confirmar {emReais(centavosDe(valor))}
+            Confirmar {emReais(emCentavos(valor))}
           </button>
           {!conferido && (
             <p id="falta-conferir" className="nota">
@@ -652,6 +652,7 @@ export const ConferirComprovante = ({ token }: { token: string }) => {
     Promise.all([recarregarComprovantes(), recarregarUsuarios(), recarregarSituacoes()]);
   const { enviando, fazer, avisos } = useComando(recarregar);
   const [busca] = useSearchParams();
+  const navigate = useNavigate();
   const [falhaAoAbrir, setFalhaAoAbrir] = useState(false);
 
   if (!comprovantes || !usuarios || !situacoes) return <Carregando />;
@@ -668,13 +669,19 @@ export const ConferirComprovante = ({ token }: { token: string }) => {
   const situacaoDoId = new Map(situacoes.valor.map((situacao) => [situacao.id, situacao]));
   const nomeDoComprovante = (comprovante: ComprovanteEnviado) =>
     nomes.get(comprovante.participanteId) ?? 'Desconhecido';
-  // The one asked for, or the first: once analisado, it leaves the fila, and the next comes.
+  // The one asked for, or the first.
   const indice = Math.max(
     0,
     fila.findIndex((comprovante) => comprovante.id === busca.get('id')),
   );
   const atual = fila[indice];
   const proximo = fila.length > 1 ? fila[(indice + 1) % fila.length] : undefined;
+  // Once analisado, it leaves the fila, and the next comes.
+  const analisar: typeof fazer = async (...comando) => {
+    const feito = await fazer(...comando);
+    if (feito && proximo) navigate(`?id=${proximo.id}`, { replace: true });
+    return feito;
+  };
 
   return (
     <>
@@ -693,13 +700,14 @@ export const ConferirComprovante = ({ token }: { token: string }) => {
             )}
           </p>
           <Conferencia
-            key={atual.id}
+            // The participante may change the arquivo or valor: then the lista is checked again.
+            key={`${atual.id}-${atual.comprovanteId}-${atual.valorEmCentavos}`}
             token={token}
             comprovante={atual}
             nome={nomeDoComprovante(atual)}
             situacao={situacaoDoId.get(atual.participanteId)}
             enviando={enviando}
-            fazer={fazer}
+            fazer={analisar}
             abrir={async () =>
               setFalhaAoAbrir(
                 !(await abrirArquivo(token, `/api/financeiro/comprovante/${atual.comprovanteId}`)),
@@ -716,6 +724,7 @@ export const ConferirComprovante = ({ token }: { token: string }) => {
               <li
                 key={comprovante.id}
                 data-testid="comprovante-a-confirmar"
+                data-atual={comprovante === atual ? 'sim' : 'nao'}
                 aria-current={comprovante === atual ? 'true' : undefined}
               >
                 <Link className="linha" to={`?id=${comprovante.id}`} data-testid="conferir">
@@ -749,7 +758,8 @@ export const ReceberPagamento = ({ token }: { token: string }) => {
     '/api/financeiro/participante',
   );
   const recarregar = () => Promise.all([recarregarUsuarios(), recarregarSituacoes()]);
-  const { enviando, fazer, avisos } = useComando(recarregar);
+  // Once received, the page leaves for Participantes, which reads them again.
+  const { enviando, fazer, avisos } = useComando(() => {});
   const [busca] = useSearchParams();
   const [escolhido, setEscolhido] = useState<string>();
   const [valor, setValor] = useState<string>();
@@ -772,7 +782,7 @@ export const ReceberPagamento = ({ token }: { token: string }) => {
   const campo =
     valor ??
     (situacao && situacao.pendenteEmCentavos > 0 ? emReais(situacao.pendenteEmCentavos) : '');
-  const centavos = campo ? emCentavos(campo) : 0;
+  const centavos = emCentavos(campo);
   const depois = usuario && situacao && depoisDoPagamento(nomeDe(usuario), situacao, centavos);
 
   const receber = aoEnviar(async (dados) => {
@@ -1329,6 +1339,8 @@ export const ValorDaCota = ({ token }: { token: string }) => {
           {avisos}
           {confirmacao}
           <form
+            // A new form for the next year, without the valores typed for this one.
+            key={definicao.ano}
             onSubmit={definir(definicao.ano, definicao.tipos)}
             data-testid="definicao-do-valor-da-cota"
             data-ano={definicao.ano}

@@ -325,6 +325,10 @@ export const garantirValorDaCota = (gestor: Page) =>
       await definicao.getByTestId('definir-valor-da-cota').click();
       await confirmarAcao(gestor);
       await feito(gestor);
+      // Then the next year's, empty: not with the valores just typed.
+      await expect(definicao).toHaveAttribute('data-ano', String(Number(ano) + 1));
+      for (const tipo of Object.keys(VALOR_DA_COTA))
+        await expect(definicao.getByTestId(`valor-${tipo}`)).toHaveValue('');
     }
     await gestor.goto('/caixinha');
     const valores = gestor.getByTestId('valores-da-cota');
@@ -418,7 +422,7 @@ export const conferir = async (gestor: Page, nome: string, valor: string) => {
   const comprovante = aConfirmar(gestor, nome, valor);
   await comprovante.getByTestId('conferir').click();
   // The conferência changes with the one picked, marked in the list.
-  await expect(comprovante).toHaveAttribute('aria-current', 'true');
+  await expect(comprovante).toHaveAttribute('data-atual', 'sim');
   return gestor.getByTestId('conferencia');
 };
 

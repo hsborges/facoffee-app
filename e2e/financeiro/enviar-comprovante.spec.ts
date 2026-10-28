@@ -182,6 +182,12 @@ test.describe('RF-FIN-02 Enviar comprovante', () => {
     await test.step('A confirmação é recusada, e o comprovante continua a confirmar', async () => {
       await expect(gestor.getByTestId('aviso-falha')).toBeVisible();
       await expect(aConfirmar(gestor, pessoa.nome, '40,00')).toBeVisible();
+      // The arquivo changed: the lista is checked again, against it.
+      const conferencia = gestor.getByTestId('conferencia');
+      await expect(
+        conferencia.locator('[data-testid="item-a-conferir"][data-conferido="sim"]'),
+      ).toHaveCount(0);
+      await expect(conferencia.getByTestId('confirmar')).toBeDisabled();
       await participante.reload();
       await expect(enviadoDe(participante, '40,00')).toHaveAttribute(
         'data-situacao',
@@ -197,6 +203,7 @@ test.describe('RF-FIN-02 Enviar comprovante', () => {
     const bia = await participanteEGestor(browser);
     await enviarComprovante(ana.participante, '11,00');
     await enviarComprovante(bia.participante, '12,00');
+    await enviarComprovante(bia.participante, '13,00');
     const { gestor } = ana;
 
     await conferirComprovantes(gestor);
@@ -204,17 +211,21 @@ test.describe('RF-FIN-02 Enviar comprovante', () => {
     await confirmarComprovante(gestor, bia.pessoa.nome, '12,00');
     await feito(gestor);
 
-    await test.step('O gestor vê só o comprovante a confirmar', async () => {
+    await test.step('O gestor vê só os comprovantes a confirmar, e confere o seguinte', async () => {
+      await expect(aConfirmar(gestor, bia.pessoa.nome, '13,00')).toHaveAttribute(
+        'data-atual',
+        'sim',
+      );
       await expect(aConfirmar(gestor, ana.pessoa.nome, '11,00')).toBeVisible();
       await expect(aConfirmar(gestor, bia.pessoa.nome, '12,00')).toHaveCount(0);
     });
-    await test.step('Cada participante vê só o seu, com a situação', async () => {
-      for (const { participante, valor, situacao } of [
-        { participante: ana.participante, valor: '11,00', situacao: 'a-confirmar' },
-        { participante: bia.participante, valor: '12,00', situacao: 'confirmado' },
+    await test.step('Cada participante vê só os seus, com a situação', async () => {
+      for (const { participante, quantos, valor, situacao } of [
+        { participante: ana.participante, quantos: 1, valor: '11,00', situacao: 'a-confirmar' },
+        { participante: bia.participante, quantos: 2, valor: '12,00', situacao: 'confirmado' },
       ]) {
         await participante.reload();
-        await expect(enviados(participante)).toHaveCount(1);
+        await expect(enviados(participante)).toHaveCount(quantos);
         await expect(enviadoDe(participante, valor)).toHaveAttribute('data-situacao', situacao);
       }
     });
@@ -241,7 +252,9 @@ test.describe('RF-FIN-02 Enviar comprovante', () => {
     });
     await test.step('Corrigir o valor desmarca o passo do valor', async () => {
       const conferencia = gestor.getByTestId('conferencia');
-      const desmarcados = conferencia.locator('[data-testid="item-a-conferir"]:not(:checked)');
+      const desmarcados = conferencia.locator(
+        '[data-testid="item-a-conferir"][data-conferido="nao"]',
+      );
       await conferencia.getByTestId('valor').fill('12,00');
       await expect(conferencia.getByTestId('confirmar')).toBeDisabled();
       await expect(desmarcados).toHaveCount(1);
