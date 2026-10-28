@@ -32,6 +32,7 @@ No modo Play, os botões e menus levam de uma tela à outra.
 | *Registrar um gasto que paguei* na Caixinha do participante | RN-FIN-26, que já valia pela API |
 | Confirmação antes de toda ação crítica | RNF-12 |
 | *Desativar meu acesso* numa página própria, pelo menu da conta, só na visão do participante | RN-USU-01 |
+| Valor da cota mostra os valores do ano seguinte já definidos e só pede os tipos de cota que faltam | RN-PAR-14, RN-PAR-16 |
 
 ## O que ficou de fora
 
