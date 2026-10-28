@@ -269,16 +269,16 @@ export const lerApi = async <T>(page: Page, caminho: string) =>
 /** A participante's crédito or pendência, as read from the API. */
 export type Situacao = {
   readonly id: string;
-  readonly ativo: boolean;
+  readonly participando: boolean;
   readonly creditoEmCentavos: number;
-  readonly pendenteEmCentavos: number;
+  readonly pendenciaEmCentavos: number;
   readonly cotas: readonly { readonly mes: string; readonly valorEmCentavos: number }[];
 };
 
 /** The logged-in participante's crédito minus pendência, in centavos. */
 export const saldoDe = async (page: Page) => {
   const s = await lerApi<Situacao>(page, '/api/financeiro/participante/eu');
-  return s.creditoEmCentavos - s.pendenteEmCentavos;
+  return s.creditoEmCentavos - s.pendenciaEmCentavos;
 };
 
 /** The saldo da caixinha, in centavos. */
