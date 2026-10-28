@@ -241,11 +241,14 @@ test.describe('RF-FIN-02 Enviar comprovante', () => {
     });
     await test.step('Corrigir o valor desmarca o passo do valor', async () => {
       const conferencia = gestor.getByTestId('conferencia');
+      const desmarcados = conferencia.locator('[data-testid="item-a-conferir"]:not(:checked)');
       await conferencia.getByTestId('valor').fill('12,00');
       await expect(conferencia.getByTestId('confirmar')).toBeDisabled();
-      await expect(
-        conferencia.locator('[data-testid="item-a-conferir"]:not(:checked)'),
-      ).toHaveCount(1);
+      await expect(desmarcados).toHaveCount(1);
+      // Back to the valor informado, the step stays unchecked: it was never checked for it again.
+      await conferencia.getByTestId('valor').fill('13,00');
+      await expect(conferencia.getByTestId('confirmar')).toBeDisabled();
+      await expect(desmarcados).toHaveCount(1);
     });
     await recusarComprovante(gestor, pessoa.nome, '13,00', 'Comprovante de outro mês', {
       comum: true,

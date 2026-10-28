@@ -202,7 +202,7 @@ Regra: RN-FIN-34 No envio, o valor pago começa no pendente, com atalhos de um m
 
 - Termo: [Comprovante](../../dominio/GLOSSARIO.md#comprovante), [Gestor](../../dominio/GLOSSARIO.md#gestor) · Origem: [protótipo](../../design/PROTOTYPE.md)
 
-A lista *Confira no comprovante* tem passos curtos, cada um o contrário de um motivo comum: é um comprovante de PIX legível, o valor é o que o gestor vai confirmar e a data é deste mês. *Confirmar* só fica disponível com todos marcados; corrigir o valor desmarca o passo do valor, que passa a dizer o novo. *Recusar* não depende da lista. Os motivos comuns preenchem o motivo da recusa (RN-FIN-10), que o gestor ainda pode mudar.
+A lista *Confira no comprovante* tem passos curtos, cada um o contrário de um motivo comum: é um comprovante de PIX legível, o valor é o que o gestor vai confirmar e a data é deste mês. *Confirmar* só fica disponível com todos marcados; corrigir o valor desmarca o passo do valor, que passa a dizer o novo, mesmo quando o valor volta ao de antes. *Recusar* não depende da lista. Os motivos comuns preenchem o motivo da recusa (RN-FIN-10), que o gestor ainda pode mudar.
 
 ```gherkin
 # language: pt
@@ -217,6 +217,12 @@ Regra: RN-FIN-36 O gestor só confirma o comprovante depois de conferir a lista,
     Dado que o gestor marcou todos os passos do comprovante de R$ 30,00 de Ana
     Quando o gestor corrige o valor a confirmar para R$ 25,00
     Então o gestor marca de novo o passo do valor, agora de R$ 25,00, para confirmar
+
+  Cenário: valor corrigido e depois desfeito
+    Dado que o gestor marcou todos os passos do comprovante de R$ 30,00 de Ana
+    E corrigiu o valor a confirmar para R$ 25,00
+    Quando o gestor volta o valor a confirmar para R$ 30,00
+    Então o gestor marca de novo o passo do valor, de R$ 30,00, para confirmar
 
   Cenário: recusa com motivo comum
     Dado que Ana enviou um comprovante de R$ 30,00
