@@ -91,6 +91,15 @@ it('publishes Participante saiu once, and Participante entrou again when the par
   expect(await eventually(() => joined(id).length === 2 && left(id).length === 1)).toBe(true);
   const { rows } = await db.query('select tipo_de_cota from participantes where id = $1', [id]);
   expect(rows).toEqual([{ tipo_de_cota: 'completa' }]);
+  const lista = await fetch(`${url}/participante`, {
+    headers: { 'x-user-id': randomUUID(), 'x-user-roles': 'gestor' },
+  });
+  expect(((await lista.json()) as { id: string }[]).find((p) => p.id === id)).toEqual({
+    id,
+    tipoDeCota: 'completa',
+    participando: true,
+    troca: null,
+  });
 });
 
 it('saves a troca de tipo de cota for the next month and publishes nothing', async () => {
@@ -212,7 +221,7 @@ it('gives anyone logged in the valor of each tipo de cota in the current year', 
     [ano],
   );
 
-  const response = await fetch(`${url}/tipo-de-cota`, { headers: { 'x-user-id': randomUUID() } });
+  const response = await fetch(`${url}/valor-da-cota`, { headers: { 'x-user-id': randomUUID() } });
   expect(response.status).toBe(200);
   expect(new Set(await response.json())).toEqual(new Set(rows));
 });

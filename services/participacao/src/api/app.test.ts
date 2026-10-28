@@ -32,6 +32,10 @@ const app = (deps: Partial<ApiDependencies> = {}) =>
       id === participando
         ? ok({ id, tipoDeCota: 'so-cafe', participando: true, troca: null })
         : fail('participante-nao-encontrado'),
+    listarParticipantes: async (solicitante) =>
+      solicitante.perfis.includes('gestor')
+        ? ok([{ id: participando, tipoDeCota: 'so-cafe', participando: true, troca: null }])
+        : fail('sem-permissao'),
     consultarValoresDaCota: async () => [
       { tipoDeCota: 'so-cafe', ano: 2026, valorEmCentavos: 2500 },
       { tipoDeCota: 'completa', ano: 2026, valorEmCentavos: 3000 },
@@ -134,15 +138,36 @@ describe('GET /participante/eu', () => {
   });
 });
 
-describe('GET /tipo-de-cota', () => {
+describe('GET /participante', () => {
+  it('RN-PAR-17: 200 with each participante and their tipo de cota, for the gestor', async () => {
+    const response = await app().request('/participante', {
+      headers: { 'x-user-id': novo, 'x-user-roles': 'default-roles-facoffee,gestor' },
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual([
+      { id: participando, tipoDeCota: 'so-cafe', participando: true, troca: null },
+    ]);
+  });
+
+  it('RN-PAR-17: 403 for a participante who is not the gestor, 401 without identity', async () => {
+    const response = await app().request('/participante', { headers: { 'x-user-id': novo } });
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ error: 'sem-permissao' });
+    expect((await app().request('/participante')).status).toBe(401);
+  });
+});
+
+describe('GET /valor-da-cota', () => {
   it('RN-PAR-16: 200 with the valor of each tipo de cota in the year, for anyone logged in', async () => {
-    const response = await app().request('/tipo-de-cota', { headers: { 'x-user-id': novo } });
+    const response = await app().request('/valor-da-cota', { headers: { 'x-user-id': novo } });
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual([
       { tipoDeCota: 'so-cafe', ano: 2026, valorEmCentavos: 2500 },
       { tipoDeCota: 'completa', ano: 2026, valorEmCentavos: 3000 },
     ]);
-    expect((await app().request('/tipo-de-cota')).status).toBe(401);
+    const anonimo = await app().request('/valor-da-cota');
+    expect(anonimo.status).toBe(401);
+    expect(await anonimo.json()).toEqual({ error: 'nao-autenticado' });
   });
 
   it('RN-PAR-16: 200 with the valores of the year asked in ?ano, and 400 for an invalid one', async () => {
@@ -153,7 +178,7 @@ describe('GET /tipo-de-cota', () => {
           anos.push(ano);
           return [];
         },
-      }).request(`/tipo-de-cota${query}`, { headers: { 'x-user-id': novo } });
+      }).request(`/valor-da-cota${query}`, { headers: { 'x-user-id': novo } });
     expect((await comAno('?ano=2027')).status).toBe(200);
     expect((await comAno('')).status).toBe(200);
     expect(anos).toEqual([2027, undefined]);
@@ -192,7 +217,7 @@ describe('POST /definir-valor-da-cota', () => {
       409,
       'valor-ja-definido',
     ],
-    ['400 for a past year', gestor, { ...valor, ano: 2025 }, 400, 'ano-passado'],
+    ['409 for a past year', gestor, { ...valor, ano: 2025 }, 409, 'ano-passado'],
   ])('%s', async (_case, headers, body, status, error) => {
     const response = await post('/definir-valor-da-cota', headers, body);
     expect(response.status).toBe(status);
@@ -245,13 +270,19 @@ describe('identity', () => {
   );
 
   it.each(['/entrada', '/troca-cota', '/saida', '/valor-da-cota'])(
-    '404 on the old path %s',
+    '404 on the old path POST %s',
     async (path) => {
       expect((await post(path, { 'x-user-id': novo }, { tipoDeCota: 'completa' })).status).toBe(
         404,
       );
     },
   );
+
+  it('404 on the old path GET /tipo-de-cota', async () => {
+    expect((await app().request('/tipo-de-cota', { headers: { 'x-user-id': novo } })).status).toBe(
+      404,
+    );
+  });
 });
 
 describe('GET /health', () => {

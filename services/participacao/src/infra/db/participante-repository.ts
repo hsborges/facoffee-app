@@ -35,6 +35,7 @@ export const participanteRepository = (db: Executor): Repository => ({
     const [row] = await db.select().from(participantes).where(eq(participantes.id, id));
     return row && paraParticipante(row);
   },
+  listar: async () => (await db.select().from(participantes)).map(paraParticipante),
   // The setWhere makes a concurrent entrada of the same person save and publish nothing.
   salvarEntrada: (participante, events) =>
     db.transaction(async (tx) => {
