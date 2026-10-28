@@ -1,9 +1,10 @@
 import type { Event } from '../domain/event.js';
-import { ok, type Result } from '../domain/result.js';
+import { fail, ok, type Result } from '../domain/result.js';
 import {
   type Desativacao,
   type DesativarErro,
   desativar,
+  type ReativarErro,
   type SemPermissao,
   somenteGestor,
   type Usuario,
@@ -31,7 +32,8 @@ export type Clock = { readonly now: () => Date; readonly newId: () => string };
 
 /**
  * Use case: deactivates an access and stores *Usuário desativado* in the outbox.
- * An access already deactivated succeeds without publishing again.
+ * An access already deactivated succeeds without publishing again; an usuário never registered
+ * is refused.
  */
 export const desativarAcesso =
   (repository: Repository, clock: Clock) =>
@@ -44,6 +46,7 @@ export const desativarAcesso =
       agora: clock.now(),
     });
     if (!result.ok) return result;
+    if (!(await repository.buscar(usuarioId))) return fail('usuario-nao-encontrado');
     if (await repository.estaDesativado(usuarioId)) return ok(undefined);
     await repository.salvar(result.value.desativacao, [result.value.evento]);
     return ok(undefined);
@@ -74,16 +77,18 @@ export const listarUsuarios =
 
 /**
  * Use case: reactivates an access; only the gestor. Publishes nothing and does not bring the
- * participação back (ADR 0013). Reactivating an active access has no effect.
+ * participação back (ADR 0013). Reactivating an active access has no effect; an usuário never
+ * registered is refused.
  */
 export const reativarAcesso =
   (repository: Repository) =>
   async (
     solicitante: Pick<Usuario, 'perfis'>,
     usuarioId: string,
-  ): Promise<Result<void, SemPermissao>> => {
+  ): Promise<Result<void, ReativarErro>> => {
     const permitido = somenteGestor(solicitante);
     if (!permitido.ok) return permitido;
+    if (!(await repository.buscar(usuarioId))) return fail('usuario-nao-encontrado');
     await repository.reativar(usuarioId);
     return ok(undefined);
   };

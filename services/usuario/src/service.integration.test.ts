@@ -78,6 +78,7 @@ it('registers the usuário on the first access and the gestor reactivates them',
     fetch(`${url}/${id}/${acao}`, { method: 'POST', headers });
 
   expect(await listar()).toBeUndefined();
+  expect((await post('desativar', gestor)).status).toBe(404);
   expect((await acesso('João')).status).toBe(204);
   expect((await acesso('João Café')).status).toBe(204);
   expect(await listar()).toEqual({ id, nome: 'João Café', email: '', desativado: false });

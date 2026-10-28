@@ -5,15 +5,18 @@ import { type ApiDependencies, createApp } from './app.js';
 
 const desativado = '7a6b5c4d-3e2f-4a1b-9c8d-7e6f5a4b3c2d';
 const ativo = '11111111-1111-4111-8111-111111111111';
+const desconhecido = '22222222-2222-4222-8222-222222222222';
 
 const registrados: unknown[] = [];
 
 const app = (deps: Partial<ApiDependencies> = {}) =>
   createApp({
     desativar: async (solicitante, usuarioId) =>
-      solicitante.id === usuarioId || solicitante.perfis.includes('gestor')
-        ? ok(undefined)
-        : fail('sem-permissao'),
+      solicitante.id !== usuarioId && !solicitante.perfis.includes('gestor')
+        ? fail('sem-permissao')
+        : usuarioId === desconhecido
+          ? fail('usuario-nao-encontrado')
+          : ok(undefined),
     registrarAcesso: async (usuario) => {
       registrados.push(usuario);
       return usuario.id === desativado ? 'desativado' : 'ativo';
@@ -25,8 +28,12 @@ const app = (deps: Partial<ApiDependencies> = {}) =>
     contato: async (id) =>
       id === ativo ? { id: ativo, nome: 'João', email: 'joao@ufms.br' } : undefined,
     gestores: async () => [{ id: ativo, nome: 'João', email: 'joao@ufms.br' }],
-    reativar: async (solicitante) =>
-      solicitante.perfis.includes('gestor') ? ok(undefined) : fail('sem-permissao'),
+    reativar: async (solicitante, usuarioId) =>
+      !solicitante.perfis.includes('gestor')
+        ? fail('sem-permissao')
+        : usuarioId === desconhecido
+          ? fail('usuario-nao-encontrado')
+          : ok(undefined),
     health: async () => ({ database: true, rabbitmq: true }),
     logger: createLogger('test', () => {}),
     ...deps,
@@ -47,7 +54,7 @@ describe('GET /eu', () => {
       id: 'user-1',
       nome: 'João Café',
       email: 'joao@ufms.br',
-      perfis: ['gestor', 'participante'],
+      perfis: ['gestor'],
     });
   });
 
@@ -59,7 +66,9 @@ describe('GET /eu', () => {
   });
 
   it('401 without the gateway identity', async () => {
-    expect((await app().request('/eu')).status).toBe(401);
+    const response = await app().request('/eu');
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: 'nao-autenticado' });
   });
 });
 
@@ -85,10 +94,16 @@ describe('POST /:id/desativar', () => {
     expect(await response.json()).toEqual({ error: 'sem-permissao' });
   });
 
-  it('404 for an invalid id and 401 without the gateway identity', async () => {
-    expect((await post('abc', { 'x-user-id': 'gestor-1', 'x-user-roles': 'gestor' })).status).toBe(
-      404,
-    );
+  it('404 for an usuário never registered or an invalid id', async () => {
+    const gestor = { 'x-user-id': 'gestor-1', 'x-user-roles': 'gestor' };
+    for (const id of [desconhecido, 'abc']) {
+      const response = await post(id, gestor);
+      expect(response.status).toBe(404);
+      expect(await response.json()).toEqual({ error: 'usuario-nao-encontrado' });
+    }
+  });
+
+  it('401 without the gateway identity', async () => {
     expect((await post(ativo, {})).status).toBe(401);
   });
 });
@@ -204,10 +219,16 @@ describe('POST /:id/reativar', () => {
     expect(await response.json()).toEqual({ error: 'sem-permissao' });
   });
 
-  it('404 for an invalid id and 401 without the gateway identity', async () => {
-    expect((await post('abc', { 'x-user-id': 'gestor-1', 'x-user-roles': 'gestor' })).status).toBe(
-      404,
-    );
+  it('404 for an usuário never registered or an invalid id', async () => {
+    const gestor = { 'x-user-id': 'gestor-1', 'x-user-roles': 'gestor' };
+    for (const id of [desconhecido, 'abc']) {
+      const response = await post(id, gestor);
+      expect(response.status).toBe(404);
+      expect(await response.json()).toEqual({ error: 'usuario-nao-encontrado' });
+    }
+  });
+
+  it('401 without the gateway identity', async () => {
     expect((await post(desativado, {})).status).toBe(401);
   });
 });
