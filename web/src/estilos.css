@@ -2021,13 +2021,10 @@ button.visao.escura:hover {
 
 .exemplo {
   display: grid;
-  justify-items: end;
+  grid-template-columns: min(100%, 20rem);
+  justify-content: end;
   gap: 1rem;
   color: var(--espresso-dark);
-}
-
-.exemplo .cartao {
-  width: min(100%, 20rem);
 }
 
 .exemplo small {
