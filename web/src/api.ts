@@ -116,9 +116,9 @@ export type ValorDaCota = {
   readonly valorEmCentavos: number;
 };
 
-/** What entered, left per tipo de gasto and was left, as answered by `GET /api/financeiro/caixinha/{mes}`. */
-export type CaixinhaDoMes = {
-  readonly mes: string;
+/** What entered, left per tipo de gasto and was left, as answered by `GET /api/financeiro/caixinha/{ano}`. */
+export type CaixinhaDoAno = {
+  readonly ano: number;
   readonly saldoNoInicioEmCentavos: number;
   readonly recebidoEmCentavos: number;
   readonly gastosPorTipoEmCentavos: Readonly<Record<TipoDeGasto, number>>;

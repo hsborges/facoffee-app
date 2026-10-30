@@ -6,6 +6,7 @@ import {
   detalheDoComprovante,
   editarComprovante,
   enviarComprovante,
+  rotulosDaCaixinhaDoAno,
   saldoAntes,
 } from './participante';
 
@@ -179,5 +180,22 @@ describe('depoisDoPagamento', () => {
     expect(
       depoisDoPagamento('Ana', { creditoEmCentavos: 500, pendenciaEmCentavos: 0 }, 1000),
     ).toEqual({ situacao: 'credito', texto: 'Ana fica com R$\u00a015,00 de crédito.' });
+  });
+});
+
+describe('rotulosDaCaixinhaDoAno', () => {
+  it('names the saldo of the current year as the one now, with the gastos up to this month', () => {
+    expect(rotulosDaCaixinhaDoAno(2026, '2026-10')).toEqual({
+      saldo: 'Saldo agora',
+      periodo: 'De janeiro a outubro, por tipo de gasto',
+    });
+    expect(rotulosDaCaixinhaDoAno(2026, '2026-01').periodo).toBe('Em janeiro, por tipo de gasto');
+  });
+
+  it('names the saldo of a past year as the one at its end', () => {
+    expect(rotulosDaCaixinhaDoAno(2025, '2026-10')).toEqual({
+      saldo: 'Saldo em 31/12/2025',
+      periodo: 'Por tipo de gasto',
+    });
   });
 });

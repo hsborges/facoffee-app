@@ -29,6 +29,7 @@ No modo Play, os botões e menus levam de uma tela à outra.
 | Como a situação fica depois de enviar ou receber | RN-FIN-35 |
 | Lista "Confira no comprovante", que libera *Confirmar*, e motivos comuns de recusa | RN-FIN-36 |
 | Saldo da caixinha, e depois dos reembolsos, na tela Gastos | RN-FIN-37 |
+| Caixinha do ano, com seletor de ano, e os gastos do ano anterior num expansível junto da cota | RN-FIN-31, RN-FIN-32, RN-FIN-33, [ADR 0036](../adr/0036-caixinha-do-ano.md) |
 | *Registrar um gasto que paguei* na Caixinha do participante | RN-FIN-26, que já valia pela API |
 | Confirmação antes de toda ação crítica | RNF-12 |
 | *Desativar meu acesso* numa página própria, pelo menu da conta, só na visão do participante | RN-USU-01 |
@@ -40,7 +41,7 @@ Pede dado que a API ainda não devolve; entra quando a API devolver:
 
 - Simulação do valor da cota do ano seguinte com os participantes de hoje: falta quantos participam com cada tipo de cota.
 - Tipo de cota e detalhe de cada participante em Participantes ("cobre até março", "setembro e outubro"), e as cotas do participante em Receber pagamento: o gestor só lê o total do crédito e da pendência.
-- "O que está devido" em Minha situação: a API não diz quais cotas já estão quitadas; a tela mostra todas as cotas e complementos.
+- "O que está pendente" em Minha situação: a API não diz quais cotas já estão quitadas; a tela mostra todas as cotas e complementos.
 - Valores da cota na página inicial: só quem está logado lê os valores.
 - *Ver os gastos e as notas* na Caixinha: só o gestor lista os gastos.
 - Contagens na escolha da visão (comprovantes a confirmar, situação) e "Todos são avisados por e-mail" ao definir o valor da cota (RN-NOT-01 ainda não envia esse aviso).

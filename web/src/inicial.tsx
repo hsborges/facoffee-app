@@ -3,56 +3,25 @@ import { Icone, Marca } from './icones';
 
 const PASSOS = [
   {
-    titulo: 'Entre na copa',
-    texto: 'Escolha o tipo de cota. Você já deve a cota do mês em que entrou.',
-  },
-  {
-    titulo: 'Todo mês, uma cota',
+    titulo: 'Os gastos viram cota',
     texto:
-      'No início do mês, a cota fica devida. Se esquecer, um lembrete leve chega por e-mail a partir do dia 10.',
+      'O gestor define o valor da cota do ano com base nos gastos do ano anterior, que ficam à vista de todos.',
   },
   {
-    titulo: 'Pague do seu jeito',
-    texto: 'Faça o PIX e envie o comprovante aqui, ou entregue o dinheiro ao gestor.',
+    titulo: 'Cada um escolhe a sua parte',
+    texto:
+      'Ao entrar na copa, escolha o tipo de cota: só café ou completa. A cota fica devida todo mês.',
   },
   {
-    titulo: 'O gestor confere',
-    texto: 'Pagou a mais? Vira crédito e abate os próximos meses sozinho.',
-  },
-] as const;
-
-const PERFIS = [
-  {
-    titulo: 'Participante',
-    itens: [
-      'Vê se está em dia, com crédito ou pendente',
-      'Envia o comprovante do PIX',
-      'Acompanha a caixinha de cada mês',
-      'Registra um gasto que pagou do próprio bolso',
-    ],
+    titulo: 'Pague a sua parte',
+    texto:
+      'Faça o PIX e envie o comprovante, ou entregue o dinheiro ao gestor. Pagou a mais? Vira crédito para os próximos meses.',
   },
   {
-    titulo: 'Gestor',
-    itens: [
-      'Confirma ou recusa os comprovantes',
-      'Recebe pagamentos em dinheiro',
-      'Registra gastos e reembolsa quem pagou',
-      'Define o valor da cota no início do ano',
-    ],
+    titulo: 'A caixinha à vista',
+    texto:
+      'Cada pagamento entra na caixinha e cada gasto sai dela. Todos veem quanto entrou, quanto saiu e quanto sobrou.',
   },
-] as const;
-
-const PRINCIPIOS = [
-  { titulo: 'Entre colegas', texto: 'Voluntário, sem multa, sem juros e sem bloqueio.' },
-  {
-    titulo: 'Ninguém é exposto',
-    texto: 'Cada um vê só a própria situação. Quem está pendente, só o gestor sabe.',
-  },
-  {
-    titulo: 'Caixinha à vista',
-    texto: 'Quanto entrou, quanto saiu com cada coisa e quanto sobrou, para todos.',
-  },
-  { titulo: 'Confiança no consumo', texto: 'Ninguém mede quantos cafés você toma.' },
 ] as const;
 
 /** Start page for whoever is not logged in: what the FACOFFEE is and the button to sign in. */
@@ -67,11 +36,11 @@ export const PaginaInicial = ({ entrar }: { entrar: () => void }) => (
     <main>
       <section className="heroi" aria-labelledby="heroi-titulo">
         <div>
-          <p className="sobretitulo">Copa dos servidores da FACOM · UFMS</p>
-          <h1 id="heroi-titulo">O café de todos, sem ninguém precisar cobrar.</h1>
+          <p className="sobretitulo">O app da copa da FACOM</p>
+          <h1 id="heroi-titulo">Apoiando a divisão de custos entre os servidores da FACOM.</h1>
           <p className="destaque">
-            Cada um vê se está em dia, envia o próprio comprovante e acompanha a caixinha. O gestor
-            só confere.
+            O FACOFFEE registra as cotas, os pagamentos e os gastos da copa: cada um sabe qual é a
+            sua parte, e todos veem para onde vai o dinheiro.
           </p>
           <div className="acoes">
             <button
@@ -88,6 +57,7 @@ export const PaginaInicial = ({ entrar }: { entrar: () => void }) => (
         </div>
         {/* An illustration of the pages, with made-up valores: hidden from screen readers. */}
         <div className="exemplo" aria-hidden="true">
+          <small className="selo-exemplo">Exemplo do que o participante vê</small>
           <div className="cartao">
             <p className="titulo-com-valor">
               <small>Minha situação</small>
@@ -140,37 +110,6 @@ export const PaginaInicial = ({ entrar }: { entrar: () => void }) => (
             </li>
           ))}
         </ol>
-      </section>
-
-      <section aria-labelledby="perfis-titulo">
-        <h2 id="perfis-titulo">Quem faz o quê</h2>
-        <div className="tipos">
-          {PERFIS.map(({ titulo, itens }) => (
-            <div key={titulo} className={titulo === 'Gestor' ? 'cartao espuma' : 'cartao'}>
-              <h3>{titulo}</h3>
-              <ul className="com-check">
-                {itens.map((item) => (
-                  <li key={item}>
-                    <Icone nome="check" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section aria-labelledby="principios-titulo">
-        <h2 id="principios-titulo">O combinado continua o mesmo</h2>
-        <ul className="principios">
-          {PRINCIPIOS.map(({ titulo, texto }) => (
-            <li key={titulo}>
-              <h3>{titulo}</h3>
-              <p>{texto}</p>
-            </li>
-          ))}
-        </ul>
       </section>
 
       <section className="chamada-final" aria-labelledby="chamada-titulo">
