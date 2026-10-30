@@ -12,7 +12,7 @@ import type { GastoListado, RegistrarGastoErro } from '../application/gastos.js'
 import type { ReceberPagamentoErro } from '../application/pagamentos.js';
 import type { ReembolsarGastoErro } from '../application/reembolsos.js';
 import { type ArquivoInvalido, type Solicitante, TAMANHO_MAXIMO } from '../domain/arquivo.js';
-import type { Caixinha, CaixinhaDoMes, Mes } from '../domain/caixinha.js';
+import type { Caixinha, CaixinhaDoAno } from '../domain/caixinha.js';
 import type { SolicitarErro } from '../domain/complemento.js';
 import type {
   ComprovanteEnviado,
@@ -94,7 +94,7 @@ export type ApiDependencies = {
     valorTotalEmCentavos: number,
   ) => Promise<Result<unknown, SolicitarErro>>;
   readonly consultarCaixinha: () => Promise<Caixinha>;
-  readonly consultarCaixinhaDoMes: (mes: Mes) => Promise<CaixinhaDoMes>;
+  readonly consultarCaixinhaDoAno: (ano: number) => Promise<CaixinhaDoAno>;
   readonly listarGastos: (
     solicitante: Pick<Solicitante, 'perfis'>,
   ) => Promise<Result<readonly GastoListado[], 'sem-permissao'>>;
@@ -110,7 +110,7 @@ export type ApiDependencies = {
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const MES = /^\d{4}-(0[1-9]|1[0-2])$/;
+const ANO = /^\d{4}$/;
 
 // Identity comes from the gateway in X-User-Id and X-User-Roles (ADR 0007).
 const solicitante = (c: Context): Solicitante | undefined => {
@@ -258,7 +258,7 @@ const baixado = (
  * The gestor reembolsa a gasto pago do próprio bolso with `POST /gasto/:id/reembolsar` and
  * solicita a complemento with `POST /solicitar-complemento` (JSON, the valor total).
  * Leituras *Saldo da caixinha* and *Gastos do ano anterior*: `GET /caixinha`, for anyone logged in.
- * Leitura *Caixinha do mês*: `GET /caixinha/:mes` (`AAAA-MM`), for anyone logged in.
+ * Leitura *Caixinha do ano*: `GET /caixinha/:ano` (`AAAA`), for anyone logged in.
  * Leitura *Gastos*: `GET /gasto`, every gasto with whether it was reembolsado, only for the gestor.
  * Leitura *Crédito e pendentes*: `GET /participante` lists every participante, only for the
  * gestor; `GET /participante/eu` gives the logged-in participante their own, with their cotas and
@@ -285,7 +285,7 @@ export const createApp = ({
   reembolsarGasto,
   solicitarComplemento,
   consultarCaixinha,
-  consultarCaixinhaDoMes,
+  consultarCaixinhaDoAno,
   listarGastos,
   listarCreditoEPendentes,
   consultarCreditoEPendente,
@@ -439,11 +439,11 @@ export const createApp = ({
       if (!solicitante(c)) return c.json({ error: 'nao-autenticado' }, 401);
       return c.json(await consultarCaixinha());
     })
-    .get('/caixinha/:mes', async (c) => {
+    .get('/caixinha/:ano', async (c) => {
       if (!solicitante(c)) return c.json({ error: 'nao-autenticado' }, 401);
-      const mes = c.req.param('mes');
-      if (!MES.test(mes)) return c.json({ error: 'pedido-invalido' }, 400);
-      return c.json(await consultarCaixinhaDoMes(mes));
+      const ano = c.req.param('ano');
+      if (!ANO.test(ano)) return c.json({ error: 'pedido-invalido' }, 400);
+      return c.json(await consultarCaixinhaDoAno(Number(ano)));
     })
     .get('/gasto', async (c) => {
       const quem = solicitante(c);

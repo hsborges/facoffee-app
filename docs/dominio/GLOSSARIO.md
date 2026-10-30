@@ -55,7 +55,7 @@ Dois termos aparecem em mais de um contexto:
 
 **Regras:**
 - [RN-FIN-30](../requisitos/financeiro/acompanhar-a-caixinha.md#rn-fin-30-todo-pagamento-entra-na-caixinha-todo-gasto-e-todo-reembolso-saem-dela) Todo pagamento entra na caixinha; todo gasto e todo reembolso saem dela
-- [RN-FIN-31](../requisitos/financeiro/acompanhar-a-caixinha.md#rn-fin-31-a-caixinha-acumula-de-um-mês-para-o-outro) A caixinha acumula de um mês para o outro
+- [RN-FIN-31](../requisitos/financeiro/acompanhar-a-caixinha.md#rn-fin-31-a-caixinha-acumula-de-um-ano-para-o-outro) A caixinha acumula de um ano para o outro
 
 **O gestor também diz:** "reserva", "fundo".
 

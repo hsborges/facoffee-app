@@ -1,6 +1,6 @@
 # 0029. Visões do gestor e do participante
 
-- Status: Aceito; posição dos menus substituída por 0034
+- Status: Aceito; posição dos menus substituída por 0034; páginas da visão do gestor e endereço substituídos por 0037
 - Data: 2026-10-26
 
 ## Contexto

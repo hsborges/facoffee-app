@@ -132,7 +132,7 @@ Cada necessidade aponta para onde o domínio já a trata.
 | Avisar o valor da cota do ano | Todos | Evento *Valor da cota definido* → Notificação |
 | Avisar o início da cobrança do mês | Quem tem a cota do mês pendente | Mesma política: aviso da cota devida, exceto a quem tem a cota abatida do crédito ([ADR 0027](../adr/0027-lembrete-aos-pendentes.md)) |
 | Registrar gastos com nota e reembolsar quem pagou | Gestor | [Gasto](../dominio/GLOSSARIO.md#gasto), [Nota](../dominio/GLOSSARIO.md#nota), [Reembolso](../dominio/GLOSSARIO.md#reembolso) |
-| Resumo do mês: entrou, saiu e sobrou | Todos | Leitura *Caixinha do mês* (Financeiro), com o que saiu por [Tipo de gasto](../dominio/GLOSSARIO.md#tipo-de-gasto) |
+| Resumo do ano: entrou, saiu e sobrou | Todos | Leitura *Caixinha do ano* (Financeiro), com o que saiu por [Tipo de gasto](../dominio/GLOSSARIO.md#tipo-de-gasto) |
 | Pedir complemento quando a caixinha não dá conta | Gestor | [Complemento](../dominio/GLOSSARIO.md#complemento) |
 | Embasar o valor da cota do ano | Gestor e participantes | Leituras *Gastos do ano anterior* (Financeiro), por [Tipo de gasto](../dominio/GLOSSARIO.md#tipo-de-gasto), e *Valores da cota* (Participação), visíveis a todos |
 
@@ -168,3 +168,4 @@ Cada necessidade aponta para onde o domínio já a trata.
 | 1.3 | 2026-10-26 | Fechada a lacuna da explicação dos valores (#77): todos veem os gastos do ano anterior por tipo de gasto e o valor de cada tipo de cota do ano. |
 | 1.4 | 2026-10-26 | Decidida a questão dos lembretes (#72): aviso da cota devida no início do mês e um lembrete por mês, a partir do dia 10, aos pendentes ativos. |
 | 1.5 | 2026-10-26 | O participante envia o próprio comprovante, que só vale como pagamento quando o gestor confirma (#87). |
+| 1.6 | 2026-10-29 | O resumo passa a ser do ano: a leitura *Caixinha do ano* substitui a *Caixinha do mês* ([ADR 0036](../adr/0036-caixinha-do-ano.md)). |

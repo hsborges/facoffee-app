@@ -13,11 +13,18 @@ import {
   test,
 } from '../apoio.ts';
 
-type CaixinhaDoMes = {
+type CaixinhaDoAno = {
   readonly recebidoEmCentavos: number;
   readonly gastosPorTipoEmCentavos: Readonly<Record<TipoDeGasto, number>>;
   readonly saldoNoFimEmCentavos: number;
 };
+
+const anoEmCampoGrande = () =>
+  Number(
+    new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Campo_Grande', year: 'numeric' }).format(
+      new Date(),
+    ),
+  );
 
 const TIPOS_DE_GASTO: readonly TipoDeGasto[] = [
   'cafe',
@@ -27,7 +34,7 @@ const TIPOS_DE_GASTO: readonly TipoDeGasto[] = [
 ];
 
 test.describe('RF-FIN-06 Acompanhar a caixinha', () => {
-  test('RN-FIN-32: a caixinha do mês mostra a todos o que entrou, o que saiu por tipo de gasto e o que sobrou, sem a situação de ninguém', {
+  test('RN-FIN-32: a caixinha do ano mostra a todos o que entrou, o que saiu por tipo de gasto e o que sobrou, sem a situação de ninguém', {
     tag: '@celular',
   }, async ({ browser }) => {
     // A new gestor, who participates: pays and registers a gasto pago pela caixinha.
@@ -37,19 +44,15 @@ test.describe('RF-FIN-06 Acompanhar a caixinha', () => {
     await naTelaDoGestor(gestor, quemPaga.nome);
     const pessoa = await novoUsuario();
     const participante = await entrarNoFacoffee(browser, pessoa.usuario);
-    const mes = new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'America/Campo_Grande',
-      year: 'numeric',
-      month: '2-digit',
-    }).format(new Date());
-    const antes = await lerApi<CaixinhaDoMes>(participante, `/api/financeiro/caixinha/${mes}`);
+    const ano = anoEmCampoGrande();
+    const antes = await lerApi<CaixinhaDoAno>(participante, `/api/financeiro/caixinha/${ano}`);
 
     await receberEmDinheiro(gestor, quemPaga.nome, '7,00');
     await registrarGasto(gestor, { tipo: 'reposicao', valor: '3,00', origem: 'caixinha' });
 
-    await test.step(`${pessoa.usuario} vê o resumo do mês`, async () => {
+    await test.step(`${pessoa.usuario} vê o resumo do ano`, async () => {
       await participante.goto('/caixinha');
-      const caixinha = participante.getByTestId('caixinha-do-mes');
+      const caixinha = participante.getByTestId('caixinha-do-ano');
       await expect(caixinha.getByTestId('recebido')).toHaveText(
         emReais(antes.recebidoEmCentavos + 700),
       );
@@ -73,6 +76,7 @@ test.describe('RF-FIN-06 Acompanhar a caixinha', () => {
     const pessoa = await novoUsuario();
     const participante = await entrarNoFacoffee(browser, pessoa.usuario);
     await participante.goto('/caixinha');
+    await participante.getByTestId('ver-gastos-do-ano-anterior').click();
     const gastos = participante.getByTestId('gastos-do-ano-anterior');
     // A new stack has no gasto in the year before.
     for (const tipo of TIPOS_DE_GASTO)

@@ -62,7 +62,7 @@ Regra: RN-FIN-23 Todo gasto tem nota, com o valor total
 
 - Termo: [Reembolso](../../dominio/GLOSSARIO.md#reembolso), [Gasto](../../dominio/GLOSSARIO.md#gasto) · Origem: [Modelos §1](../../dominio/MODELOS.md#decisões-de-modelagem), agregado Caixinha (Financeiro)
 
-Assim o mesmo dinheiro não sai da caixinha duas vezes. Na caixinha do mês, o gasto pago do próprio bolso conta no mês do reembolso, com o tipo do gasto reembolsado (RN-FIN-32).
+Assim o mesmo dinheiro não sai da caixinha duas vezes. Na caixinha do ano, o gasto pago do próprio bolso conta no ano do reembolso, com o tipo do gasto reembolsado (RN-FIN-32).
 
 ```gherkin
 # language: pt

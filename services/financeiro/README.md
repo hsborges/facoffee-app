@@ -3,7 +3,7 @@
 Contexto de negócio. Pagamentos, comprovantes enviados, crédito, pendências, complementos, gastos, reembolsos e caixinha.
 
 - **Agregados:** Participante, Comprovante enviado, Caixinha, Complemento
-- **Leituras:** Crédito e pendentes, Saldo da caixinha, Caixinha do mês, Gastos do ano anterior, Participantes ativos, Comprovantes enviados
+- **Leituras:** Crédito e pendentes, Saldo da caixinha, Caixinha do ano, Gastos do ano anterior, Participantes ativos, Comprovantes enviados
 - **Publica:** Pagamento recebido, Complemento solicitado, Reembolso feito, Comprovante enviado, Comprovante recusado
 - **Consome:** Cota devida, Participante entrou, Participante saiu
 - **Arquivos:** Comprovante, Nota
@@ -100,7 +100,7 @@ O participante envia o próprio comprovante, que fica a confirmar até o gestor 
 - *Saldo da caixinha*: pagamentos recebidos − gastos pagos pela caixinha − reembolsos. O gasto do próprio bolso só sai no reembolso. Fica negativo quando os gastos passam do que entrou.
 - *Gastos do ano anterior*: soma de todos os gastos, de qualquer origem, feitos no ano anterior pelo horário de Campo Grande ([ADR 0015](../../docs/adr/0015-fuso-horario-do-dominio.md)), no total e por tipo de gasto. Só totais: não mostra a situação de ninguém.
 
-`GET /caixinha/:mes` (qualquer usuário logado; `mes` em `AAAA-MM`, senão 400) → `200 { mes, saldoNoInicioEmCentavos, recebidoEmCentavos, gastosPorTipoEmCentavos: { cafe, outros-itens, conserto-e-manutencao, reposicao }, saldoNoFimEmCentavos }`, a leitura *Caixinha do mês*. O que saiu por tipo são os gastos pagos pela caixinha e os reembolsos feitos no mês, cada um pelo tipo do seu gasto; assim saldo no fim = saldo no início + recebido − gastos, e no mês atual é o saldo da caixinha. O mês vira pelo horário de Campo Grande. Só totais: não mostra a situação de ninguém.
+`GET /caixinha/:ano` (qualquer usuário logado; `ano` em `AAAA`, senão 400) → `200 { ano, saldoNoInicioEmCentavos, recebidoEmCentavos, gastosPorTipoEmCentavos: { cafe, outros-itens, conserto-e-manutencao, reposicao }, saldoNoFimEmCentavos }`, a leitura *Caixinha do ano*. O que saiu por tipo são os gastos pagos pela caixinha e os reembolsos feitos no ano, cada um pelo tipo do seu gasto; assim saldo no fim = saldo no início + recebido − gastos, e no ano atual é o saldo da caixinha. O ano vira pelo horário de Campo Grande. Só totais: não mostra a situação de ninguém.
 
 ## Crédito e pendentes
 

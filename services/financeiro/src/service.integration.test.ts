@@ -9,7 +9,7 @@ import {
   registrarCotaDevida,
   registrarSaida,
 } from './application/participantes.js';
-import { anoAnterior, type CaixinhaDoMes, FUSO } from './domain/caixinha.js';
+import { anoAnterior, type CaixinhaDoAno } from './domain/caixinha.js';
 import { confirmar } from './domain/comprovante-enviado.js';
 import type { Event } from './domain/event.js';
 import { queues } from './infra/consumer.js';
@@ -531,7 +531,7 @@ it('keeps Saldo da caixinha and Gastos do ano anterior, with gastos pela caixinh
   expect(porTipo('reposicao')).toBe(50);
 });
 
-it('sums the Caixinha do mês per tipo de gasto, matching the Saldo da caixinha', async () => {
+it('sums the Caixinha do ano per tipo de gasto, matching the Saldo da caixinha', async () => {
   const participante = randomUUID();
   publicar(entrou(participante));
   expect(await eventually(async () => (await repository.buscar(participante)) !== undefined)).toBe(
@@ -543,12 +543,8 @@ it('sums the Caixinha do mês per tipo de gasto, matching the Saldo da caixinha'
     (await (
       await fetch(`${url}${caminho}`, { headers: { 'x-user-id': participante } })
     ).json()) as T;
-  const mes = new Intl.DateTimeFormat('en-CA', {
-    timeZone: FUSO,
-    year: 'numeric',
-    month: '2-digit',
-  }).format(new Date());
-  const doMes = () => ler<CaixinhaDoMes>(`/caixinha/${mes}`);
+  const ano = anoAnterior(new Date()) + 1;
+  const doAno = () => ler<CaixinhaDoAno>(`/caixinha/${ano}`);
   const registrar = async (origem: string, tipo: string, valorEmCentavos: number) => {
     const form = new FormData();
     form.append('arquivo', new Blob([new TextEncoder().encode('%PDF-1.7 nota')]), 'nota.pdf');
@@ -565,7 +561,7 @@ it('sums the Caixinha do mês per tipo de gasto, matching the Saldo da caixinha'
     });
     return ((await gasto.json()) as { id: string }).id;
   };
-  const antes = await doMes();
+  const antes = await doAno();
 
   await fetch(`${url}/receber-pagamento`, {
     method: 'POST',
@@ -578,11 +574,11 @@ it('sums the Caixinha do mês per tipo de gasto, matching the Saldo da caixinha'
   });
   await registrar('caixinha', 'cafe', 3000);
   const doBolso = await registrar('proprio-bolso', 'reposicao', 2500);
-  expect((await doMes()).gastosPorTipoEmCentavos.reposicao).toBe(
+  expect((await doAno()).gastosPorTipoEmCentavos.reposicao).toBe(
     antes.gastosPorTipoEmCentavos.reposicao,
   );
   await fetch(`${url}/gasto/${doBolso}/reembolsar`, { method: 'POST', headers: gestor });
-  // 23:59 of the last day of the month before, in Campo Grande: it only changes the saldo no início.
+  // 23:59 of 31 December the year before, in Campo Grande: it only changes the saldo no início.
   await database.db.insert(gastos).values({
     id: randomUUID(),
     participanteId: participante,
@@ -590,10 +586,10 @@ it('sums the Caixinha do mês per tipo de gasto, matching the Saldo da caixinha'
     origem: 'caixinha',
     tipo: 'cafe',
     notaId: randomUUID(),
-    registradoEm: new Date(`${mes}-01T03:59:00Z`),
+    registradoEm: new Date(`${ano}-01-01T03:59:00Z`),
   });
 
-  const depois = await doMes();
+  const depois = await doAno();
   expect(depois.saldoNoInicioEmCentavos - antes.saldoNoInicioEmCentavos).toBe(-9);
   expect(depois.recebidoEmCentavos - antes.recebidoEmCentavos).toBe(10000);
   expect(depois.gastosPorTipoEmCentavos.cafe - antes.gastosPorTipoEmCentavos.cafe).toBe(3000);

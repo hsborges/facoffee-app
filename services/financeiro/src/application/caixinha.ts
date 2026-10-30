@@ -1,10 +1,9 @@
 import {
   anoAnterior,
   type Caixinha,
-  type CaixinhaDoMes,
+  type CaixinhaDoAno,
   caixinha,
-  caixinhaDoMes,
-  type Mes,
+  caixinhaDoAno,
   type Movimento,
   type TotaisDaCaixinha,
 } from '../domain/caixinha.js';
@@ -18,8 +17,8 @@ export type BuscarCaixinha = {
   readonly gastosDoAno: (
     ano: number,
   ) => Promise<readonly Pick<Gasto, 'tipo' | 'valorEmCentavos'>[]>;
-  /** The movimento `antes` the month `mes` began, or `no-mes`, Campo Grande time. */
-  readonly movimento: (mes: Mes, periodo: 'antes' | 'no-mes') => Promise<Movimento>;
+  /** The movimento `antes` the year `ano` began, or `no-ano`, Campo Grande time. */
+  readonly movimento: (ano: number, periodo: 'antes' | 'no-ano') => Promise<Movimento>;
 };
 
 /** Leituras *Saldo da caixinha* and *Gastos do ano anterior*; any participante sees them. */
@@ -32,13 +31,13 @@ export const consultarCaixinha =
     return caixinha(totais, gastosDoAnoAnterior);
   };
 
-/** Leitura *Caixinha do mês*; any participante sees it, as it shows no one's situação. */
-export const consultarCaixinhaDoMes =
+/** Leitura *Caixinha do ano*; any participante sees it, as it shows no one's situação. */
+export const consultarCaixinhaDoAno =
   (buscar: BuscarCaixinha) =>
-  async (mes: Mes): Promise<CaixinhaDoMes> => {
-    const [antes, noMes] = await Promise.all([
-      buscar.movimento(mes, 'antes'),
-      buscar.movimento(mes, 'no-mes'),
+  async (ano: number): Promise<CaixinhaDoAno> => {
+    const [antes, noAno] = await Promise.all([
+      buscar.movimento(ano, 'antes'),
+      buscar.movimento(ano, 'no-ano'),
     ]);
-    return caixinhaDoMes(mes, antes, noMes);
+    return caixinhaDoAno(ano, antes, noAno);
   };

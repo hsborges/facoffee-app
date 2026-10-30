@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import {
-  type CaixinhaDoMes as CaixinhaDoMesLida,
+  type CaixinhaDoAno as CaixinhaDoAnoLida,
   type Caixinha as CaixinhaLida,
   type Comando,
   type ComprovanteEnviado,
@@ -395,6 +395,31 @@ export const MesNavegavel = ({ mes, mudar }: { mes: string; mudar: (mes: string)
       aria-label="Mês seguinte"
       disabled={mes >= mesEmCampoGrande(new Date())}
       onClick={() => mudar(outroMes(mes, 1))}
+    >
+      <Icone nome="direita" />
+    </button>
+  </fieldset>
+);
+
+/** A year to browse, with buttons to the one before and the one after, up to the current. */
+export const AnoNavegavel = ({ ano, mudar }: { ano: number; mudar: (ano: number) => void }) => (
+  <fieldset className="mes">
+    <legend className="visualmente-oculto">Ano</legend>
+    <button
+      type="button"
+      className="fantasma quadrado"
+      aria-label="Ano anterior"
+      onClick={() => mudar(ano - 1)}
+    >
+      <Icone nome="esquerda" />
+    </button>
+    <span aria-live="polite">{ano}</span>
+    <button
+      type="button"
+      className="fantasma quadrado"
+      aria-label="Próximo ano"
+      disabled={ano >= anoAtual()}
+      onClick={() => mudar(ano + 1)}
     >
       <Icone nome="direita" />
     </button>
@@ -1099,7 +1124,7 @@ export const EnviarComprovante = ({
       {avisos}
       {saldo.pendenciaEmCentavos > 0 && (
         <p className="apoio">
-          Você deve <strong>{emReais(saldo.pendenciaEmCentavos)}</strong>.
+          Você deve <strong>{emReais(saldo.pendenciaEmCentavos)}</strong> de cotas vencidas.
         </p>
       )}
       <div className="colunas">
@@ -1173,41 +1198,71 @@ export const EnviarComprovante = ({
 };
 
 /**
- * *Caixinha*: the saldo da caixinha and the caixinha do mês, month by month; why the cota costs
- * what it costs (the gastos do ano anterior and the valor of each tipo de cota); and registrar a
- * gasto paid by the person.
+ * How the caixinha of `ano` is named, seen in the month `mesAtual`: the current year is still
+ * running, so its saldo is the one now and its gastos go up to this month.
+ */
+export const rotulosDaCaixinhaDoAno = (ano: number, mesAtual: string) =>
+  ano < Number(mesAtual.slice(0, 4))
+    ? { saldo: `Saldo em 31/12/${ano}`, periodo: 'Por tipo de gasto' }
+    : mesAtual.endsWith('-01')
+      ? { saldo: 'Saldo agora', periodo: 'Em janeiro, por tipo de gasto' }
+      : { saldo: 'Saldo agora', periodo: `De janeiro a ${nomeDoMes(mesAtual)}, por tipo de gasto` };
+
+/** What left the caixinha as one bar split per tipo de gasto, with a legend of each valor. */
+const SaidasPorTipo = ({ valores }: { valores: Readonly<Record<TipoDeGasto, number>> }) => {
+  const total = Object.values(valores).reduce((a, b) => a + b, 0);
+  const tipos = Object.entries(NOME_DO_TIPO_DE_GASTO) as [TipoDeGasto, string][];
+  return (
+    <>
+      <span className="barra-por-tipo" aria-hidden="true">
+        {total > 0 &&
+          tipos.map(([tipo]) => (
+            <span
+              key={tipo}
+              data-tipo={tipo}
+              style={{ width: `${(100 * valores[tipo]) / total}%` }}
+            />
+          ))}
+      </span>
+      <ul className="legenda">
+        {tipos.map(([tipo, nome]) => (
+          <li key={tipo}>
+            <span className="cor" data-tipo={tipo} aria-hidden="true" />
+            <span>{nome}</span>
+            <span data-testid={`saiu-${tipo}`}>{emReais(valores[tipo])}</span>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+};
+
+/**
+ * *Caixinha*: the caixinha do ano, year by year, with what left per tipo de gasto and the cota of
+ * that year, which came from the gastos of the year before (in the current year, shown on demand);
+ * and registrar a gasto paid by the person.
  */
 export const Caixinha = ({ token }: { token: string }) => {
+  const [ano, setAno] = useState(anoAtual);
   const [caixinha, recarregar] = useLeitura<CaixinhaLida>(token, '/api/financeiro/caixinha');
+  const [doAno, recarregarAno] = useLeitura<CaixinhaDoAnoLida>(
+    token,
+    `/api/financeiro/caixinha/${ano}`,
+  );
   const [valores, recarregarValores] = useLeitura<readonly ValorDaCota[]>(
     token,
-    '/api/participacao/valor-da-cota',
-  );
-  const [mes, setMes] = useState(() => mesEmCampoGrande(new Date()));
-  const [doMes, recarregarMes] = useLeitura<CaixinhaDoMesLida>(
-    token,
-    `/api/financeiro/caixinha/${mes}`,
+    `/api/participacao/valor-da-cota?ano=${ano}`,
   );
   const { avisos } = useComando(() => {});
-  if (!caixinha || !valores) return <Carregando />;
-  if (caixinha.situacao !== 'ok' || valores.situacao !== 'ok')
-    return (
-      <FalhaAoCarregar
-        tentarDeNovo={() => {
-          recarregar();
-          recarregarValores();
-        }}
-      />
-    );
-  const ano = anoAtual();
-  const saiu = doMes?.situacao === 'ok' ? doMes.valor.gastosPorTipoEmCentavos : undefined;
+  const rotulos = rotulosDaCaixinhaDoAno(ano, mesEmCampoGrande(new Date()));
+  const saiu = doAno?.situacao === 'ok' ? doAno.valor.gastosPorTipoEmCentavos : undefined;
   const totalQueSaiu = saiu ? Object.values(saiu).reduce((a, b) => a + b, 0) : 0;
 
   return (
     <>
       {avisos}
       <div className="barra-de-acoes">
-        <MesNavegavel mes={mes} mudar={setMes} />
+        <AnoNavegavel ano={ano} mudar={setAno} />
         <Link
           className="botao contorno"
           to="/caixinha/registrar-gasto"
@@ -1217,64 +1272,73 @@ export const Caixinha = ({ token }: { token: string }) => {
           Registrar um gasto que paguei
         </Link>
       </div>
-      {!doMes ? (
+      {!doAno || !valores || !caixinha ? (
         <Carregando />
-      ) : doMes.situacao !== 'ok' || !saiu ? (
-        <FalhaAoCarregar tentarDeNovo={recarregarMes} />
+      ) : doAno.situacao !== 'ok' ||
+        !saiu ||
+        valores.situacao !== 'ok' ||
+        caixinha.situacao !== 'ok' ? (
+        <FalhaAoCarregar
+          tentarDeNovo={() => {
+            recarregarAno();
+            recarregarValores();
+            recarregar();
+          }}
+        />
       ) : (
-        <div className="colunas" data-testid="caixinha-do-mes">
-          <section className="cartao escuro" aria-labelledby="saldo-agora">
-            <h2 id="saldo-agora" className="rotulo">
-              Saldo agora
+        <div className="colunas" data-testid="caixinha-do-ano" data-ano={ano}>
+          <section className="cartao escuro" aria-labelledby="saldo">
+            <h2 id="saldo" className="rotulo">
+              {rotulos.saldo}
             </h2>
-            <p className="valor-grande">{emReais(caixinha.valor.saldoEmCentavos)}</p>
+            <p className="valor-grande">{emReais(doAno.valor.saldoNoFimEmCentavos)}</p>
             <dl className="contas">
               <div>
-                <dt>No início de {nomeDoMes(mes)}</dt>
+                <dt>No início de {ano}</dt>
                 <dd data-testid="saldo-no-inicio">
-                  {emReais(doMes.valor.saldoNoInicioEmCentavos)}
+                  {emReais(doAno.valor.saldoNoInicioEmCentavos)}
                 </dd>
               </div>
               <div>
-                <dt>Entrou</dt>
-                <dd data-testid="recebido">{emReais(doMes.valor.recebidoEmCentavos)}</dd>
+                <dt>Entrou em {ano}</dt>
+                <dd data-testid="recebido">{emReais(doAno.valor.recebidoEmCentavos)}</dd>
               </div>
               <div>
-                <dt>Saiu</dt>
+                <dt>Saiu em {ano}</dt>
                 <dd>{emReais(totalQueSaiu)}</dd>
               </div>
               <div className="total">
                 <dt>Sobrou</dt>
-                <dd data-testid="saldo-no-fim">{emReais(doMes.valor.saldoNoFimEmCentavos)}</dd>
+                <dd data-testid="saldo-no-fim">{emReais(doAno.valor.saldoNoFimEmCentavos)}</dd>
               </div>
             </dl>
           </section>
-          <section className="cartao" aria-labelledby="o-que-saiu">
-            <h2 id="o-que-saiu" className="titulo-com-valor">
-              O que saiu em {nomeDoMes(mes)}
-              <span>{emReais(totalQueSaiu)}</span>
-            </h2>
-            <PorTipoDeGasto valores={saiu} testId={(tipo) => `saiu-${tipo}`} />
-            <p className="nota">
-              Um gasto pago do próprio bolso sai da caixinha no mês do reembolso.
-            </p>
+          <section className="cartao pilha" aria-labelledby="o-que-saiu">
+            <div>
+              <h2 id="o-que-saiu" className="titulo-com-valor">
+                O que saiu em {ano}
+                <span data-testid="total-que-saiu">{emReais(totalQueSaiu)}</span>
+              </h2>
+              <p className="apoio">{rotulos.periodo}.</p>
+            </div>
+            <SaidasPorTipo valores={saiu} />
+            <div className="cota-do-ano">
+              <p className="apoio">
+                Cota de {ano}, definida com base nos gastos de {ano - 1}
+              </p>
+              <ValoresDaCota valores={valores.valor} />
+              {ano === anoAtual() && (
+                <details>
+                  <summary data-testid="ver-gastos-do-ano-anterior">
+                    Ver os gastos de {ano - 1}
+                  </summary>
+                  <GastosDoAnoAnterior caixinha={caixinha.valor} />
+                </details>
+              )}
+            </div>
           </section>
         </div>
       )}
-      <section className="cartao" aria-labelledby="por-que">
-        <h2 id="por-que">Por que a cota custa isso</h2>
-        <p className="apoio">
-          No início do ano, o gestor define o valor de cada tipo de cota com base nos gastos do ano
-          anterior: os de {ano} vieram dos gastos de {ano - 1}.
-        </p>
-        <div className="colunas">
-          <GastosDoAnoAnterior caixinha={caixinha.valor} />
-          <div>
-            <h3>Cota de {ano}, por mês</h3>
-            <ValoresDaCota valores={valores.valor} />
-          </div>
-        </div>
-      </section>
     </>
   );
 };
