@@ -963,7 +963,7 @@ main [role="alert"] {
 }
 
 /* Uma barra só, dividida por tipo de gasto, com a legenda abaixo. */
-.empilhada {
+.barra-por-tipo {
   display: flex;
   gap: 2px;
   height: 0.875rem;
@@ -998,20 +998,20 @@ main [role="alert"] {
   border-radius: 3px;
 }
 
-:is(.empilhada, .legenda) [data-tipo="cafe"] {
+:is(.barra-por-tipo, .legenda) [data-tipo="cafe"] {
   background: var(--espresso-dark);
 }
 
-:is(.empilhada, .legenda) [data-tipo="outros-itens"] {
+:is(.barra-por-tipo, .legenda) [data-tipo="outros-itens"] {
   background: var(--warm-latte-hover);
 }
 
-:is(.empilhada, .legenda) [data-tipo="conserto-e-manutencao"] {
+:is(.barra-por-tipo, .legenda) [data-tipo="conserto-e-manutencao"] {
   background: var(--contorno);
 }
 
 /* Light Sand some no fundo branco: o contorno separa a cor. */
-:is(.empilhada, .legenda) [data-tipo="reposicao"] {
+:is(.barra-por-tipo, .legenda) [data-tipo="reposicao"] {
   box-sizing: border-box;
   border: 1px solid #b5ada2;
   background: var(--light-sand);

@@ -1214,7 +1214,7 @@ const SaidasPorTipo = ({ valores }: { valores: Readonly<Record<TipoDeGasto, numb
   const tipos = Object.entries(NOME_DO_TIPO_DE_GASTO) as [TipoDeGasto, string][];
   return (
     <>
-      <span className="empilhada" aria-hidden="true">
+      <span className="barra-por-tipo" aria-hidden="true">
         {total > 0 &&
           tipos.map(([tipo]) => (
             <span
