@@ -13,7 +13,7 @@ Uma fileira do canvas por grupo de telas:
 | :--- | :--- |
 | Fundamentos e entrada | Cores, tipografia, situação, ações, campos e ícones; página inicial antes do login |
 | Visão do participante | Entrar na copa, Minha situação, Enviar comprovante, Caixinha, Menu da conta, Confirmação de ação crítica e Desativar meu acesso, no celular |
-| Visão do gestor | Escolher a visão, Participantes, Conferir comprovante, Receber pagamento, Gastos e Valor da cota, no celular |
+| Visão do gestor | Escolher a visão, Participantes, Conferir comprovante, Receber pagamento, Gastos e Valor da cota, no celular; a Caixinha é a mesma da visão do participante |
 | Desktop · visão do participante | Entrar na copa, Minha situação, Enviar comprovante, Caixinha e Desativar meu acesso a partir de `48rem`, com menu lateral |
 | Desktop · visão do gestor | Escolher a visão, Participantes, Conferir comprovante, Receber pagamento, Gastos e Valor da cota a partir de `48rem`, com tabelas |
 
@@ -30,6 +30,7 @@ No modo Play, os botões e menus levam de uma tela à outra.
 | Lista "Confira no comprovante", que libera *Confirmar*, e motivos comuns de recusa | RN-FIN-36 |
 | Saldo da caixinha, e depois dos reembolsos, na tela Gastos | RN-FIN-37 |
 | Caixinha do ano, com seletor de ano, e os gastos do ano anterior num expansível junto da cota | RN-FIN-31, RN-FIN-32, RN-FIN-33, [ADR 0036](../adr/0036-caixinha-do-ano.md) |
+| *Caixinha* também no menu do gestor | [ADR 0037](../adr/0037-caixinha-tambem-na-visao-do-gestor.md), que substitui as páginas da visão do gestor do [ADR 0029](../adr/0029-visoes-do-gestor-e-do-participante.md) |
 | *Registrar um gasto que paguei* na Caixinha do participante | RN-FIN-26, que já valia pela API |
 | Confirmação antes de toda ação crítica | RNF-12 |
 | *Desativar meu acesso* numa página própria, pelo menu da conta, só na visão do participante | RN-USU-01 |

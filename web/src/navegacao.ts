@@ -8,6 +8,13 @@ export type Rota = { readonly caminho: string; readonly titulo: string };
 /** A link of the main navigation, with the subpáginas that leave from it (ADR 0034). */
 export type Item = Rota & { readonly icone: NomeDoIcone; readonly subpaginas: readonly Rota[] };
 
+const CAIXINHA: Item = {
+  caminho: '/caixinha',
+  titulo: 'Caixinha',
+  icone: 'carteira',
+  subpaginas: [{ caminho: '/caixinha/registrar-gasto', titulo: 'Registrar gasto' }],
+};
+
 const DO_PARTICIPANTE: readonly Item[] = [
   {
     caminho: '/',
@@ -19,12 +26,7 @@ const DO_PARTICIPANTE: readonly Item[] = [
       { caminho: '/desativar-meu-acesso', titulo: 'Desativar meu acesso' },
     ],
   },
-  {
-    caminho: '/caixinha',
-    titulo: 'Caixinha',
-    icone: 'carteira',
-    subpaginas: [{ caminho: '/caixinha/registrar-gasto', titulo: 'Registrar gasto' }],
-  },
+  CAIXINHA,
 ];
 
 const DO_GESTOR: readonly Item[] = [
@@ -46,6 +48,8 @@ const DO_GESTOR: readonly Item[] = [
       { caminho: '/gastos/solicitar-complemento', titulo: 'Solicitar complemento' },
     ],
   },
+  // The Caixinha is in both visões (ADR 0037).
+  CAIXINHA,
   { caminho: '/valor-da-cota', titulo: 'Valor da cota', icone: 'etiqueta', subpaginas: [] },
 ];
 
@@ -73,7 +77,8 @@ const daVisao = (visao: Visao, caminho: string) =>
 /**
  * Visão to show, or `undefined` while the gestor has not chosen one. Whoever is not gestor always
  * sees the participante pages, where whoever does not participate yet asks to join. The gestor
- * sees the visão of the page opened, else the one chosen. The API still checks the perfil.
+ * stays in the visão chosen while the page opened is in it, else goes to the visão of the page.
+ * The API still checks the perfil.
  */
 export const visaoAtual = (
   perfis: readonly Perfil[],
@@ -82,6 +87,7 @@ export const visaoAtual = (
 ): Visao | undefined => {
   if (!perfis.includes('gestor')) return 'participante';
   if (!escolhida) return undefined;
+  if (daVisao(escolhida, caminho)) return escolhida;
   if (daVisao('gestor', caminho)) return 'gestor';
   if (daVisao('participante', caminho)) return 'participante';
   return escolhida;

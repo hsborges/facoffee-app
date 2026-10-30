@@ -150,7 +150,12 @@ test.describe('RF-USU-01 Acesso ao FACOFFEE', () => {
       await conta.getByTestId('trocar-visao').click();
       await expect(conta).toBeHidden();
       await expect(pagina(gestor, 'participantes')).toBeVisible();
-      expect(await paginasDoMenu(gestor)).toEqual(['participantes', 'gastos', 'valor-da-cota']);
+      expect(await paginasDoMenu(gestor)).toEqual([
+        'participantes',
+        'gastos',
+        'caixinha',
+        'valor-da-cota',
+      ]);
       const doGestor = await abrirConta(gestor);
       await expect(doGestor.getByTestId('trocar-visao')).toBeVisible();
       await expect(doGestor.getByTestId('ir-desativar-meu-acesso')).toHaveCount(0);

@@ -36,8 +36,13 @@ describe('navegacao', () => {
     expect(caminhos('participante')).toEqual(['/', '/caixinha']);
   });
 
-  it('the visão do gestor has only the gestor pages', () => {
-    expect(caminhos('gestor')).toEqual(['/participantes', '/gastos', '/valor-da-cota']);
+  it('the visão do gestor has the gestor pages and the Caixinha', () => {
+    expect(caminhos('gestor')).toEqual([
+      '/participantes',
+      '/gastos',
+      '/caixinha',
+      '/valor-da-cota',
+    ]);
   });
 });
 
@@ -57,6 +62,8 @@ describe('paginas', () => {
       '/gastos',
       '/gastos/registrar-gasto',
       '/gastos/solicitar-complemento',
+      '/caixinha',
+      '/caixinha/registrar-gasto',
       '/valor-da-cota',
     ]);
   });
@@ -78,20 +85,26 @@ describe('visaoAtual', () => {
 
   it('a page of the other visão leads the gestor to it', () => {
     expect(visaoAtual(GESTOR, 'participante', '/gastos')).toBe('gestor');
-    expect(visaoAtual(GESTOR, 'gestor', '/caixinha')).toBe('participante');
+    expect(visaoAtual(GESTOR, 'gestor', '/')).toBe('participante');
+  });
+
+  it('a page of both visões keeps the one chosen', () => {
+    for (const caminho of ['/caixinha', '/caixinha/registrar-gasto']) {
+      expect(visaoAtual(GESTOR, 'gestor', caminho)).toBe('gestor');
+      expect(visaoAtual(GESTOR, 'participante', caminho)).toBe('participante');
+    }
   });
 
   it('matches the page as the router does: trailing slash and any case', () => {
     expect(visaoAtual(GESTOR, 'participante', '/gastos/')).toBe('gestor');
     expect(visaoAtual(GESTOR, 'participante', '/Valor-da-Cota')).toBe('gestor');
-    expect(visaoAtual(GESTOR, 'gestor', '/caixinha/')).toBe('participante');
+    expect(visaoAtual(GESTOR, 'gestor', '/Enviar-Comprovante/')).toBe('participante');
   });
 
   it('a subpágina belongs to the visão of its page', () => {
     expect(visaoAtual(GESTOR, 'participante', '/participantes/receber-pagamento')).toBe('gestor');
     expect(visaoAtual(GESTOR, 'gestor', '/enviar-comprovante')).toBe('participante');
     expect(visaoAtual(GESTOR, 'participante', '/gastos/registrar-gasto')).toBe('gestor');
-    expect(visaoAtual(GESTOR, 'gestor', '/caixinha/registrar-gasto')).toBe('participante');
   });
 
   it('a page of no visão keeps the one chosen', () => {
