@@ -109,6 +109,11 @@ services:
     build:
       context: ..
       dockerfile: gateway/Dockerfile
+    develop:
+      watch:
+        - action: rebuild
+          path: ../gateway
+          ignore: [dist/, node_modules/, traefik/, openapi.yaml]
     environment:
       # iss dos tokens emitidos ao navegador; o JWKS é buscado pela rede interna
       OIDC_ISSUER: http://localhost:8080/realms/facoffee
@@ -129,12 +134,22 @@ services:
     build:
       context: ..
       dockerfile: web/Dockerfile
+    develop:
+      watch:
+        - action: rebuild
+          path: ../web
+          ignore: [dist/, node_modules/]
 
   # Sem porta publicada: só é alcançado pelo gateway (ADR 0007).
   usuario:
     build:
       context: ..
       dockerfile: services/usuario/Dockerfile
+    develop:
+      watch:
+        - action: rebuild
+          path: ../services/usuario
+          ignore: [dist/, node_modules/]
     environment:
       SERVICE: user
       DATABASE_URL: postgres://usuario:${USUARIO_DB_PASSWORD}@postgres:5432/usuario
@@ -149,6 +164,11 @@ services:
     build:
       context: ..
       dockerfile: services/participacao/Dockerfile
+    develop:
+      watch:
+        - action: rebuild
+          path: ../services/participacao
+          ignore: [dist/, node_modules/]
     environment:
       SERVICE: participation
       DATABASE_URL: postgres://participacao:${PARTICIPACAO_DB_PASSWORD}@postgres:5432/participacao
@@ -163,6 +183,11 @@ services:
     build:
       context: ..
       dockerfile: services/financeiro/Dockerfile
+    develop:
+      watch:
+        - action: rebuild
+          path: ../services/financeiro
+          ignore: [dist/, node_modules/]
     environment:
       SERVICE: finance
       DATABASE_URL: postgres://financeiro:${FINANCEIRO_DB_PASSWORD}@postgres:5432/financeiro
@@ -184,6 +209,11 @@ services:
     build:
       context: ..
       dockerfile: services/notificacao/Dockerfile
+    develop:
+      watch:
+        - action: rebuild
+          path: ../services/notificacao
+          ignore: [dist/, node_modules/]
     environment:
       SERVICE: notification
       DATABASE_URL: postgres://notificacao:${NOTIFICACAO_DB_PASSWORD}@postgres:5432/notificacao
@@ -206,6 +236,11 @@ services:
     build:
       context: ..
       dockerfile: services/agendador/Dockerfile
+    develop:
+      watch:
+        - action: rebuild
+          path: ../services/agendador
+          ignore: [dist/, node_modules/]
     environment:
       PARTICIPACAO_URL: http://participacao:3000
       NOTIFICACAO_URL: http://notificacao:3000

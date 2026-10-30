@@ -8,6 +8,8 @@ cp .env.example .env
 docker compose up -d --wait
 ```
 
+Para refazer o contêiner a cada mudança no código, suba com `docker compose up --watch`: mudar um arquivo de `services/<contexto>/`, `gateway/` ou `web/` refaz a imagem daquele serviço e o recria (`develop.watch`). Não é recarga a quente: cada mudança leva alguns segundos de build. Para o web, `pnpm --filter @facoffee/web dev` é mais rápido ([README do web](../web/README.md)).
+
 | Serviço | Endereço |
 |---|---|
 | [API Gateway](../gateway/) (único ponto aberto fora do host) | https://localhost ou http://localhost |

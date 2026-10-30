@@ -45,7 +45,7 @@ cp .env.example .env
 docker compose up -d --wait --build
 ```
 
-O web e a API ficam em https://localhost (ou http://localhost), a documentação da API em https://localhost/docs e os e-mails enviados em http://localhost:8025 (Mailpit). Entre com `gestor`/`gestor` ou `participante`/`participante`. Demais endereços, credenciais e o realm do Keycloak no [README da infra](infra/README.md); o web com recarga automática (`pnpm --filter @facoffee/web dev`) no [README do web](web/README.md).
+O web e a API ficam em https://localhost (ou http://localhost), a documentação da API em https://localhost/docs e os e-mails enviados em http://localhost:8025 (Mailpit). Entre com `gestor`/`gestor` ou `participante`/`participante`. Com `docker compose up --watch`, cada serviço é refeito ao mudar o seu código. Demais endereços, credenciais e o realm do Keycloak no [README da infra](infra/README.md); o web com recarga automática (`pnpm --filter @facoffee/web dev`) no [README do web](web/README.md).
 
 ## Comandos (na raiz)
 
