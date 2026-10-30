@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { consultarCaixinha, consultarCaixinhaDoMes } from './caixinha.js';
+import { consultarCaixinha, consultarCaixinhaDoAno } from './caixinha.js';
 
 describe('consultarCaixinha', () => {
   it('gives the saldo and the gastos of the year before the current one in Campo Grande', async () => {
@@ -39,19 +39,19 @@ describe('consultarCaixinha', () => {
   });
 });
 
-describe('consultarCaixinhaDoMes', () => {
-  it('RN-FIN-31: gives the caixinha of the month from the movimento before it and in it', async () => {
-    const consultar = consultarCaixinhaDoMes({
+describe('consultarCaixinhaDoAno', () => {
+  it('RN-FIN-31: gives the caixinha of the year from the movimento before it and in it', async () => {
+    const consultar = consultarCaixinhaDoAno({
       totais: async () => ({ recebidoEmCentavos: 0, gastos: [], reembolsadoEmCentavos: 0 }),
       gastosDoAno: async () => [],
-      movimento: async (mes, periodo) =>
-        mes !== '2026-10'
+      movimento: async (ano, periodo) =>
+        ano !== 2026
           ? { recebidoEmCentavos: 0, saidas: [] }
           : periodo === 'antes'
             ? { recebidoEmCentavos: 5000, saidas: [] }
             : { recebidoEmCentavos: 1000, saidas: [{ tipo: 'reposicao', valorEmCentavos: 700 }] },
     });
-    expect(await consultar('2026-10')).toMatchObject({
+    expect(await consultar(2026)).toMatchObject({
       saldoNoInicioEmCentavos: 5000,
       recebidoEmCentavos: 1000,
       saldoNoFimEmCentavos: 5300,

@@ -1,16 +1,16 @@
 # RF-FIN-06 Acompanhar a caixinha
 
 - Contexto: Financeiro · Para quem: Todos
-- Necessidades: Resumo do mês: entrou, saiu e sobrou; Embasar o valor da cota do ano ([Visão](../../produto/VISAO.md#o-que-o-produto-precisa-garantir))
+- Necessidades: Resumo do ano: entrou, saiu e sobrou; Embasar o valor da cota do ano ([Visão](../../produto/VISAO.md#o-que-o-produto-precisa-garantir))
 - Termos: [Caixinha](../../dominio/GLOSSARIO.md#caixinha), [Saldo da caixinha](../../dominio/GLOSSARIO.md#saldo-da-caixinha), [Tipo de gasto](../../dominio/GLOSSARIO.md#tipo-de-gasto)
-- Origem: leituras *Saldo da caixinha*, *Caixinha do mês* e *Gastos do ano anterior* ([Modelos](../../dominio/MODELOS.md#leituras)), #73, #77
+- Origem: leituras *Saldo da caixinha*, *Caixinha do ano* e *Gastos do ano anterior* ([Modelos](../../dominio/MODELOS.md#leituras)), #73, #77
 
 ```gherkin
 # language: pt
 Funcionalidade: RF-FIN-06 Acompanhar a caixinha
   Para saber quanto entrou, quanto saiu com cada coisa e quanto sobrou,
   como participante,
-  quero ver a caixinha de cada mês e os gastos do ano anterior,
+  quero ver a caixinha de cada ano, com os gastos do ano anterior,
   sem ver a situação de ninguém.
 ```
 
@@ -38,31 +38,31 @@ Regra: RN-FIN-30 Todo pagamento entra na caixinha; todo gasto e todo reembolso s
     Então o saldo da caixinha é -R$ 50,00
 ```
 
-### RN-FIN-31 A caixinha acumula de um mês para o outro
+### RN-FIN-31 A caixinha acumula de um ano para o outro
 
-- Termo: [Caixinha](../../dominio/GLOSSARIO.md#caixinha) · Origem: glossário, leitura *Caixinha do mês*
+- Termo: [Caixinha](../../dominio/GLOSSARIO.md#caixinha) · Origem: glossário, leitura *Caixinha do ano*
 
 ```gherkin
 # language: pt
-Regra: RN-FIN-31 A caixinha acumula de um mês para o outro
+Regra: RN-FIN-31 A caixinha acumula de um ano para o outro
 
-  Cenário: saldo no início do mês
-    Dado que o saldo no fim de março é R$ 350,00
-    Então o saldo no início de abril é R$ 350,00
-    E o saldo no fim de abril é o do início mais o que entrou menos o que saiu em abril
+  Cenário: saldo no início do ano
+    Dado que o saldo no fim de 2025 é R$ 350,00
+    Então o saldo no início de 2026 é R$ 350,00
+    E o saldo no fim de 2026 é o do início mais o que entrou menos o que saiu em 2026
 ```
 
-### RN-FIN-32 A caixinha do mês mostra a todos o que entrou, o que saiu por tipo de gasto e o que sobrou, sem a situação de ninguém
+### RN-FIN-32 A caixinha do ano mostra a todos o que entrou, o que saiu por tipo de gasto e o que sobrou, sem a situação de ninguém
 
 - Termo: [Caixinha](../../dominio/GLOSSARIO.md#caixinha), [Tipo de gasto](../../dominio/GLOSSARIO.md#tipo-de-gasto) · Origem: #73, [Visão, princípio 5](../../produto/VISAO.md#princípios-de-produto)
 
 ```gherkin
 # language: pt
-Regra: RN-FIN-32 A caixinha do mês mostra a todos o que entrou, o que saiu por tipo de gasto e o que sobrou, sem a situação de ninguém
+Regra: RN-FIN-32 A caixinha do ano mostra a todos o que entrou, o que saiu por tipo de gasto e o que sobrou, sem a situação de ninguém
 
-  Cenário: participante vê o resumo do mês
-    Dado que em abril entraram R$ 300,00 e saíram R$ 80,00 em café e R$ 20,00 em reposição
-    Quando Ana, participante, consulta a caixinha de abril
+  Cenário: participante vê o resumo do ano
+    Dado que em 2026 entraram R$ 300,00 e saíram R$ 80,00 em café e R$ 20,00 em reposição
+    Quando Ana, participante, consulta a caixinha de 2026
     Então vê R$ 300,00 que entraram, R$ 80,00 em café, R$ 20,00 em reposição e o saldo no início e no fim
     E não vê quem pagou nem quem está pendente
 ```

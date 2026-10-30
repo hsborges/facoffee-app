@@ -137,7 +137,7 @@ flowchart LR
     E1 --> R1["👁 Crédito e pendentes (Financeiro)"]
     E2 --> R1
     E2 --> R2["👁 Saldo da caixinha (Financeiro)"]
-    E2 --> R3["👁 Caixinha do mês (Financeiro)"]
+    E2 --> R3["👁 Caixinha do ano (Financeiro)"]
     R1 --> P2["⚙ Todo mês, avisar a cota devida e lembrar os pendentes (Notificação)"]
 ```
 
@@ -161,11 +161,11 @@ flowchart LR
     E1 --> P1["⚙ Se foi pago do próprio bolso, reembolsar quem pagou"] --> A2["👤 Gestor"] --> C2["▶ Reembolsar"] --> G2["▣ Caixinha (Financeiro)"] --> E2["⚡ Reembolso feito"]
     E1 -- "se pago pela caixinha" --> R1["👁 Saldo da caixinha (Financeiro)"]
     E2 --> R1
-    E1 -- "se pago pela caixinha" --> R2["👁 Caixinha do mês (Financeiro)"]
+    E1 -- "se pago pela caixinha" --> R2["👁 Caixinha do ano (Financeiro)"]
     E2 --> R2
 ```
 
-Quem registra o gasto informa o tipo de gasto. Na leitura *Caixinha do mês*, o gasto pago do próprio bolso conta no mês do reembolso, com o tipo do gasto reembolsado, porque é quando o dinheiro sai da caixinha.
+Quem registra o gasto informa o tipo de gasto. Na leitura *Caixinha do ano*, o gasto pago do próprio bolso conta no ano do reembolso, com o tipo do gasto reembolsado, porque é quando o dinheiro sai da caixinha.
 
 ### 2.4 Complemento
 
@@ -224,7 +224,7 @@ O contexto Participação também recebe um evento do contexto Usuário:
 |---|---|---|---|
 | **Crédito e pendentes** | Financeiro | Para cada participante: pagamentos recebidos menos cotas devidas e partes de complementos. Se o resultado é positivo, é crédito; se é negativo, o participante está pendente. | O gestor, para acompanhar quem deve; o participante, para saber a própria situação; Notificação, para avisar a cota devida e lembrar os pendentes, cada um só da própria situação. |
 | **Saldo da caixinha** | Financeiro | Pagamentos recebidos menos gastos pagos pela caixinha e reembolsos feitos. | O gestor, para decidir se precisa pedir complemento; os participantes, para acompanhar. |
-| **Caixinha do mês** | Financeiro | Saldo da caixinha no início do mês, pagamentos recebidos no mês, o que saiu no mês por tipo de gasto (gastos pagos pela caixinha e reembolsos feitos) e o saldo no fim do mês, que é o do início mais o que entrou menos o que saiu. | Todos os participantes, para acompanhar quanto entrou, quanto saiu com cada coisa e quanto sobrou. Mostra só totais, sem a situação de ninguém. |
+| **Caixinha do ano** | Financeiro | Saldo da caixinha no início do ano, pagamentos recebidos no ano, o que saiu no ano por tipo de gasto (gastos pagos pela caixinha e reembolsos feitos) e o saldo no fim do ano, que é o do início mais o que entrou menos o que saiu. | Todos os participantes, para acompanhar quanto entrou, quanto saiu com cada coisa e quanto sobrou. Mostra só totais, sem a situação de ninguém. |
 | **Gastos do ano anterior** | Financeiro | Soma dos gastos feitos no ano anterior, no total e por tipo de gasto. | O gestor, para definir o valor da cota; todos os participantes, para entender de onde vem o valor de cada tipo de cota. Mostra só totais, sem a situação de ninguém. |
 | **Valores da cota** | Participação | O valor de cada tipo de cota no ano atual, ou num ano pedido. | Todos os participantes, para saber quanto custa cada tipo de cota e compará-lo com os gastos do ano anterior; o gestor, para ver o que já definiu para o ano seguinte. |
 | **Comprovantes enviados** | Financeiro | Os comprovantes enviados pelos participantes, com a situação de cada um: a confirmar, confirmado (com o valor confirmado) ou recusado (com o motivo). | O gestor, só os a confirmar, para analisar; o participante, só os próprios, para acompanhar. |
@@ -321,3 +321,4 @@ Nenhum no momento.
 | 2.13 | 2026-10-26 | A coluna *Regras que garante* dos agregados passa a apontar para as regras de negócio em [docs/requisitos/](../requisitos/README.md), por ID, sem repetir o texto ([ADR 0032](../adr/0032-requisitos-rastreaveis-em-bdd.md), #96). Base atualizada para o glossário 2.10. |
 | 2.14 | 2026-10-27 | A leitura *Valores da cota* também responde por um ano pedido, para o gestor ver o que já definiu para o ano seguinte (RN-PAR-16). |
 | 2.15 | 2026-10-28 | Nova leitura *Participantes* (Participação), só para o gestor, com o tipo de cota de cada um (RN-PAR-17, [ADR 0035](../adr/0035-normalizacao-da-api-publica.md)). O diagrama da arquitetura passa à [v2](../arquitetura/visao-geral-v2.png). |
+| 2.16 | 2026-10-29 | A leitura *Caixinha do ano* substitui a *Caixinha do mês*: o que entrou, o que saiu por tipo de gasto e o saldo no início e no fim do ano ([ADR 0036](../adr/0036-caixinha-do-ano.md)). |

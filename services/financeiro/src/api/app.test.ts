@@ -157,8 +157,8 @@ const app = (deps: Partial<ApiDependencies> = {}) => {
         reposicao: 0,
       },
     }),
-    consultarCaixinhaDoMes: async (mes) => ({
-      mes,
+    consultarCaixinhaDoAno: async (ano) => ({
+      ano,
       saldoNoInicioEmCentavos: 1000,
       recebidoEmCentavos: 500,
       gastosPorTipoEmCentavos: {
@@ -776,20 +776,20 @@ describe('GET /caixinha', () => {
   });
 });
 
-describe('GET /caixinha/:mes', () => {
-  it('RN-FIN-32: gives any participante the caixinha of the month', async () => {
-    const response = await app().request('/caixinha/2026-10', { headers: doParticipante });
+describe('GET /caixinha/:ano', () => {
+  it('RN-FIN-32: gives any participante the caixinha of the year', async () => {
+    const response = await app().request('/caixinha/2026', { headers: doParticipante });
     expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ mes: '2026-10', saldoNoFimEmCentavos: 1200 });
+    expect(await response.json()).toMatchObject({ ano: 2026, saldoNoFimEmCentavos: 1200 });
   });
 
-  it('400 for a month not in AAAA-MM and 401 without the logged-in person', async () => {
-    for (const mes of ['2026-13', '2026-1', 'outubro']) {
-      const response = await app().request(`/caixinha/${mes}`, { headers: doParticipante });
+  it('400 for a year not in AAAA and 401 without the logged-in person', async () => {
+    for (const ano of ['2026-10', '26', 'outubro']) {
+      const response = await app().request(`/caixinha/${ano}`, { headers: doParticipante });
       expect(response.status).toBe(400);
       expect(await response.json()).toEqual({ error: 'pedido-invalido' });
     }
-    expect((await app().request('/caixinha/2026-10')).status).toBe(401);
+    expect((await app().request('/caixinha/2026')).status).toBe(401);
   });
 });
 

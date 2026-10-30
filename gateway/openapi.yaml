@@ -1065,59 +1065,62 @@ paths:
           $ref: '#/components/responses/AcessoDesativado'
         '500':
           $ref: '#/components/responses/ErroInterno'
-  /api/financeiro/caixinha/{mes}:
+  /api/financeiro/caixinha/{ano}:
     get:
       tags: [financeiro]
-      operationId: consultarCaixinhaDoMes
-      summary: Caixinha do mês
+      operationId: consultarCaixinhaDoAno
+      summary: Caixinha do ano
       description: |
-        O que entrou na caixinha no mês, o que saiu por tipo de gasto e quanto sobrou. Qualquer
-        usuário logado consulta; mostra só os totais, sem a situação de ninguém. O mês vira à
+        O que entrou na caixinha no ano, o que saiu por tipo de gasto e quanto sobrou. Qualquer
+        usuário logado consulta; mostra só os totais, sem a situação de ninguém. O ano vira à
         meia-noite de Campo Grande (MS). Saldo no fim = saldo no início + recebido − gastos de todos
-        os tipos; no mês atual, é o saldo da caixinha.
+        os tipos; no ano atual, é o saldo da caixinha.
       parameters:
-        - name: mes
+        - name: ano
           in: path
           required: true
-          description: O mês.
+          description: O ano, em `AAAA`.
           schema:
-            $ref: '#/components/schemas/Mes'
+            type: integer
+            minimum: 1000
+            maximum: 9999
+          example: 2026
       responses:
         '200':
-          description: Caixinha do mês.
+          description: Caixinha do ano.
           content:
             application/json:
               schema:
                 type: object
                 required:
                   [
-                    mes,
+                    ano,
                     saldoNoInicioEmCentavos,
                     recebidoEmCentavos,
                     gastosPorTipoEmCentavos,
                     saldoNoFimEmCentavos,
                   ]
                 properties:
-                  mes:
-                    $ref: '#/components/schemas/Mes'
+                  ano:
+                    type: integer
                   saldoNoInicioEmCentavos:
                     type: integer
-                    description: Saldo da caixinha no início do mês, em centavos de real.
+                    description: Saldo da caixinha no início do ano, em centavos de real.
                   recebidoEmCentavos:
                     type: integer
                     minimum: 0
-                    description: Pagamentos recebidos no mês, em centavos de real.
+                    description: Pagamentos recebidos no ano, em centavos de real.
                   gastosPorTipoEmCentavos:
                     $ref: '#/components/schemas/PorTipoDeGasto'
                     description: |
-                      O que saiu da caixinha no mês, por tipo de gasto, em centavos de real: os
-                      gastos pagos pela caixinha e os reembolsos feitos no mês. Um gasto pago do
-                      próprio bolso conta no mês do reembolso.
+                      O que saiu da caixinha no ano, por tipo de gasto, em centavos de real: os
+                      gastos pagos pela caixinha e os reembolsos feitos no ano. Um gasto pago do
+                      próprio bolso conta no ano do reembolso.
                   saldoNoFimEmCentavos:
                     type: integer
-                    description: Saldo da caixinha no fim do mês, em centavos de real.
+                    description: Saldo da caixinha no fim do ano, em centavos de real.
               example:
-                mes: '2026-10'
+                ano: 2026
                 saldoNoInicioEmCentavos: 12000
                 recebidoEmCentavos: 75000
                 gastosPorTipoEmCentavos:
@@ -1131,7 +1134,7 @@ paths:
         '403':
           $ref: '#/components/responses/AcessoDesativado'
         '400':
-          description: O mês não está no formato `AAAA-MM`.
+          description: O ano não está no formato `AAAA`.
           content:
             application/json:
               schema:

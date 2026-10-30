@@ -33,9 +33,6 @@ export const saldoDaCaixinha = ({
   gastos.reduce((total, gasto) => total + saidaDaCaixinha(gasto), 0) -
   reembolsadoEmCentavos;
 
-/** A month, as `AAAA-MM`. */
-export type Mes = string;
-
 /** What entered and left the caixinha in a period. */
 export type Movimento = {
   /** Sum of the pagamentos recebidos. */
@@ -44,9 +41,9 @@ export type Movimento = {
   readonly saidas: readonly { readonly tipo: TipoDeGasto; readonly valorEmCentavos: number }[];
 };
 
-/** Leitura *Caixinha do mês*: what entered, what left per tipo de gasto and what was left. */
-export type CaixinhaDoMes = {
-  readonly mes: Mes;
+/** Leitura *Caixinha do ano*: what entered, what left per tipo de gasto and what was left. */
+export type CaixinhaDoAno = {
+  readonly ano: number;
   readonly saldoNoInicioEmCentavos: number;
   readonly recebidoEmCentavos: number;
   readonly gastosPorTipoEmCentavos: Readonly<Record<TipoDeGasto, number>>;
@@ -75,17 +72,17 @@ export const caixinha = (
 });
 
 /**
- * *Caixinha do mês* from the movimento `antes` the month and the one `noMes`. A gasto pago do
- * próprio bolso counts in the month of its reembolso, when its money leaves the caixinha.
+ * *Caixinha do ano* from the movimento `antes` the year and the one `noAno`. A gasto pago do
+ * próprio bolso counts in the year of its reembolso, when its money leaves the caixinha.
  */
-export const caixinhaDoMes = (mes: Mes, antes: Movimento, noMes: Movimento): CaixinhaDoMes => {
+export const caixinhaDoAno = (ano: number, antes: Movimento, noAno: Movimento): CaixinhaDoAno => {
   const saldoNoInicioEmCentavos = antes.recebidoEmCentavos - soma(antes.saidas);
   return {
-    mes,
+    ano,
     saldoNoInicioEmCentavos,
-    recebidoEmCentavos: noMes.recebidoEmCentavos,
-    gastosPorTipoEmCentavos: porTipo(noMes.saidas),
-    saldoNoFimEmCentavos: saldoNoInicioEmCentavos + noMes.recebidoEmCentavos - soma(noMes.saidas),
+    recebidoEmCentavos: noAno.recebidoEmCentavos,
+    gastosPorTipoEmCentavos: porTipo(noAno.saidas),
+    saldoNoFimEmCentavos: saldoNoInicioEmCentavos + noAno.recebidoEmCentavos - soma(noAno.saidas),
   };
 };
 

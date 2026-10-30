@@ -10,7 +10,7 @@ import {
   guardarNota,
   notaDoParticipante,
 } from './application/arquivos.js';
-import { consultarCaixinha, consultarCaixinhaDoMes } from './application/caixinha.js';
+import { consultarCaixinha, consultarCaixinhaDoAno } from './application/caixinha.js';
 import { solicitarComplemento } from './application/complementos.js';
 import {
   cancelarComprovante,
@@ -126,7 +126,7 @@ export const startService = async (config: Config, logger: Logger) => {
     consultarCaixinha: consultarCaixinha(caixinhaRepository(database.db), {
       now: () => new Date(),
     }),
-    consultarCaixinhaDoMes: consultarCaixinhaDoMes(caixinhaRepository(database.db)),
+    consultarCaixinhaDoAno: consultarCaixinhaDoAno(caixinhaRepository(database.db)),
     listarGastos: listarGastos(buscarGastos(database.db)),
     listarCreditoEPendentes: listarCreditoEPendentes(buscarTotais(database.db)),
     consultarCreditoEPendente: consultarCreditoEPendente(
