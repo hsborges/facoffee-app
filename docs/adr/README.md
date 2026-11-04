@@ -6,7 +6,7 @@ Registros de decisões de arquitetura. Um arquivo por decisão: `NNNN-titulo.md`
 |---|---|---|
 | [0001](0001-arquitetura-servicos.md) | Arquitetura baseada em serviços | Aceito |
 | [0002](0002-stack.md) | Stack TypeScript/Node.js | Aceito |
-| [0003](0003-ambiente-local-docker-compose.md) | Ambiente local com docker compose | Aceito |
+| [0003](0003-ambiente-local-docker-compose.md) | Ambiente local com docker compose | Aceito; credenciais em `.env` substituídas por 0038 |
 | [0004](0004-contratos-dos-eventos-de-dominio.md) | Contratos dos eventos de domínio | Substituído por 0006 |
 | [0005](0005-template-de-servico.md) | Template de serviço | Aceito; Dockerfile e ambiente local substituídos por 0026 |
 | [0006](0006-contratos-dos-eventos-em-ingles.md) | Contratos dos eventos em inglês | Aceito |
@@ -41,3 +41,4 @@ Registros de decisões de arquitetura. Um arquivo por decisão: `NNNN-titulo.md`
 | [0035](0035-normalizacao-da-api-publica.md) | Normalização da API pública | Aceito |
 | [0036](0036-caixinha-do-ano.md) | Caixinha do ano | Aceito |
 | [0037](0037-caixinha-tambem-na-visao-do-gestor.md) | Caixinha também na visão do gestor | Aceito |
+| [0038](0038-compose-so-de-desenvolvimento.md) | Compose só de desenvolvimento | Aceito |
