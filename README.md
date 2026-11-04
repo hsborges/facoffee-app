@@ -1,7 +1,5 @@
 <p align="center"><img src="docs/design/facoffee-logo.svg" alt="FACOFFEE" width="240"></p>
 
-# FACOFFEE
-
 Divisão de custos da copa da FACOM (UFMS).
 
 > [!NOTE]
