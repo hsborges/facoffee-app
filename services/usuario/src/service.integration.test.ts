@@ -10,7 +10,7 @@ import { startService } from './service.js';
 const config = {
   service: 'user',
   port: 0,
-  databaseUrl: process.env.DATABASE_URL ?? 'postgres://usuario:usuario@localhost:5432/usuario',
+  databaseUrl: process.env.DATABASE_URL ?? 'postgres://usuario@localhost:5432/usuario',
   rabbitmqUrl: process.env.RABBITMQ_URL ?? 'amqp://facoffee:facoffee@localhost:5672',
 };
 vi.setConfig({ testTimeout: 20_000, hookTimeout: 20_000 });

@@ -26,7 +26,7 @@ O exemplo registra um *Example* (`POST /examples`), publica `example.example-reg
 |---|---|
 | `SERVICE` | `example` (nome do contexto nos contratos, ex.: `finance`; define as filas) |
 | `PORT` | `3000` (padrão) |
-| `DATABASE_URL` | `postgres://example:example@localhost:5432/example` |
+| `DATABASE_URL` | `postgres://example@localhost:5432/example` |
 | `RABBITMQ_URL` | `amqp://facoffee:facoffee@localhost:5672` |
 
 ## Comandos

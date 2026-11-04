@@ -132,7 +132,7 @@ A tabela `participantes` guarda quem Participação já informou e se está ativ
 |---|---|
 | `SERVICE` | `finance` (nome do contexto nos contratos) |
 | `PORT` | `3000` (padrão) |
-| `DATABASE_URL` | `postgres://financeiro:financeiro@localhost:5432/financeiro` |
+| `DATABASE_URL` | `postgres://financeiro@localhost:5432/financeiro` |
 | `RABBITMQ_URL` | `amqp://facoffee:facoffee@localhost:5672` |
 | `S3_ENDPOINT` | `http://localhost:8333` |
 | `S3_ACCESS_KEY` / `S3_SECRET_KEY` | `facoffee` / `facoffee-secret` |

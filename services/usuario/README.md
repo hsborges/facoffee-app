@@ -37,7 +37,7 @@ Banco, outbox e publicação vêm do [template de serviço](../../templates/serv
 |---|---|
 | `SERVICE` | `user` (nome do contexto nos contratos) |
 | `PORT` | `3000` (padrão) |
-| `DATABASE_URL` | `postgres://usuario:usuario@localhost:5432/usuario` |
+| `DATABASE_URL` | `postgres://usuario@localhost:5432/usuario` |
 | `RABBITMQ_URL` | `amqp://facoffee:facoffee@localhost:5672` |
 
 ## Comandos

@@ -21,8 +21,7 @@ const config = {
   // Unique queue names so the test does not compete with a running notificacao container.
   service: `test-${randomUUID().slice(0, 8)}`,
   port: 0,
-  databaseUrl:
-    process.env.DATABASE_URL ?? 'postgres://notificacao:notificacao@localhost:5432/notificacao',
+  databaseUrl: process.env.DATABASE_URL ?? 'postgres://notificacao@localhost:5432/notificacao',
   rabbitmqUrl: process.env.RABBITMQ_URL ?? 'amqp://facoffee:facoffee@localhost:5672',
   smtpUrl: process.env.SMTP_URL ?? 'smtp://localhost:1025',
   smtpFrom: 'FACOFFEE <facoffee@localhost>',

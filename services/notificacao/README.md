@@ -42,7 +42,7 @@ Um processo à parte envia os e-mails devidos a cada segundo. Falha no envio nã
 |---|---|
 | `SERVICE` | `notification` (nome do contexto nos contratos) |
 | `PORT` | `3000` (padrão; `GET /health` e `POST /lembrar-pendentes`) |
-| `DATABASE_URL` | `postgres://notificacao:notificacao@localhost:5432/notificacao` |
+| `DATABASE_URL` | `postgres://notificacao@localhost:5432/notificacao` |
 | `RABBITMQ_URL` | `amqp://facoffee:facoffee@localhost:5672` |
 | `USUARIO_URL` | `http://usuario:3000` |
 | `FINANCEIRO_URL` | `http://financeiro:3000` |

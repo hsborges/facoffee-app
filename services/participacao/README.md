@@ -44,7 +44,7 @@ Fila `participation.events`. *Usuário desativado* (`user.user-deactivated.v1`) 
 |---|---|
 | `SERVICE` | `participation` (nome do contexto nos contratos) |
 | `PORT` | `3000` (padrão) |
-| `DATABASE_URL` | `postgres://participacao:participacao@localhost:5432/participacao` |
+| `DATABASE_URL` | `postgres://participacao@localhost:5432/participacao` |
 | `RABBITMQ_URL` | `amqp://facoffee:facoffee@localhost:5672` |
 
 ## Comandos

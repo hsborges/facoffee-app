@@ -10,7 +10,7 @@ import { connectRabbitmq, EXCHANGE } from './infra/rabbitmq.js';
 import { startService } from './service.js';
 
 const config = {
-  databaseUrl: process.env.DATABASE_URL ?? 'postgres://example:example@localhost:5432/example',
+  databaseUrl: process.env.DATABASE_URL ?? 'postgres://example@localhost:5432/example',
   rabbitmqUrl: process.env.RABBITMQ_URL ?? 'amqp://facoffee:facoffee@localhost:5672',
 };
 const logger = createLogger('test', () => {});

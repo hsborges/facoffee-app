@@ -9,6 +9,8 @@ cd infra
 docker compose -f docker-compose.dev.yml up -d --wait --build
 ```
 
+O PostgreSQL só cria os bancos e a regra de acesso sem senha num volume novo. Num ambiente que já existia antes do `docker-compose.dev.yml`, com o `.env`, os serviços não conectam: apague os volumes uma vez com `docker compose -f docker-compose.dev.yml down -v` (apaga os dados locais).
+
 Para refazer o contêiner a cada mudança no código, suba com `docker compose -f docker-compose.dev.yml up --watch`: mudar um arquivo de `services/<contexto>/`, `gateway/` ou `web/` refaz a imagem daquele serviço e o recria (`develop.watch`). Não é recarga a quente: cada mudança leva alguns segundos de build. Para o web, `pnpm --filter @facoffee/web dev` é mais rápido ([README do web](../web/README.md)).
 
 | Serviço | Endereço | Credenciais |
@@ -30,7 +32,7 @@ O gateway publica as portas 80 e 443 do host. Onde elas estão ocupadas ou não 
 GATEWAY_HTTP_PORT=8081 GATEWAY_HTTPS_PORT=8443 docker compose -f docker-compose.dev.yml up -d --wait --build
 ```
 
-O web fica em https://localhost:8443 (ou http://localhost:8081). As mesmas variáveis vão para o Keycloak, que aceita o login nessas portas (redirects e origens do client `facoffee-web`), e para o Vite (`GATEWAY_HTTPS_PORT=8443 pnpm --filter @facoffee/web dev`). O realm só é importado na criação do Keycloak: ao trocar as portas num ambiente que já existia, recrie-o com `docker compose -f docker-compose.dev.yml up -d --force-recreate keycloak`.
+O web fica em https://localhost:8443 (ou http://localhost:8081). As mesmas variáveis vão para o Keycloak, que aceita o login nessas portas (redirects e origens do client `facoffee-web`), e para o Vite (`pnpm --filter @facoffee/web dev`), que lê `GATEWAY_HTTPS_PORT` do ambiente ou do `infra/.env`. O realm só é importado na criação do Keycloak: ao trocar as portas num ambiente que já existia, recrie-o com `docker compose -f docker-compose.dev.yml up -d --force-recreate keycloak`.
 
 ## Keycloak
 
