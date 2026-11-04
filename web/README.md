@@ -5,11 +5,11 @@ Front-end para participantes e gestor (React com Vite). Segue o [Design System](
 Quem não está logado vê a página inicial, com o botão **Entrar** ([ADR 0025](../docs/adr/0025-pagina-inicial-antes-do-login.md)). Entra pelo Keycloak (OIDC, Authorization Code + PKCE) e chama a API pelo [gateway](../gateway/), em `/api/...`. O menu depende dos perfis de `GET /api/usuario/eu`: quem não é gestor vê as páginas do participante; o gestor escolhe, ao entrar, a visão do gestor ou a do participante e troca pelo menu da conta, no avatar ([ADR 0029](../docs/adr/0029-visoes-do-gestor-e-do-participante.md)). O menu fica no pé da tela no celular e na lateral a partir de `48rem`; as tarefas longas são subpáginas da página de onde saem ([ADR 0034](../docs/adr/0034-menu-inferior-no-celular-e-lateral-no-computador.md)). As telas seguem o [protótipo](../docs/design/PROTOTYPE.md).
 
 ```sh
-cd infra && docker compose up -d --wait --build   # stack completa; o web fica em https://localhost
+cd infra && docker compose -f docker-compose.dev.yml up -d --wait --build   # stack completa; o web fica em https://localhost
 pnpm --filter @facoffee/web dev                   # desenvolvimento: http://localhost:5173
 ```
 
-Entre com um usuário de teste do [realm local](../infra/README.md#keycloak) (`gestor`/`gestor` ou `participante`/`participante`). No desenvolvimento, o Vite encaminha `/api` para `https://localhost`. Na stack, o build é servido por nginx (`Dockerfile`, `nginx.conf`) atrás do gateway ([ADR 0021](../docs/adr/0021-front-end-servido-pelo-gateway.md)).
+Entre com um usuário de teste do [realm local](../infra/README.md#keycloak) (`gestor`/`gestor` ou `participante`/`participante`). No desenvolvimento, o Vite encaminha `/api` para `https://localhost`, ou para a porta de `GATEWAY_HTTPS_PORT` quando o gateway sobe em outra porta ([README da infra](../infra/README.md#portas-do-gateway)). Na stack, o build é servido por nginx (`Dockerfile`, `nginx.conf`) atrás do gateway ([ADR 0021](../docs/adr/0021-front-end-servido-pelo-gateway.md)).
 
 | Variável | Padrão |
 |---|---|

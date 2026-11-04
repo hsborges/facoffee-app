@@ -13,7 +13,7 @@ Para refazer o contêiner a cada mudança no código, suba com `docker compose -
 
 | Serviço | Endereço | Credenciais |
 |---|---|---|
-| [API Gateway](../gateway/) (único ponto aberto fora do host) | https://localhost ou http://localhost | — |
+| [API Gateway](../gateway/) (único ponto aberto fora do host; [portas](#portas-do-gateway)) | https://localhost ou http://localhost | — |
 | FACOFFEE web (pelo gateway) | https://localhost ou http://localhost | usuários de teste do [Keycloak](#keycloak) |
 | Documentação da API (Swagger UI, pelo gateway) | https://localhost/docs ou http://localhost/docs | — |
 | RabbitMQ (AMQP / painel) | `localhost:5672` / http://localhost:15672 | `facoffee` / `facoffee` |
@@ -22,12 +22,22 @@ Para refazer o contêiner a cada mudança no código, suba com `docker compose -
 | SeaweedFS (S3) | http://localhost:8333 | `facoffee` / `facoffee-secret` |
 | Mailpit (SMTP / caixa de entrada) | `localhost:1025` / http://localhost:8025 | — |
 
+## Portas do gateway
+
+O gateway publica as portas 80 e 443 do host. Onde elas estão ocupadas ou não são permitidas (porta privilegiada, rede restrita), escolha outras com `GATEWAY_HTTP_PORT` e `GATEWAY_HTTPS_PORT`, no ambiente ou num `infra/.env` (não versionado):
+
+```sh
+GATEWAY_HTTP_PORT=8081 GATEWAY_HTTPS_PORT=8443 docker compose -f docker-compose.dev.yml up -d --wait --build
+```
+
+O web fica em https://localhost:8443 (ou http://localhost:8081). As mesmas variáveis vão para o Keycloak, que aceita o login nessas portas (redirects e origens do client `facoffee-web`), e para o Vite (`GATEWAY_HTTPS_PORT=8443 pnpm --filter @facoffee/web dev`). O realm só é importado na criação do Keycloak: ao trocar as portas num ambiente que já existia, recrie-o com `docker compose -f docker-compose.dev.yml up -d --force-recreate keycloak`.
+
 ## Keycloak
 
 O realm `facoffee` é importado de [`keycloak/facoffee-realm.json`](keycloak/facoffee-realm.json) quando o Keycloak sobe (realm já existente não é sobrescrito; para reimportar, `docker compose -f docker-compose.dev.yml down -v`).
 
 - Emissor OIDC: `http://localhost:8080/realms/facoffee`
-- Client do web: `facoffee-web` (público, Authorization Code + PKCE S256, redirect `http://localhost:5173/*`, `https://localhost/*` e `http://localhost/*`)
+- Client do web: `facoffee-web` (público, Authorization Code + PKCE S256, redirect `http://localhost:5173/*`, `https://localhost/*` e `http://localhost/*`, além das [portas do gateway](#portas-do-gateway))
 - Papéis do realm: `gestor` e `participante`
 - Tela de login: tema `facoffee` em [`keycloak/themes/facoffee/`](keycloak/themes/facoffee/), segue o [Design System](../docs/design/DESIGN_SYSTEM.md) (estende o `keycloak.v2`; no `start-dev`, mudanças no CSS aparecem ao recarregar a página). Num ambiente que já existia, `docker compose -f docker-compose.dev.yml up -d --force-recreate keycloak` reimporta o realm com o tema ([ADR 0014](../docs/adr/0014-tema-da-tela-de-login.md))
 

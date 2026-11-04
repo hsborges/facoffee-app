@@ -45,6 +45,9 @@ services:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
       KC_HEALTH_ENABLED: "true"
+      # Portas do gateway nos redirects e origens do client facoffee-web (keycloak/facoffee-realm.json).
+      GATEWAY_HTTP_PORT: ${GATEWAY_HTTP_PORT:-80}
+      GATEWAY_HTTPS_PORT: ${GATEWAY_HTTPS_PORT:-443}
     ports:
       - "127.0.0.1:8080:8080"
     volumes:
@@ -85,11 +88,12 @@ services:
       retries: 10
 
   # Único ponto aberto para fora do host (ADR 0007), em HTTPS e HTTP (ADR 0022).
+  # Portas do host configuráveis, onde 80 e 443 não estão livres ou não são permitidas.
   gateway:
     image: traefik:v3.7
     ports:
-      - "80:80"
-      - "443:443"
+      - "${GATEWAY_HTTP_PORT:-80}:80"
+      - "${GATEWAY_HTTPS_PORT:-443}:443"
     volumes:
       - ../gateway/traefik:/etc/traefik:ro
     healthcheck:

@@ -20,11 +20,23 @@
       "standardFlowEnabled": true,
       "implicitFlowEnabled": false,
       "directAccessGrantsEnabled": false,
-      "redirectUris": ["http://localhost:5173/*", "https://localhost/*", "http://localhost/*"],
-      "webOrigins": ["http://localhost:5173", "https://localhost", "http://localhost"],
+      "redirectUris": [
+        "http://localhost:5173/*",
+        "https://localhost/*",
+        "http://localhost/*",
+        "https://localhost:${GATEWAY_HTTPS_PORT:443}/*",
+        "http://localhost:${GATEWAY_HTTP_PORT:80}/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5173",
+        "https://localhost",
+        "http://localhost",
+        "https://localhost:${GATEWAY_HTTPS_PORT:443}",
+        "http://localhost:${GATEWAY_HTTP_PORT:80}"
+      ],
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "http://localhost:5173/*##https://localhost/*##http://localhost/*"
+        "post.logout.redirect.uris": "http://localhost:5173/*##https://localhost/*##http://localhost/*##https://localhost:${GATEWAY_HTTPS_PORT:443}/*##http://localhost:${GATEWAY_HTTP_PORT:80}/*"
       }
     }
   ],
