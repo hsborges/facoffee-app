@@ -56,5 +56,5 @@ Um processo à parte envia os e-mails devidos a cada segundo. Falha no envio nã
 pnpm --filter @facoffee/notificacao test               # unidade
 pnpm --filter @facoffee/notificacao test:integration   # precisa de postgres, rabbitmq e mailpit do compose
 pnpm --filter @facoffee/notificacao db:generate        # gera migration após mudar src/infra/db/schema.ts
-cd infra && docker compose up -d --wait --build notificacao   # e-mails em http://localhost:8025
+cd infra && docker compose -f docker-compose.dev.yml up -d --wait --build notificacao   # e-mails em http://localhost:8025
 ```

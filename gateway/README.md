@@ -33,7 +33,7 @@ Rotas, respostas e autenticação estão em [`openapi.yaml`](openapi.yaml) (Open
 
 ```sh
 pnpm --filter @facoffee/gateway test
-cd infra && docker compose up -d --wait --build gateway
+cd infra && docker compose -f docker-compose.dev.yml up -d --wait --build gateway
 curl -k https://localhost/api/usuario/   # 401
 ```
 

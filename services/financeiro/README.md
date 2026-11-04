@@ -144,5 +144,5 @@ A tabela `participantes` guarda quem Participação já informou e se está ativ
 pnpm --filter @facoffee/financeiro test               # unidade
 pnpm --filter @facoffee/financeiro test:integration   # precisa de postgres, rabbitmq e seaweedfs do compose
 pnpm --filter @facoffee/financeiro db:generate        # gera migration após mudar src/infra/db/schema.ts
-cd infra && docker compose up -d --wait --build financeiro
+cd infra && docker compose -f docker-compose.dev.yml up -d --wait --build financeiro
 ```

@@ -1,4 +1,4 @@
-// Needs the local compose: cd infra && docker compose up -d --wait postgres rabbitmq mailpit
+// Needs the local compose: cd infra && docker compose -f docker-compose.dev.yml up -d --wait postgres rabbitmq mailpit
 import { randomUUID } from 'node:crypto';
 import type { AddressInfo } from 'node:net';
 import { setTimeout as sleep } from 'node:timers/promises';

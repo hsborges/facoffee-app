@@ -33,11 +33,10 @@ export default async () => {
   });
   log(`Subindo a stack ${projeto} (build das imagens e healthchecks, cerca de 2 minutos)...`);
   const stack = await new DockerComposeEnvironment(INFRA, [
-    'docker-compose.yml',
+    'docker-compose.dev.yml',
     'docker-compose.test.yml',
   ])
     .withProjectName(projeto)
-    .withEnvironmentFile('.env.example')
     .withBuild()
     // Waits for the healthchecks, as docker compose up --wait.
     .withClientOptions({ commandOptions: ['--wait'] })

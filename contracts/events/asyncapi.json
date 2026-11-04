@@ -10,7 +10,7 @@
     "local": {
       "host": "localhost:5672",
       "protocol": "amqp",
-      "description": "RabbitMQ do ambiente local (infra/docker-compose.yml)."
+      "description": "RabbitMQ do ambiente local (infra/docker-compose.dev.yml)."
     }
   },
   "channels": {

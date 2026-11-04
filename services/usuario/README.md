@@ -46,6 +46,6 @@ Banco, outbox e publicação vêm do [template de serviço](../../templates/serv
 pnpm --filter @facoffee/usuario test               # unidade
 pnpm --filter @facoffee/usuario test:integration   # precisa de postgres e rabbitmq do compose
 pnpm --filter @facoffee/usuario db:generate        # gera migration após mudar src/infra/db/schema.ts
-cd infra && docker compose up -d --wait --build usuario gateway
+cd infra && docker compose -f docker-compose.dev.yml up -d --wait --build usuario gateway
 curl -k https://localhost/api/usuario/eu -H "Authorization: Bearer $TOKEN"
 ```
