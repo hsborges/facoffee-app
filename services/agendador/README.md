@@ -15,6 +15,6 @@ Ao subir e depois a cada hora, chama `POST /iniciar-ano` e `POST /iniciar-mes` e
 
 ```sh
 pnpm --filter @facoffee/agendador test
-cd infra && docker compose up -d --build agendador
-docker compose logs -f agendador
+cd infra && docker compose -f docker-compose.dev.yml up -d --build agendador
+docker compose -f docker-compose.dev.yml logs -f agendador
 ```

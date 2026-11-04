@@ -1,4 +1,4 @@
-// Needs the local compose: cd infra && docker compose up -d --wait postgres rabbitmq seaweedfs
+// Needs the local compose: cd infra && docker compose -f docker-compose.dev.yml up -d --wait postgres rabbitmq seaweedfs
 import { randomUUID } from 'node:crypto';
 import { setTimeout as sleep } from 'node:timers/promises';
 import amqplib from 'amqplib';
@@ -25,8 +25,7 @@ const config = {
   // Unique queue names so the test does not compete with a running financeiro container.
   service: `test-${randomUUID().slice(0, 8)}`,
   port: 0,
-  databaseUrl:
-    process.env.DATABASE_URL ?? 'postgres://financeiro:financeiro@localhost:5432/financeiro',
+  databaseUrl: process.env.DATABASE_URL ?? 'postgres://financeiro@localhost:5432/financeiro',
   rabbitmqUrl: process.env.RABBITMQ_URL ?? 'amqp://facoffee:facoffee@localhost:5672',
   s3: {
     endpoint: process.env.S3_ENDPOINT ?? 'http://localhost:8333',

@@ -1,4 +1,4 @@
-// Needs the local compose: cd infra && docker compose up -d --wait postgres rabbitmq
+// Needs the local compose: cd infra && docker compose -f docker-compose.dev.yml up -d --wait postgres rabbitmq
 import { randomInt, randomUUID } from 'node:crypto';
 import { setTimeout as sleep } from 'node:timers/promises';
 import amqplib from 'amqplib';
@@ -14,8 +14,7 @@ const config = {
   // Unique queue names so the test does not compete with a running participacao container.
   service: `test-${randomUUID().slice(0, 8)}`,
   port: 0,
-  databaseUrl:
-    process.env.DATABASE_URL ?? 'postgres://participacao:participacao@localhost:5432/participacao',
+  databaseUrl: process.env.DATABASE_URL ?? 'postgres://participacao@localhost:5432/participacao',
   rabbitmqUrl: process.env.RABBITMQ_URL ?? 'amqp://facoffee:facoffee@localhost:5672',
 };
 vi.setConfig({ testTimeout: 20_000, hookTimeout: 20_000 });

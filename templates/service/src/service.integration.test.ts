@@ -1,4 +1,4 @@
-// Needs the local compose: cd infra && docker compose up -d --wait postgres rabbitmq
+// Needs the local compose: cd infra && docker compose -f docker-compose.dev.yml up -d --wait postgres rabbitmq
 import { randomUUID } from 'node:crypto';
 import { setTimeout as sleep } from 'node:timers/promises';
 import amqplib from 'amqplib';
@@ -10,7 +10,7 @@ import { connectRabbitmq, EXCHANGE } from './infra/rabbitmq.js';
 import { startService } from './service.js';
 
 const config = {
-  databaseUrl: process.env.DATABASE_URL ?? 'postgres://example:example@localhost:5432/example',
+  databaseUrl: process.env.DATABASE_URL ?? 'postgres://example@localhost:5432/example',
   rabbitmqUrl: process.env.RABBITMQ_URL ?? 'amqp://facoffee:facoffee@localhost:5672',
 };
 const logger = createLogger('test', () => {});

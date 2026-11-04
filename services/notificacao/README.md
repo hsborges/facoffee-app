@@ -42,7 +42,7 @@ Um processo à parte envia os e-mails devidos a cada segundo. Falha no envio nã
 |---|---|
 | `SERVICE` | `notification` (nome do contexto nos contratos) |
 | `PORT` | `3000` (padrão; `GET /health` e `POST /lembrar-pendentes`) |
-| `DATABASE_URL` | `postgres://notificacao:notificacao@localhost:5432/notificacao` |
+| `DATABASE_URL` | `postgres://notificacao@localhost:5432/notificacao` |
 | `RABBITMQ_URL` | `amqp://facoffee:facoffee@localhost:5672` |
 | `USUARIO_URL` | `http://usuario:3000` |
 | `FINANCEIRO_URL` | `http://financeiro:3000` |
@@ -56,5 +56,5 @@ Um processo à parte envia os e-mails devidos a cada segundo. Falha no envio nã
 pnpm --filter @facoffee/notificacao test               # unidade
 pnpm --filter @facoffee/notificacao test:integration   # precisa de postgres, rabbitmq e mailpit do compose
 pnpm --filter @facoffee/notificacao db:generate        # gera migration após mudar src/infra/db/schema.ts
-cd infra && docker compose up -d --wait --build notificacao   # e-mails em http://localhost:8025
+cd infra && docker compose -f docker-compose.dev.yml up -d --wait --build notificacao   # e-mails em http://localhost:8025
 ```

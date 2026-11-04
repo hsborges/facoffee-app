@@ -47,8 +47,9 @@ export const novoUsuario = async ({
       body: new URLSearchParams({
         grant_type: 'password',
         client_id: 'admin-cli',
-        username: process.env.KEYCLOAK_ADMIN ?? 'admin',
-        password: process.env.KEYCLOAK_ADMIN_PASSWORD ?? 'admin',
+        // Fixed in infra/docker-compose.dev.yml (ADR 0038).
+        username: 'admin',
+        password: 'admin',
       }),
     });
     const headers = {

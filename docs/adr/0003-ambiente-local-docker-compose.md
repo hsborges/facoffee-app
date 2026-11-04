@@ -1,6 +1,6 @@
 # 0003. Ambiente local com docker compose
 
-- Status: Aceito
+- Status: Aceito; credenciais em `.env` substituídas por 0038
 - Data: 2026-10-25
 
 ## Contexto

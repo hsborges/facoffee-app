@@ -44,7 +44,7 @@ Fila `participation.events`. *Usuário desativado* (`user.user-deactivated.v1`) 
 |---|---|
 | `SERVICE` | `participation` (nome do contexto nos contratos) |
 | `PORT` | `3000` (padrão) |
-| `DATABASE_URL` | `postgres://participacao:participacao@localhost:5432/participacao` |
+| `DATABASE_URL` | `postgres://participacao@localhost:5432/participacao` |
 | `RABBITMQ_URL` | `amqp://facoffee:facoffee@localhost:5672` |
 
 ## Comandos
@@ -53,7 +53,7 @@ Fila `participation.events`. *Usuário desativado* (`user.user-deactivated.v1`) 
 pnpm --filter @facoffee/participacao test               # unidade
 pnpm --filter @facoffee/participacao test:integration   # precisa de postgres e rabbitmq do compose
 pnpm --filter @facoffee/participacao db:generate        # gera migration após mudar src/infra/db/schema.ts
-cd infra && docker compose up -d --wait --build participacao gateway
+cd infra && docker compose -f docker-compose.dev.yml up -d --wait --build participacao gateway
 curl -k -X POST https://localhost/api/participacao/entrar -H "Authorization: Bearer $TOKEN" \
   -H 'content-type: application/json' -d '{"tipoDeCota":"completa"}'
 ```

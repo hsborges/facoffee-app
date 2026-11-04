@@ -132,7 +132,7 @@ A tabela `participantes` guarda quem Participação já informou e se está ativ
 |---|---|
 | `SERVICE` | `finance` (nome do contexto nos contratos) |
 | `PORT` | `3000` (padrão) |
-| `DATABASE_URL` | `postgres://financeiro:financeiro@localhost:5432/financeiro` |
+| `DATABASE_URL` | `postgres://financeiro@localhost:5432/financeiro` |
 | `RABBITMQ_URL` | `amqp://facoffee:facoffee@localhost:5672` |
 | `S3_ENDPOINT` | `http://localhost:8333` |
 | `S3_ACCESS_KEY` / `S3_SECRET_KEY` | `facoffee` / `facoffee-secret` |
@@ -144,5 +144,5 @@ A tabela `participantes` guarda quem Participação já informou e se está ativ
 pnpm --filter @facoffee/financeiro test               # unidade
 pnpm --filter @facoffee/financeiro test:integration   # precisa de postgres, rabbitmq e seaweedfs do compose
 pnpm --filter @facoffee/financeiro db:generate        # gera migration após mudar src/infra/db/schema.ts
-cd infra && docker compose up -d --wait --build financeiro
+cd infra && docker compose -f docker-compose.dev.yml up -d --wait --build financeiro
 ```

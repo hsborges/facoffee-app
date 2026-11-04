@@ -1,11 +1,15 @@
+# Ambiente de desenvolvimento local (ADR 0003, ADR 0038). Só para desenvolvimento:
+# credenciais fixas e PostgreSQL sem senha.
+#   docker compose -f docker-compose.dev.yml up -d --wait --build
 name: facoffee
 
 services:
+  # facoffee/facoffee; o usuário padrão guest só conecta de dentro do contêiner.
   rabbitmq:
     image: rabbitmq:4.4-management-alpine
     environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+      RABBITMQ_DEFAULT_USER: facoffee
+      RABBITMQ_DEFAULT_PASS: facoffee
     ports:
       - "127.0.0.1:5672:5672"
       - "127.0.0.1:15672:15672"
@@ -17,15 +21,11 @@ services:
       timeout: 10s
       retries: 10
 
+  # Sem senha (trust); um banco e um usuário por serviço, criados pelo init.sh.
   postgres:
     image: postgres:18-alpine
     environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      USUARIO_DB_PASSWORD: ${USUARIO_DB_PASSWORD}
-      PARTICIPACAO_DB_PASSWORD: ${PARTICIPACAO_DB_PASSWORD}
-      FINANCEIRO_DB_PASSWORD: ${FINANCEIRO_DB_PASSWORD}
-      NOTIFICACAO_DB_PASSWORD: ${NOTIFICACAO_DB_PASSWORD}
-      EXAMPLE_DB_PASSWORD: ${EXAMPLE_DB_PASSWORD}
+      POSTGRES_HOST_AUTH_METHOD: trust
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
@@ -42,9 +42,12 @@ services:
     image: quay.io/keycloak/keycloak:26.8
     command: start-dev --import-realm
     environment:
-      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN}
-      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
       KC_HEALTH_ENABLED: "true"
+      # Portas do gateway nos redirects e origens do client facoffee-web (keycloak/facoffee-realm.json).
+      GATEWAY_HTTP_PORT: ${GATEWAY_HTTP_PORT:-80}
+      GATEWAY_HTTPS_PORT: ${GATEWAY_HTTPS_PORT:-443}
     ports:
       - "127.0.0.1:8080:8080"
     volumes:
@@ -61,8 +64,8 @@ services:
     image: chrislusf/seaweedfs:4.48
     command: server -dir=/data -s3 -s3.port=8333
     environment:
-      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY}
-      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY}
+      AWS_ACCESS_KEY_ID: facoffee
+      AWS_SECRET_ACCESS_KEY: facoffee-secret
     ports:
       - "127.0.0.1:8333:8333"
     volumes:
@@ -85,11 +88,12 @@ services:
       retries: 10
 
   # Único ponto aberto para fora do host (ADR 0007), em HTTPS e HTTP (ADR 0022).
+  # Portas do host configuráveis, onde 80 e 443 não estão livres ou não são permitidas.
   gateway:
     image: traefik:v3.7
     ports:
-      - "80:80"
-      - "443:443"
+      - "${GATEWAY_HTTP_PORT:-80}:80"
+      - "${GATEWAY_HTTPS_PORT:-443}:443"
     volumes:
       - ../gateway/traefik:/etc/traefik:ro
     healthcheck:
@@ -152,8 +156,8 @@ services:
           ignore: [dist/, node_modules/]
     environment:
       SERVICE: user
-      DATABASE_URL: postgres://usuario:${USUARIO_DB_PASSWORD}@postgres:5432/usuario
-      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      DATABASE_URL: postgres://usuario@postgres:5432/usuario
+      RABBITMQ_URL: amqp://facoffee:facoffee@rabbitmq:5672
     depends_on:
       postgres:
         condition: service_healthy
@@ -171,8 +175,8 @@ services:
           ignore: [dist/, node_modules/]
     environment:
       SERVICE: participation
-      DATABASE_URL: postgres://participacao:${PARTICIPACAO_DB_PASSWORD}@postgres:5432/participacao
-      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      DATABASE_URL: postgres://participacao@postgres:5432/participacao
+      RABBITMQ_URL: amqp://facoffee:facoffee@rabbitmq:5672
     depends_on:
       postgres:
         condition: service_healthy
@@ -190,11 +194,11 @@ services:
           ignore: [dist/, node_modules/]
     environment:
       SERVICE: finance
-      DATABASE_URL: postgres://financeiro:${FINANCEIRO_DB_PASSWORD}@postgres:5432/financeiro
-      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      DATABASE_URL: postgres://financeiro@postgres:5432/financeiro
+      RABBITMQ_URL: amqp://facoffee:facoffee@rabbitmq:5672
       S3_ENDPOINT: http://seaweedfs:8333
-      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
-      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_ACCESS_KEY: facoffee
+      S3_SECRET_KEY: facoffee-secret
       S3_BUCKET: financeiro
     depends_on:
       postgres:
@@ -216,8 +220,8 @@ services:
           ignore: [dist/, node_modules/]
     environment:
       SERVICE: notification
-      DATABASE_URL: postgres://notificacao:${NOTIFICACAO_DB_PASSWORD}@postgres:5432/notificacao
-      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      DATABASE_URL: postgres://notificacao@postgres:5432/notificacao
+      RABBITMQ_URL: amqp://facoffee:facoffee@rabbitmq:5672
       USUARIO_URL: http://usuario:3000
       FINANCEIRO_URL: http://financeiro:3000
       SMTP_URL: smtp://mailpit:1025
