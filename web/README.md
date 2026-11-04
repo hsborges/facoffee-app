@@ -9,7 +9,7 @@ cd infra && docker compose -f docker-compose.dev.yml up -d --wait --build   # st
 pnpm --filter @facoffee/web dev                   # desenvolvimento: http://localhost:5173
 ```
 
-Entre com um usuário de teste do [realm local](../infra/README.md#keycloak) (`gestor`/`gestor` ou `participante`/`participante`). No desenvolvimento, o Vite encaminha `/api` para `https://localhost`, ou para a porta de `GATEWAY_HTTPS_PORT` quando o gateway sobe em outra porta ([README da infra](../infra/README.md#portas-do-gateway)). Na stack, o build é servido por nginx (`Dockerfile`, `nginx.conf`) atrás do gateway ([ADR 0021](../docs/adr/0021-front-end-servido-pelo-gateway.md)).
+Entre com um usuário de teste do [realm local](../infra/README.md#keycloak) (`gestor`/`gestor` ou `participante`/`participante`). No desenvolvimento, o Vite encaminha `/api` para `https://localhost`, ou para a porta de `GATEWAY_HTTPS_PORT` (do ambiente ou do `infra/.env`) quando o gateway sobe em outra porta ([README da infra](../infra/README.md#portas-do-gateway)). Na stack, o build é servido por nginx (`Dockerfile`, `nginx.conf`) atrás do gateway ([ADR 0021](../docs/adr/0021-front-end-servido-pelo-gateway.md)).
 
 | Variável | Padrão |
 |---|---|
